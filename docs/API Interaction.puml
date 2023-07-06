@@ -1,0 +1,44 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+box "Remote Services" #Lightblue
+entity "VCell Server" #seagreen
+queue API
+database "Big Data Server" #skyblue
+end box
+
+box "Fiji Plugins"
+participant "Model Gen" #orange
+participant "Data Viewer"
+end box
+
+actor User
+
+
+User -> "Model Gen": Input parameters for model
+"Model Gen" -> API: Take in parameters
+API -> "VCell Server": Start simulation with parameters
+
+== Finish simulation after some time ==
+"VCell Server" --> "Big Data Server": Simulation Results
+note over "VCell Server": Store results in file \n system temp for big \n data server to serve it
+
+User -> "Data Viewer": Connect to big data server
+"Data Viewer" -> "Big Data Server": Connection request
+"Big Data Server" --> "Data Viewer": Connection granted
+note over "Big Data Server": Want to return subset \n of generated models \n so user does not get \n overwhelmed
+
+"Data Viewer" --> User: List of models that user can view
+
+note over "Data Viewer": May not have the \n best UI for viewing \n these served images \n and processing them
+
+
+
+
+
+
+
+
+
+
+@enduml
