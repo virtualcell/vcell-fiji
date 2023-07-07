@@ -13,7 +13,7 @@ Java swing seems to be the best suited library for GUI development
 Although there is the issue of it not supporting hardware acceleration or 3D graphics.
 
 ## Sci-Java
-Sci-Java is a collaboration project which integrates software for scientific processing.
+[Sci-Java](https://imagej.net/libs/scijava) is a collaboration project which integrates software for scientific processing.
 The libraries and applications which are most interesting are
 - [ImgLib2](https://imagej.net/libs/imglib2)
   - Core libraries for N-dimensional image processing.
@@ -22,7 +22,7 @@ The libraries and applications which are most interesting are
   - Core libraries for N-dimensional image I/O.
   - Does not actually display the images
 - [Fiji](https://imagej.net/software/fiji)
-  - The ImageJ application with a large set of plugins included.
+  - The [ImageJ2](https://imagej.net/software/imagej2/) application with a large set of plugins included.
 - Big Data
   - Two part system, one for clients and other for the server
   - [BigDataServer](https://imagej.net/plugins/bdv/server)
@@ -47,3 +47,40 @@ Some of the key takeaways are
 - Tips for developers transition from other C++ to [java](https://imagej.net/develop/cpp-tips)
 - There is quick-hand list of [tips](https://imagej.net/develop/tips) for developers for completing essential tasks most plugins need to do
 
+### Development [lifecycle](https://imagej.net/develop/releasing)
+***Development*** 
+
+For debugging there is a [template](https://github.com/imagej/example-imagej2-command) intended to be used.
+
+Still nothing concrete found though on how to actually debug the application.
+There are plenty of resources to integrate a plugin within Fiji, but nothing to 
+execute the application and debug.
+
+It does seem that taking a jar file, and sticking it within the Fiji plugins folder allows
+for Fiji to recognize the plugin, but that seems to be a static fix , and does not allow
+dynamic debugging.
+
+Some potential leads into setting up a proper debugging setup:
+
+- https://imagej.net/develop/debugging
+- https://i-ric.org/en/forum/launching-fiji-within-intellij-java-program/
+- https://intellij-support.jetbrains.com/hc/en-us/community/posts/360000503104-ImageJ-scripting?page=1#community_comment_360000312360
+- https://github.com/imagingbook/imagej1-plugins-ide-setup/tree/master
+- https://intellij-support.jetbrains.com/hc/en-us/community/posts/360002617360-Writting-ImageJ-Fiji-in-IntelliJ
+- https://micro-manager.org/How_to_debug_and_develop_MM2.0
+- 
+
+
+***Production***
+
+Commit to the main branch so that the changes can be solidified within the project.
+
+***Release***
+
+Once an accumulation of changes within the main branch is created, create a jar
+file of the project (maven artifact). This file can be submitted to the Maven project
+so that other developers can add to the plugin if wanted, but more importantly for the
+users of ImageJ, to the [updater website](https://imagej.net/update-sites/setup#creating-a-hosted-update-site).
+
+The updater website is the ecosystem of plugins for ImageJ, and allows for easy
+implementation of plugins and updating.
