@@ -27,6 +27,7 @@ The libraries and applications which are most interesting are
   - Two part system, one for clients and other for the server
   - [BigDataServer](https://imagej.net/plugins/bdv/server)
     - An application which runs on a server, and handles clients requests to view large image files, supposedly doing it extremely efficiently and quickly
+    - Need to open it within a hyper stack, it only shows the 
   - [BigDataViewer](https://imagej.net/plugins/bdv)
     - Re-slicing browser and Fiji plugin for terabyte-sized multi-view image sequences
 
@@ -70,6 +71,7 @@ Some potential leads into setting up a proper debugging setup:
 - https://micro-manager.org/How_to_debug_and_develop_MM2.0
 - 
 
+Have it similar to VCell current debugging
 
 ***Production***
 
@@ -84,3 +86,7 @@ users of ImageJ, to the [updater website](https://imagej.net/update-sites/setup#
 
 The updater website is the ecosystem of plugins for ImageJ, and allows for easy
 implementation of plugins and updating.
+
+Can use GitHub actions such that when a commitment is made to a specific branch,
+it does the entire process of one final ring of test cases, and than can publish the
+compiled JAR files to the required repositories.
