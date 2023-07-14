@@ -1,0 +1,45 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!pragma teoz true
+
+title Using Bio-Format plugin to access remote files
+
+
+box Remote #lightblue
+entity "VCell Server" #seagreen
+queue "Simulation API"
+database "Hosted files" #skyblue
+end box
+
+box Local
+box Fiji Plugins #orange
+participant "Bio-Format"
+end box
+participant "VCell App"
+end box
+
+actor User
+
+User -> "VCell App": Set parameters for model
+"VCell App" -> "Simulation API": Take in parameters
+note over "Simulation API": If model already\nexists than don't\nsimulate.\nPotential bugs
+"Simulation API" -> "VCell Server": Start simulation with parameters
+
+== Finish Simulation after some time ==
+
+"VCell Server" --> "Hosted files": Make the result publicly available through a link
+note over "Hosted files": Requires dynamic \nGeneration and  removal\nOf links
+
+User -> "Bio-Format": Input link to model generated previously
+"Bio-Format" -> "Hosted files": Requests to access file
+"Hosted files" --> "Bio-Format": Accepts request
+
+"Bio-Format" --> User: Options menu for loading the selected image
+note over "Bio-Format": The options to\nselect from may\nnot allow for efficient\nimage retrial. Virtual stack\nseems to be the only one.
+
+User -> "Bio-Format": Selects how to open image
+
+"Bio-Format" --> User: Image editing window
+note over "Bio-Format": Still don't know\nhow it transfers data for\nimages. Also on it's page\nthis feature is described as\nnot robust.
+
+@enduml

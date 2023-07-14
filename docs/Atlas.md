@@ -1,6 +1,10 @@
 # Goal
 To build Fiji plugins which allow for easy use of the VCell servers, allowing for the best of both worlds.
-A powerful image processing tool and the models generated from VCells simulations.
+A powerful image processing tool and the models generated from VCells simulations. There
+are already plenty of solutions which help to handle large amounts of data,
+the only thing is that data is mounted on the users computer.
+
+When trying to access these files in Bio-Format
 
 # Problem
 Users of VCell are able to create a simulated model, but exporting and analyzing data from these models
