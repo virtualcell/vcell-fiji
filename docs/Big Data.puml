@@ -30,9 +30,13 @@ note over "Big Data Server": Want to return subset \n of generated models \n so 
 
 "Data Viewer" --> User: List of models that user can view
 
-note over "Data Viewer": May not have the \n best UI for viewing \n these served images \n and processing them
 
+User -> "Data Viewer": Select desired model
+"Data Viewer" --> User: Return image selected encapsulated\nin the Big Data viewer window
 
+note over "Data Viewer": The tools available in the\nbig data viewer do not seem\ncapable of proper processing
+
+== With modifications made to the big data viewer ==
 
 
 
