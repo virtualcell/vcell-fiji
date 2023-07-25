@@ -108,3 +108,39 @@ be used to process the image and export data easily.
 Have the simulation result within the remote repository.
 Preview the data preemptively with the Big Data viewer.
 Then stream the information to the user when they want to access the model within ImageJ.
+
+
+
+### Ricky's Project and Work
+
+Take the beta site and make it accessible in ImageJ. Independent of VCell client.
+
+Use VCell models, but it requires the VCell client to be open.
+
+- HTML scarper
+  - Gets entire HTML
+
+
+- Model and ImageJ dependence
+  - It seems that frank implemented in VCell natively some sort of API that allows
+  for requests to be made by the VCell client.
+    - Searches for models
+    - Returns list
+  - The Fiji plugin communicates with VCell client via some internal port on the users machine
+
+  - Plugin Process
+    - Load the plugin
+    - Communicates with VCell client via some [open port](https://github.com/paulricky/vcell/blob/master/vcell-imagej-helper/src/main/java/org/vcell/imagej/helper/VCellHelper.java#L86)
+    - VCell client has some API that allows for the ImageJ application to speak with it
+      - Seems to be that a URL is generated with the port number where VCell client API is hosted, and regex is used to parse a query to that [URL](https://github.com/paulricky/vcell/blob/master/vcell-imagej-helper/src/main/java/org/vcell/imagej/helper/VCellHelper.java#L387)
+    - Requests model and sees if it is available
+    - Model available then make a request
+    - Treat each slice of the stack as a grid [array of pixels](https://github.com/paulricky/vcell/blob/master/vcell-imagej-helper/src/main/java/org/vcell/imagej/helper/VCellHelper.java#L161)
+    and load them into an [image array](https://github.com/paulricky/vcell/blob/master/vcell-imagej-helper/src/main/java/org/vcell/imagej/plugin/VCellPlugin_Minimal.java#L1179), 
+    then load that Image array [into](https://github.com/paulricky/vcell/blob/master/vcell-imagej-helper/src/main/java/org/vcell/imagej/plugin/VCellPlugin_Minimal.java#L1232) the 
+    [ImgPlus object](https://imagej.nih.gov/ij/developer/api/ij/ij/ImagePlus.html), and finally show that ImagePlus object.
+
+
+
+
+

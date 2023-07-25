@@ -1,6 +1,8 @@
 @startuml
 'https://plantuml.com/sequence-diagram
 
+!pragma teoz true
+
 box Remote #Lightblue
 entity "Remote VCell" #seagreen
 database "Storage"

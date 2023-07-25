@@ -1,0 +1,58 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+!pragma teoz true
+
+box Remote #Lightblue
+entity "Remote VCell" #seagreen
+queue "VCell API"
+database "Storage"
+queue "S3 API"
+end box
+
+box Local
+box Fiji Plugins #Orange
+participant VCellJ
+participant N5
+participant Mobius
+end box
+participant "VCell App"
+actor User
+end box
+
+title Cloud Object Storage
+
+== Simulate Model ==
+
+User -> "VCell App": Make model as specific file type
+"VCell App" -> "VCell API": Initiate simulation
+"VCell API" -> "Remote VCell": Begin simulation
+
+"Remote VCell" --> "Storage": Store results of simulation
+"Remote VCell" --> "VCell App": All Finished notice
+
+== Access Model==
+
+group The user can utilize any plugin to access the models including the one we are making
+User -> VCellJ: Access model with unique ID XXXX
+User -> N5
+User -> Mobius
+
+activate "S3 API" #Green
+VCellJ -> "S3 API": Request model XXXX
+N5 -> "S3 API"
+Mobius -> "S3 API"
+deactivate "S3 API"
+end group
+
+"S3 API" -> "Storage": Approve request and tell storage system\n ID XXXX desires to be pulled
+note over "S3 API": Depending on the type\n of request different  \nresponses will be had\n ex. HEAD,GET,PUT
+"Storage" --> VCellJ: Return model
+note over "Storage": When returning the model\nit does not have to return the \nthe whole model but can do \nchunks depending on the file\n type
+note over "S3 API": This API does not limit\n itself to only ImageJ.
+
+VCellJ --> User: Display image
+User -> VCellJ: Do any processing required
+
+
+@enduml
