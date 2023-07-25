@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.scijava</groupId>
         <artifactId>pom-scijava</artifactId>
-        <version>34.1.0</version>
+        <version>36.0.0</version>
         <relativePath />
     </parent>
 
@@ -91,6 +91,40 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+    <groupId>org.scijava</groupId>
+    <artifactId>scijava-common</artifactId>
+</dependency>
+		<dependency>
+    <groupId>ome</groupId>
+    <artifactId>bio-formats_plugins</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.scijava</groupId>
+    <artifactId>scijava-ui-swing</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.scijava</groupId>
+    <artifactId>scijava-ui-awt</artifactId>
+</dependency>
+		<dependency>
+    <groupId>net.imagej</groupId>
+    <artifactId>imagej</artifactId>
+</dependency>
+ <dependency>
+    <groupId>org.scijava</groupId>
+    <artifactId>scijava-plugins-commands</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+		    <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpclient</artifactId>
+		    
+		</dependency>
+		<dependency>
+    <groupId>org.scijava</groupId>
+    <artifactId>scijava-listeners</artifactId>
+</dependency>
     </dependencies>
 
 </project>
