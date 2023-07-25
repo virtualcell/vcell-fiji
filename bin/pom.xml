@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.scijava</groupId>
+        <artifactId>pom-scijava</artifactId>
+        <version>34.1.0</version>
+        <relativePath />
+    </parent>
+
+    <groupId>org.vcell.vcellfiji</groupId>
+    <artifactId>vcell-fiji</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+
+    <name>Virtual Cell ImageJ plugin</name>
+    <description>Virtual Cell ImageJ plugin to retrieve VCell simulation results for analysis within ImageJ</description>
+    <url>https://vcell.org</url>
+    <inceptionYear>2023</inceptionYear>
+    <organization>
+        <name>Virtual Cell</name>
+        <url>https://vcell.org</url>
+    </organization>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>jcschaff</id>
+            <name>Jim Schaff</name>
+        </developer>
+        <developer>
+            <id>AvocadoMoon</id>
+            <name>Ezequiel Valencia</name>
+        </developer>
+        <developer>
+            <id>paulricky</id>
+            <name>Ricky Paul</name>
+        </developer>
+     </developers>
+    <contributors>
+        <contributor>
+            <name>Michael Blinov</name>
+        </contributor>
+    </contributors>
+    <mailingLists>
+        <mailingList>
+            <name>VCell Open Discussion Forum</name>
+            <subscribe>https://groups.google.com/group/vcell-discuss</subscribe>
+            <unsubscribe>https://groups.google.com/group/vcell-discuss</unsubscribe>
+            <post>vcell-discuss@googlegroups.com</post>
+            <archive>https://groups.google.com/group/vcell-discuss</archive>
+        </mailingList>
+    </mailingLists>
+    <scm>
+        <connection>scm:git:https://github.com/virtualcell/vcell-fiji</connection>
+        <developerConnection>scm:git:git@github.com:virtualcell/vcell-fiji</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/virtualcell/vcell-fiji</url>
+    </scm>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/virtualcell/vcell-fiji/issues</url>
+    </issueManagement>
+    <ciManagement>
+        <system>GitHub Actions</system>
+        <url>https://github.com/virtualcell/vcell-fiji/actions</url>
+    </ciManagement>
+
+    <properties>
+        <license.licenseName>MIT</license.licenseName>
+        <license.copyrightOwners>UConn Health</license.copyrightOwners>
+
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
