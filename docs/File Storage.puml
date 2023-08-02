@@ -5,27 +5,24 @@
 
 box Remote #Lightblue
 entity "Remote VCell" #seagreen
-queue "VCell API"
 database "Storage"
-queue "Storage Proxy"
-queue "S3 API"
+queue "VCell API"
+
 end box
 
 box Local
 box Fiji Plugins #Orange
 participant VCellJ
-participant N5
-participant MoBIE
 end box
 participant "VCell App"
 actor User
 end box
 
-title Cloud Object Storage
+title Cloud File Storage
 
 == Simulate Model ==
 
-User -> "VCell App": Make model as specific file type
+User -> "VCell App": Make model
 "VCell App" -> "VCell API": Initiate simulation
 "VCell API" -> "Remote VCell": Begin simulation
 
@@ -34,24 +31,13 @@ User -> "VCell App": Make model as specific file type
 
 == Access Model==
 
-group The user can utilize any plugin to access the models including the one we are making
 User -> VCellJ: Access model with unique ID XXXX
-User -> N5
-User -> MoBIE
-
-activate "S3 API" #Green
-VCellJ -> "S3 API": Request model XXXX
-N5 -> "S3 API"
-MoBIE -> "S3 API"
-deactivate "S3 API"
-end group
 
 "S3 API" -> "Storage Proxy": Approve request
 note over "S3 API": Depending on the type\n of request different  \nresponses will be had\n ex. HEAD,GET,PUT
 "Storage Proxy" -> "Storage": Tell storage system\n ID XXXX desires to be pulled
-"Storage" --> "Storage Proxy": Return model
-"Storage Proxy" --> "S3 API": Return model
-"S3 API" --> VCellJ: Return model
+"Storage" --> "VCell API": Return model
+"VCell API" --> VCellJ: Return model
 note over "Storage": When returning the model\nit does not have to return the \nthe whole model but can do \nchunks depending on the file\n type
 note over "S3 API": This API does not limit\n itself to only ImageJ.
 

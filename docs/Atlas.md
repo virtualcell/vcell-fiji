@@ -6,6 +6,11 @@ the only thing is that data is mounted on the users computer.
 
 # File Format
 There are multiple file formats that seem to be standardized for sharing.
+TIFF is primarily used for images and graphics, HDF5 focuses on managing complex datasets, 
+and Zarr specializes in efficient storage of multi-dimensional arrays, especially in scientific computing and data-intensive applications. 
+The choice of format depends on the specific needs of the data being stored or exchanged.
+https://github.com/saalfeldlab/n5-ij/blob/master/scripts/readProcessWriteIJDemo.bsh
+https://github.com/saalfeldlab/n5-imglib2/blob/master/scripts/readProcessWriteDemo.bsh
 - ZARR
   - Whole entre paper claiming how great this format is, and its application
   outside bio-imaging
@@ -19,8 +24,11 @@ There are multiple file formats that seem to be standardized for sharing.
     - XML/HDF5
   - Is supported by most plugins that support OME.ZARR
 - N5
-  - gs://example_multi-n5_bucket/mitosis.n5/raw
-
+  - gs://example_multi-n5_bucket/mitosis.n5/raw`
+  - https://www.openorganelle.net/
+- Tiff
+  - https://people.math.sc.edu/Burkardt/data/tif/tif.html
+- HDF5
 
 # Problem
 Users of VCell are able to create a simulated model, but exporting and analyzing data from these models
