@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.vcell.vcellfiji.VCellGUI">
+  <grid id="27dc6" binding="mainPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+    <constraints>
+      <xy x="20" y="20" width="500" height="445"/>
+    </constraints>
+    <properties/>
+    <border type="line"/>
+    <children>
+      <toolbar id="b2de9" binding="menuBar">
+        <constraints/>
+        <properties>
+          <borderPainted value="false"/>
+          <floatable value="false"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="9dc9d" class="javax.swing.JButton" binding="LocalFiles">
+            <constraints/>
+            <properties>
+              <font swing-font="Button.font"/>
+              <text value="Read Local Files"/>
+            </properties>
+          </component>
+        </children>
+      </toolbar>
+    </children>
+  </grid>
+</form>
