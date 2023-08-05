@@ -46,7 +46,7 @@ public class N5ImageHandler implements Command{
     }
 
 
-    private void readN5Files(File n5File){
+    public void readN5Files(File n5File){
         // auto closes reader
         try (N5FSReader n5FSReader = new N5FSReader(n5File.getPath())) {
             ExecutorService loaderExecuter = Executors.newCachedThreadPool();
@@ -80,6 +80,6 @@ public class N5ImageHandler implements Command{
     }
 
     public static void main(String[] args) {
-        new N5ImageHandler().run();
+//        new N5ImageHandler().run();
     }
 }
