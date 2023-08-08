@@ -169,6 +169,13 @@
             <version>2.0.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-ij -->
+        <dependency>
+            <groupId>org.janelia.saalfeldlab</groupId>
+            <artifactId>n5-ij</artifactId>
+            <version>3.2.2</version>
+        </dependency>
+
 
 
         <dependency>

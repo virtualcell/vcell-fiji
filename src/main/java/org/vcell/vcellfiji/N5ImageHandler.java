@@ -1,11 +1,24 @@
 package org.vcell.vcellfiji;
 
 
+import ij.ImagePlus;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.img.CachedCellImg;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.Type;
+import net.imglib2.type.numeric.integer.*;
+import net.imglib2.type.numeric.real.*;
+//import org.janelia.saalfeldlab.n5.ij.N5IJUtils;
+import org.janelia.saalfeldlab.n5.ij.N5IJUtils;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
+import org.janelia.saalfeldlab.n5.metadata.N5CosemMetadata;
+import org.janelia.saalfeldlab.n5.metadata.N5CosemMetadataParser;
+//import org.janelia.saalfeldlab.n5.metadata.imagej.CosemToImagePlus;
+import org.janelia.saalfeldlab.n5.metadata.imagej.CosemToImagePlus;
 import org.scijava.command.Command;
+//import org.janelia.saalfeldlab.n5.blosc.BloscCompression;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
 
@@ -22,7 +35,7 @@ import java.util.Map;
 
 // Command plugins
 @Plugin(type = Command.class, menuPath = "Plugins>VCell>ImageHandler")
-public class N5ImageHandler implements Command{
+public class N5ImageHandler <T extends NativeType<T>> implements Command{
     private VCellGUI vGui;
     private File selectedFile;
 
@@ -57,7 +70,7 @@ public class N5ImageHandler implements Command{
                 };
             }
             return fList;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -69,10 +82,19 @@ public class N5ImageHandler implements Command{
         });
     }
 
+
+
     public void loadN5Dataset(String selectedDataset){
         try (N5FSWriter n5FSWriter = new N5FSWriter(selectedFile.getPath())){
-            CachedCellImg<UnsignedShortType, ?> n5imp = N5Utils.open(n5FSWriter, selectedDataset);
-            ImageJFunctions.show(n5imp);
+            N5CosemMetadataParser metadataParser = new N5CosemMetadataParser();
+            CosemToImagePlus cosemToImagePlus = new CosemToImagePlus();
+
+//            DatasetAttributes datasetAttributes = n5FSWriter.getDatasetAttributes(selectedDataset);
+//            DataType dataType = datasetAttributes.getDataType();
+//            CachedCellImg<UnsignedShortType, ?> n5imp = N5Utils.open(n5FSWriter, selectedDataset);
+
+            ImagePlus imagePlus = N5IJUtils.load(n5FSWriter, selectedDataset, metadataParser, cosemToImagePlus);
+            imagePlus.show();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

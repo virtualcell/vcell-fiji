@@ -22,4 +22,11 @@ public class N5ImageHandlerTest extends TestCase {
     }
 
 
+
+    public void manualTesting(){
+        N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        n5ImageHandler.run();
+    }
+
+
 }
