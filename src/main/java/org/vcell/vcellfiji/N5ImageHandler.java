@@ -4,33 +4,22 @@ package org.vcell.vcellfiji;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import ij.ImagePlus;
-//import org.janelia.saalfeldlab.n5.ij.N5IJUtils;
-import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedLongType;
-//import org.janelia.saalfeldlab.n5.ij.N5IJUtils;
+import net.imglib2.type.numeric.integer.*;
+import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
-//import org.janelia.saalfeldlab.n5.metadata.N5CosemMetadataParser;
-//import org.janelia.saalfeldlab.n5.metadata.imagej.CosemToImagePlus;
-//import org.janelia.saalfeldlab.n5.metadata.imagej.CosemToImagePlus;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
-import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Writer;
 import org.scijava.command.Command;
-//import org.janelia.saalfeldlab.n5.blosc.BloscCompression;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
 import org.vcell.vcellfiji.UI.VCellGUI;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -61,7 +50,6 @@ public class N5ImageHandler implements Command{
                 displayN5Results();
             }
         });
-//        readN5Files();
 
         this.vGui.okayButton.addActionListener(new ActionListener() {
             @Override
@@ -101,7 +89,7 @@ public class N5ImageHandler implements Command{
     }
 
 
-    private void loadN5DatasetHelper (String selectedDataset, N5Writer n5Writer) throws IOException {
+    public ImagePlus getImgPlusFromN5File(String selectedDataset, N5Reader n5Reader) throws IOException {
 //        N5CosemMetadataParser metadataParser = new N5CosemMetadataParser();
 //        CosemToImagePlus cosemToImagePlus = new CosemToImagePlus();
 
@@ -111,24 +99,48 @@ public class N5ImageHandler implements Command{
 
 //           Using the N5IJUtils library allows for the data type from N5 files to automatically be handled
 
-        CachedCellImg<UnsignedLongType, ?> cachedCellImg = N5Utils.open(n5Writer, selectedDataset);
-        ImagePlus imagePlus = ImageJFunctions.show(cachedCellImg);
-        new Duplicator().run(imagePlus).show();
+
+//        CachedCellImg<UnsignedLongType, ?> cachedCellImg = N5Utils.open(n5Reader, selectedDataset);
+//        ImagePlus imPlus = ImageJFunctions.wrap(cachedCellImg, "");
+        // Theres definitly a better way to do this, I trie using a variable to change the cached cells first parameter type but it didn't seem to work :/
+        switch (n5Reader.getDatasetAttributes(selectedDataset).getDataType()){
+            case UINT8:
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedByteType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case UINT16:
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedShortType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case UINT32:
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedIntType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case INT8:
+                return ImageJFunctions.wrap((CachedCellImg<ByteType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case INT16:
+                return ImageJFunctions.wrap((CachedCellImg<ShortType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case INT32:
+                return ImageJFunctions.wrap((CachedCellImg<IntType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case FLOAT32:
+                return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+        }
+        return null;
+
+
+//        ImagePlus imagePlus = ImageJFunctions.show(cachedCellImg);
 //        ImagePlus imagePlus = N5IJUtils.load(n5Writer, selectedDataset, metadataParser, cosemToImagePlus);
 //        imagePlus.show();
     }
 
+
+
     public void loadN5Dataset(String selectedDataset){
         if(selectedFile != null) {
-            try (N5FSWriter n5FSWriter = new N5FSWriter(selectedFile.getPath())) {
-                this.loadN5DatasetHelper(selectedDataset, n5FSWriter);
+            try (N5FSReader n5FSReader = new N5FSReader(selectedFile.getPath())) {
+                ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5FSReader);
+                imagePlus.show();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         else {
-            try (N5AmazonS3Writer n5AmazonS3Writer = new N5AmazonS3Writer(this.s3Client, this.bucketName, "/test_image.n5")) {
-                this.loadN5DatasetHelper(selectedDataset, n5AmazonS3Writer);
+            try (N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, "/test_image.n5")) {
+                this.getImgPlusFromN5File(selectedDataset, n5AmazonS3Reader);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -159,6 +171,7 @@ public class N5ImageHandler implements Command{
         try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, this.bucketName, "janelia-cosem-datasets/jrc_hela-2/jrc_hela-2.n5/");){
             String[] deepList = n5AmazonS3Reader.deepList("/"); // A better approach will be to just list all of the different prefixes, and then use a isDataset function on it
             System.out.print("");
+            CachedCellImg<UnsignedByteType, ?> cachedCellImg = N5Utils.open(n5AmazonS3Reader, "");
 //            ImagePlus imagePlus = N5IJUtils.load(n5AmazonS3Writer, "test/c0/s0");
 //            imagePlus.show();
         }
