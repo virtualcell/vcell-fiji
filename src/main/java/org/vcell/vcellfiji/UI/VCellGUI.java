@@ -1,4 +1,4 @@
-package org.vcell.vcellfiji;
+package org.vcell.vcellfiji.UI;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -13,6 +13,8 @@ public class VCellGUI extends JFrame {
     private JToolBar menuBar;
     public JList<String> datasetList;
     private JScrollPane resultsScrollPane;
+    private JButton remoteFiles;
+    public JButton okayButton;
 
     public VCellGUI() {
         jFrame = this;
@@ -37,6 +39,14 @@ public class VCellGUI extends JFrame {
 //                System.out.print(localFileDialog.getSelectedFile());
             }
         });
+
+        remoteFiles.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
     }
 
     public void updateDatasetList(ArrayList<String> arrayList){
