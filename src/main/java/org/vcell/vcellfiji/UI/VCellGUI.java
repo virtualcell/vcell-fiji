@@ -15,6 +15,9 @@ public class VCellGUI extends JFrame {
     private JScrollPane resultsScrollPane;
     private JButton remoteFiles;
     public JButton okayButton;
+    public JCheckBox openVirtualCheckBox;
+
+    public RemoteFileSelection remoteFileSelection;
 
     public VCellGUI() {
         jFrame = this;
@@ -26,10 +29,13 @@ public class VCellGUI extends JFrame {
 //            throw new RuntimeException(e);
 //        }
 
+
         this.setTitle("VCell Manager");
         this.setContentPane(this.mainPanel);
-        this.setSize(300, 300);
+        this.setSize(400, 400);
         this.setVisible(true);
+        this.remoteFileSelection = new RemoteFileSelection();
+
 
         LocalFiles.addActionListener(new ActionListener() {
             @Override
@@ -43,9 +49,13 @@ public class VCellGUI extends JFrame {
         remoteFiles.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                remoteFileSelection.setVisible(true);
             }
         });
+
+        // listener for if credentials or endpoint is used
+
+
 
     }
 
