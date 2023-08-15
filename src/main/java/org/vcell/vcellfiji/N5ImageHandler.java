@@ -8,8 +8,8 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.Region;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
@@ -18,7 +18,6 @@ import net.imglib2.type.numeric.integer.*;
 import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
-import org.jcodings.util.Hash;
 import org.scijava.command.Command;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
@@ -29,23 +28,32 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 // Command plugins
+/* TODO:
+     Security check for the S3Client builder, there seems to be an encrypted version of it and that should be checked
+     Test cases for handling all cases regarding
+
+
+
+ */
 
 /*
     Able to open N5 files locally, display the datasets that can be chosen from it, and open the datasets within ImageJ.
     Flow of operations is select an N5 file, get dataset list, select a dataset and then open it.
  */
 
-@Plugin(type = Command.class, menuPath = "Plugins>VCell>ImageHandler")
+@Plugin(type = Command.class, menuPath = "Plugins>VCell>Image Handler1")
 public class N5ImageHandler implements Command{
     private VCellGUI vGui;
-    private File selectedFile;
-
+    private File selectedLocalFile;
     private AmazonS3 s3Client;
     private String bucketName;
+    private AmazonS3URI s3URI;
 
     @Override
     public void run() {
@@ -53,8 +61,8 @@ public class N5ImageHandler implements Command{
         this.vGui.localFileDialog.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                selectedFile = vGui.localFileDialog.getSelectedFile();
-                displayN5Results();
+                selectedLocalFile = vGui.localFileDialog.getSelectedFile();
+                displayN5Results(getN5DatasetList());
             }
         });
 
@@ -68,35 +76,30 @@ public class N5ImageHandler implements Command{
         this.vGui.remoteFileSelection.submitS3Info.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                getS3N5DatasetList(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnEndpoint(), vGui.remoteFileSelection.returnCredentials());
+                createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
+                ArrayList<String> list = getS3N5DatasetList();
+                displayN5Results(list);
             }
         });
     }
 
     public ArrayList<String> getN5DatasetList(){
         // auto closes reader
-        if (selectedFile != null) {
-            try (N5FSReader n5Reader = new N5FSReader(selectedFile.getPath())) {
-                String[] metaList = n5Reader.deepList("/");
-                ArrayList<String> fList = new ArrayList<>();
-                for (String s : metaList) {
-                    if (n5Reader.datasetExists(s)) {
-                        fList.add(s);
-                    };
-                }
-                return fList;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        try (N5FSReader n5Reader = new N5FSReader(selectedLocalFile.getPath())) {
+            String[] metaList = n5Reader.deepList("/");
+            ArrayList<String> fList = new ArrayList<>();
+            for (String s : metaList) {
+                if (n5Reader.datasetExists(s)) {
+                    fList.add(s);
+                };
             }
-        }
-        else{
-            // when dealing with the S3 buckets using the deeplist function does not seem to work with it, so instead just list the prefixes, and ensure that they are data sets
-            return new ArrayList<>();
+            return fList;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void displayN5Results(){
-        ArrayList<String> datasetList = this.getN5DatasetList();
+    public void displayN5Results(ArrayList<String> datasetList){
         SwingUtilities.invokeLater(() ->{
             this.vGui.updateDatasetList(datasetList);
         });
@@ -107,15 +110,6 @@ public class N5ImageHandler implements Command{
 //        N5CosemMetadataParser metadataParser = new N5CosemMetadataParser();
 //        CosemToImagePlus cosemToImagePlus = new CosemToImagePlus();
 
-//            DatasetAttributes datasetAttributes = n5FSWriter.getDatasetAttributes(selectedDataset);
-//            DataType dataType = datasetAttributes.getDataType();
-//            CachedCellImg<UnsignedShortType, ?> n5imp = N5Utils.open(n5FSWriter, selectedDataset);
-
-//           Using the N5IJUtils library allows for the data type from N5 files to automatically be handled
-
-
-//        CachedCellImg<UnsignedLongType, ?> cachedCellImg = N5Utils.open(n5Reader, selectedDataset);
-//        ImagePlus imPlus = ImageJFunctions.wrap(cachedCellImg, "");
         // Theres definitly a better way to do this, I trie using a variable to change the cached cells first parameter type but it didn't seem to work :/
         switch (n5Reader.getDatasetAttributes(selectedDataset).getDataType()){
             case UINT8:
@@ -134,11 +128,6 @@ public class N5ImageHandler implements Command{
                 return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
         }
         return null;
-
-
-//        ImagePlus imagePlus = ImageJFunctions.show(cachedCellImg);
-//        ImagePlus imagePlus = N5IJUtils.load(n5Writer, selectedDataset, metadataParser, cosemToImagePlus);
-//        imagePlus.show();
     }
 
 
@@ -153,8 +142,8 @@ public class N5ImageHandler implements Command{
     }
 
     public void loadN5Dataset(String selectedDataset){
-        if(selectedFile != null) {
-            try (N5FSReader n5FSReader = new N5FSReader(selectedFile.getPath())) {
+        if(selectedLocalFile != null) {
+            try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
                 ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5FSReader);
                 this.displayN5Dataset(imagePlus);
             } catch (IOException e) {
@@ -162,67 +151,68 @@ public class N5ImageHandler implements Command{
             }
         }
         else {
-            try (N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, "/test_image.n5")) {
-                this.getImgPlusFromN5File(selectedDataset, n5AmazonS3Reader);
+            try (N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3URI.getKey())) {
+                ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5AmazonS3Reader);
+                this.displayN5Dataset(imagePlus);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
+    // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/java-dg-region-selection.html
+    // Chain of handling region is what gets set by client builder
+    // AWS_REGION Environmental variable on computer
+    // The AWS default profile on the computer
+    // Use Amazon Elastic computing instance metadata to determine region
+        // Does this mean that region is only known for buckets hosted on Amazons servers? Is that why the error is thrown? Should I use the EC2 builder to find the region?
+    // Throw error
+    private void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
+        AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
+        this.s3URI = new AmazonS3URI(URI.create(url));
+        this.bucketName = endpoint == null ? s3URI.getBucket(): endpoint.get("BucketName");
+        if(credentials != null){
+            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
+        }
+        if(endpoint != null){
+            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
+            this.s3Client = s3ClientBuilder.build();
+            return;
+        }
+        // if nothing is given, default user and return so that code after if statement does not execute
+        if(endpoint == null && credentials == null){
+            this.s3Client = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
+            return;
+        }
 
-    public void getS3N5DatasetList(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
-        System.out.print("h");
+        //  TODO: hard coding a region is not a solution
+        this.s3Client = s3ClientBuilder.build();
     }
 
-    public void S3Acess(){
-        BasicAWSCredentials basicAWSCredentials = new BasicAWSCredentials("MKPOPK1MYZQ0U93CUL63", "WT6yHX2awaLr0Ua4VnFK7+dv8oGOHncmk8XAXZkQ");
 
-        this.s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://155.37.247.226", "site2-low"))
-//                .withRegion("us-east-1")
-                .build();
-        final ListObjectsV2Request request = new ListObjectsV2Request();
-        this.bucketName = "vcelldev";
-        request.setBucketName(this.bucketName);
-        request.setDelimiter("/");
-        request.setPrefix("N5/");
+    public ArrayList<String> getS3N5DatasetList(){
 
+        // used as a flag to tell that remote access is occurring, and that there is no local files
+        selectedLocalFile = null;
 
-//
-//        this.displayN5Results();
-//
-//
-//
-        s3Client.listObjectsV2(request).getObjectSummaries().forEach(object -> {System.out.print(object.getKey() + "\n");});
-        s3Client.listObjectsV2(request).getCommonPrefixes().forEach(object -> {System.out.print("Prefix: " + object + "\n");});
-//        s3Client.listBuckets().forEach(bucket -> {System.out.print(bucket.getName());});
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, this.bucketName, "N5/mitosis.n5");){
-            String[] deepList = n5AmazonS3Reader.deepList("/"); // A better approach will be to just list all of the different prefixes, and then use a isDataset function on it
-            System.out.print("");
-
-            // Seems to work with the native N5Utils but when trying to do it with the N5IJUtils some funky stuff happens.
-            CachedCellImg<UnsignedByteType, ?> cachedCellImg = N5Utils.open(n5AmazonS3Reader, "ij");
-            ImagePlus imagePlus = ImageJFunctions.show(cachedCellImg);
-//            ImagePlus imagePlus = N5IJUtils.load(n5AmazonS3Writer, "test/c0/s0");
-//            imagePlus.show();
+        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
+            return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(s3URI.getKey())));
         }
         catch (IOException e){
             throw new RuntimeException(e);
         }
-
     }
 
 
-    public void setSelectedFile(File selectedFile){
-        this.selectedFile = selectedFile;
+    public void setSelectedLocalFile(File selectedLocalFile){
+        this.selectedLocalFile = selectedLocalFile;
     }
-    public File getSelectedFile() {
-        return selectedFile;
+    public File getSelectedLocalFile() {
+        return selectedLocalFile;
     }
 
     public static void main(String[] args) {
+//        new N5ImageHandler().getS3N5DatasetList("s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5", null, null);
         new N5ImageHandler().run();
     }
 }

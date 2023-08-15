@@ -45,6 +45,9 @@ public class RemoteFileSelection extends JFrame{
 
     public HashMap<String, String> returnCredentials(){
         HashMap<String, String> hashMap = new HashMap<>();
+        if (this.s3AccessKeyTextField.getText().isEmpty() || this.s3SecretKeyTextField.getText().isEmpty()){
+            return null;
+        }
         hashMap.put("AccessKey", this.s3AccessKeyTextField.getText());
         hashMap.put("SecretKey", this.s3SecretKeyTextField.getText());
         return hashMap;
@@ -52,6 +55,9 @@ public class RemoteFileSelection extends JFrame{
 
     public HashMap<String, String> returnEndpoint(){
         HashMap<String, String> hashMap = new HashMap<>();
+        if(this.s3BucketNameTextField.getText().isEmpty() || this.s3RegionTextField.getText().isEmpty() || this.s3EndpointTextField.getText().isEmpty()){
+            return null;
+        }
         hashMap.put("Endpoint", this.s3EndpointTextField.getText());
         hashMap.put("Region", this.s3RegionTextField.getText());
         hashMap.put("BucketName", this.s3BucketNameTextField.getText());
