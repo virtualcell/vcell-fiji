@@ -1,24 +1,49 @@
 package org.vcell.vcellfiji;
 
 import com.ibm.icu.impl.ClassLoaderUtil;
+import ij.ImagePlus;
 import junit.framework.TestCase;
+import org.janelia.saalfeldlab.n5.N5FSReader;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 
 public class N5ImageHandlerTest extends TestCase {
 
-    public void testN5DatasetList() throws URISyntaxException {
+    private File getTestResourceFiles(String filePath){
+        try {
+            URL url = ClassLoaderUtil.getClassLoader().getResource(filePath);
+            return new File(url.toURI().getPath());
+        }
+        catch (URISyntaxException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void testN5DatasetList(){
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
-        URL url = ClassLoaderUtil.getClassLoader().getResource("N5/test_image.n5");
-        File n5File = new File(url.toURI().getPath());
-        n5ImageHandler.setSelectedFile(n5File);
+        n5ImageHandler.setSelectedFile(this.getTestResourceFiles("N5/test_image.n5"));
         ArrayList<String> datasetList = n5ImageHandler.getN5DatasetList();
 
         assertEquals("test/c0/s0", datasetList.get(0));
         assertEquals(1, datasetList.size());
+    }
+
+    public void testGettingImgPlus() throws IOException {
+        N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        n5ImageHandler.setSelectedFile(this.getTestResourceFiles("N5/test_image.n5"));
+        N5FSReader n5FSReader = new N5FSReader(this.getTestResourceFiles("N5/test_image.n5").getPath());
+        ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File("test/c0/s0", n5FSReader);
+
+        // Using information that should stay constant for the image to determine if the image is being properly read
+        assertEquals(1,imagePlus.getNChannels());
+        int[] dimensions = {512, 512};{
+        for (int i = 0; i < dimensions.length; i++)
+            assertEquals(dimensions[i], imagePlus.getDimensions()[i]);
+        }
     }
 
 

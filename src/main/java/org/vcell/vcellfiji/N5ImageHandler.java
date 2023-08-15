@@ -4,16 +4,21 @@ package org.vcell.vcellfiji;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.Region;
 import ij.ImagePlus;
+import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.*;
 import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
+import org.jcodings.util.Hash;
 import org.scijava.command.Command;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
@@ -25,11 +30,13 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 // Command plugins
 
 /*
     Able to open N5 files locally, display the datasets that can be chosen from it, and open the datasets within ImageJ.
+    Flow of operations is select an N5 file, get dataset list, select a dataset and then open it.
  */
 
 @Plugin(type = Command.class, menuPath = "Plugins>VCell>ImageHandler")
@@ -55,6 +62,13 @@ public class N5ImageHandler implements Command{
             @Override
             public void actionPerformed(ActionEvent e) {
                 loadN5Dataset(vGui.datasetList.getSelectedValue());
+            }
+        });
+
+        this.vGui.remoteFileSelection.submitS3Info.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getS3N5DatasetList(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnEndpoint(), vGui.remoteFileSelection.returnCredentials());
             }
         });
     }
@@ -128,12 +142,21 @@ public class N5ImageHandler implements Command{
     }
 
 
+    private void displayN5Dataset(ImagePlus imagePlus){
+        if (this.vGui.openVirtualCheckBox.isSelected()){
+            imagePlus.show();
+        }
+        else{
+            ImagePlus memoryImagePlus = new Duplicator().run(imagePlus);
+            memoryImagePlus.show();
+        }
+    }
 
     public void loadN5Dataset(String selectedDataset){
         if(selectedFile != null) {
             try (N5FSReader n5FSReader = new N5FSReader(selectedFile.getPath())) {
                 ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5FSReader);
-                imagePlus.show();
+                this.displayN5Dataset(imagePlus);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -147,19 +170,26 @@ public class N5ImageHandler implements Command{
         }
     }
 
+
+    public void getS3N5DatasetList(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
+        System.out.print("h");
+    }
+
     public void S3Acess(){
-        BasicAWSCredentials basicAWSCredentials = new BasicAWSCredentials("", "");
+        BasicAWSCredentials basicAWSCredentials = new BasicAWSCredentials("MKPOPK1MYZQ0U93CUL63", "WT6yHX2awaLr0Ua4VnFK7+dv8oGOHncmk8XAXZkQ");
 
         this.s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()))
-//                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://155.37.247.226", "site2-low"))
-                .withRegion("us-east-1")
+                .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://155.37.247.226", "site2-low"))
+//                .withRegion("us-east-1")
                 .build();
         final ListObjectsV2Request request = new ListObjectsV2Request();
-        this.bucketName = "janelia-cosem-datasets";
+        this.bucketName = "vcelldev";
         request.setBucketName(this.bucketName);
         request.setDelimiter("/");
-        request.setPrefix("jrc_hela-2/jrc_hela-2.n5/");
+        request.setPrefix("N5/");
+
+
 //
 //        this.displayN5Results();
 //
@@ -168,10 +198,13 @@ public class N5ImageHandler implements Command{
         s3Client.listObjectsV2(request).getObjectSummaries().forEach(object -> {System.out.print(object.getKey() + "\n");});
         s3Client.listObjectsV2(request).getCommonPrefixes().forEach(object -> {System.out.print("Prefix: " + object + "\n");});
 //        s3Client.listBuckets().forEach(bucket -> {System.out.print(bucket.getName());});
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, this.bucketName, "janelia-cosem-datasets/jrc_hela-2/jrc_hela-2.n5/");){
+        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, this.bucketName, "N5/mitosis.n5");){
             String[] deepList = n5AmazonS3Reader.deepList("/"); // A better approach will be to just list all of the different prefixes, and then use a isDataset function on it
             System.out.print("");
-            CachedCellImg<UnsignedByteType, ?> cachedCellImg = N5Utils.open(n5AmazonS3Reader, "");
+
+            // Seems to work with the native N5Utils but when trying to do it with the N5IJUtils some funky stuff happens.
+            CachedCellImg<UnsignedByteType, ?> cachedCellImg = N5Utils.open(n5AmazonS3Reader, "ij");
+            ImagePlus imagePlus = ImageJFunctions.show(cachedCellImg);
 //            ImagePlus imagePlus = N5IJUtils.load(n5AmazonS3Writer, "test/c0/s0");
 //            imagePlus.show();
         }
