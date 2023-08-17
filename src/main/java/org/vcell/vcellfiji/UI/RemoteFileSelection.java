@@ -53,11 +53,13 @@ public class RemoteFileSelection extends JFrame{
         return hashMap;
     }
 
+    // having this be an enum map instead of hash map would be better
     public HashMap<String, String> returnEndpoint(){
         HashMap<String, String> hashMap = new HashMap<>();
         if(this.s3BucketNameTextField.getText().isEmpty() || this.s3RegionTextField.getText().isEmpty() || this.s3EndpointTextField.getText().isEmpty()){
             return null;
         }
+        S3Config s3Config;
         hashMap.put("Endpoint", this.s3EndpointTextField.getText());
         hashMap.put("Region", this.s3RegionTextField.getText());
         hashMap.put("BucketName", this.s3BucketNameTextField.getText());
@@ -70,7 +72,16 @@ public class RemoteFileSelection extends JFrame{
 
 
 
+    public enum S3Config{
+        Endpoint,
+        Region,
+        BucketName
+    }
 
+    public enum S3Credentials{
+        AccessKey,
+        SecretKey
+    }
 
 
 }

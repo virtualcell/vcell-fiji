@@ -9,7 +9,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
@@ -131,7 +130,7 @@ public class N5ImageHandler implements Command{
     }
 
 
-    private void displayN5Dataset(ImagePlus imagePlus){
+    private void displayN5DatasetList(ImagePlus imagePlus){
         if (this.vGui.openVirtualCheckBox.isSelected()){
             imagePlus.show();
         }
@@ -145,7 +144,7 @@ public class N5ImageHandler implements Command{
         if(selectedLocalFile != null) {
             try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
                 ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5FSReader);
-                this.displayN5Dataset(imagePlus);
+                this.displayN5DatasetList(imagePlus);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -153,7 +152,7 @@ public class N5ImageHandler implements Command{
         else {
             try (N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3URI.getKey())) {
                 ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5AmazonS3Reader);
-                this.displayN5Dataset(imagePlus);
+                this.displayN5DatasetList(imagePlus);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -167,10 +166,14 @@ public class N5ImageHandler implements Command{
     // Use Amazon Elastic computing instance metadata to determine region
         // Does this mean that region is only known for buckets hosted on Amazons servers? Is that why the error is thrown? Should I use the EC2 builder to find the region?
     // Throw error
-    private void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
+
+    //Can make it so that our bucket links contain the region in it, making it significantly easier to determine it
+    public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         this.s3URI = new AmazonS3URI(URI.create(url));
         this.bucketName = endpoint == null ? s3URI.getBucket(): endpoint.get("BucketName");
+//        String bucketLocation = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).build().getBucketLocation(this.bucketName);
+//        System.out.print(bucketLocation);
         if(credentials != null){
             s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
         }
@@ -181,12 +184,12 @@ public class N5ImageHandler implements Command{
         }
         // if nothing is given, default user and return so that code after if statement does not execute
         if(endpoint == null && credentials == null){
-            this.s3Client = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
+            this.s3Client = AmazonS3ClientBuilder.standard().withRegion("site-low").withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
             return;
         }
 
         //  TODO: hard coding a region is not a solution
-        this.s3Client = s3ClientBuilder.build();
+        this.s3Client = s3ClientBuilder.withRegion("site2-low").build();
     }
 
 
