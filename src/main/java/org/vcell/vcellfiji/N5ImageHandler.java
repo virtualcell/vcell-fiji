@@ -5,7 +5,6 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
@@ -14,6 +13,7 @@ import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.*;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
@@ -46,7 +46,7 @@ import java.util.HashMap;
     Flow of operations is select an N5 file, get dataset list, select a dataset and then open it.
  */
 
-@Plugin(type = Command.class, menuPath = "Plugins>VCell>Image Handler1")
+@Plugin(type = Command.class, menuPath = "Plugins>VCell>N5 Dataset Viewer")
 public class N5ImageHandler implements Command{
     private VCellGUI vGui;
     private File selectedLocalFile;
@@ -125,12 +125,17 @@ public class N5ImageHandler implements Command{
                 return ImageJFunctions.wrap((CachedCellImg<IntType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
             case FLOAT32:
                 return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+            case FLOAT64:
+                return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+//                final ARGBARGBDoubleConverter<ARGBDoubleType> converters = new ARGBARGBDoubleConverter<>();
+//                final CachedCellImg<DoubleType, ?> cachedCellImg = N5Utils.open(n5Reader, selectedDataset);
+//                return ImageJFunctions.showRGB(cachedCellImg, converters, "");
         }
         return null;
     }
 
 
-    private void displayN5DatasetList(ImagePlus imagePlus){
+    private void displayN5Dataset(ImagePlus imagePlus){
         if (this.vGui.openVirtualCheckBox.isSelected()){
             imagePlus.show();
         }
@@ -140,22 +145,31 @@ public class N5ImageHandler implements Command{
         }
     }
 
-    public void loadN5Dataset(String selectedDataset){
+    public N5AmazonS3Reader getN5AmazonS3Reader(){
+        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3URI.getKey())){
+            return n5AmazonS3Reader;
+        }
+        catch (IOException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public N5FSReader getN5FSReader(){
+        try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
+            return n5FSReader;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void loadN5Dataset(String selectedDataset) throws IOException {
         if(selectedLocalFile != null) {
-            try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
-                ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5FSReader);
-                this.displayN5DatasetList(imagePlus);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, this.getN5FSReader());
+            this.displayN5Dataset(imagePlus);
         }
         else {
-            try (N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3URI.getKey())) {
-                ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, n5AmazonS3Reader);
-                this.displayN5DatasetList(imagePlus);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            ImagePlus imagePlus = this.getImgPlusFromN5File(selectedDataset, this.getN5AmazonS3Reader());
+            this.displayN5Dataset(imagePlus);
         }
     }
 
@@ -217,5 +231,6 @@ public class N5ImageHandler implements Command{
     public static void main(String[] args) {
 //        new N5ImageHandler().getS3N5DatasetList("s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5", null, null);
         new N5ImageHandler().run();
+
     }
 }

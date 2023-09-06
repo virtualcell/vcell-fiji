@@ -32,7 +32,7 @@ public class VCellGUI extends JFrame {
 
         this.setTitle("VCell Manager");
         this.setContentPane(this.mainPanel);
-        this.setSize(400, 400);
+        this.setSize(500, 400);
         this.setVisible(true);
         this.remoteFileSelection = new RemoteFileSelection();
 

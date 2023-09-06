@@ -18,6 +18,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+
+
+/*
+    One test file is only metadata with no actual visual information. Has a bunch of datasets, and these datasets have complex metadata.
+    Another one has only one dataset and some visual information which is used to determine whether the data is accurate or not
+ */
 
 public class N5ImageHandlerTest extends TestCase {
 
@@ -54,31 +61,54 @@ public class N5ImageHandlerTest extends TestCase {
         }
     }
 
-    public void testS3ClientCreation(){
-        N5ImageHandler n5ImageHandler = new N5ImageHandler();
-    }
-
     // Should be same results for local images
-    public void testS3N5DatasetList(){
-
-    }
-
-    // Should be the exact same results for local images
-    public void testS3GettingImgPlus(){
-
-    }
-
-    // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds
-    public void testS3Client(){
-
-    }
-
-
-
-
-    public void manualTesting(){
+    public void S3N5DatasetList(){
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
-        n5ImageHandler.run();
+        n5ImageHandler.setSelectedLocalFile(this.getTestResourceFiles(""));
+        ArrayList<String> localDataSetList = n5ImageHandler.getN5DatasetList();
+
+        n5ImageHandler.createS3Client("", null, null);
+        ArrayList<String> remoteDataSetList = n5ImageHandler.getS3N5DatasetList();
+        for (int i = 0; i<localDataSetList.size(); i++){
+            assertEquals(localDataSetList.get(i), remoteDataSetList.get(i));
+        }
+    }
+
+    // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
+    public void S3Client(){
+        HashMap<String, String> endpoint = new HashMap<>();
+        HashMap<String, String> credentials = new HashMap<>();
+        endpoint.put("Endpoint", "");
+        endpoint.put("Region", "");
+        endpoint.put("BucketName", "");
+
+        credentials.put("AccessKey", "");
+        credentials.put("SecretKey", "");
+
+        N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        n5ImageHandler.createS3Client("", null, null);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+        n5ImageHandler.createS3Client("", null, endpoint);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+        n5ImageHandler.createS3Client("", credentials, null);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+        n5ImageHandler.createS3Client("", credentials, endpoint);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+    }
+
+    public void remoteN5ImgPlusTests(N5ImageHandler n5ImageHandler){
+        try {
+            String dataSet = "";
+            ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(dataSet, n5ImageHandler.getN5AmazonS3Reader());
+
+        }
+        catch (Exception e){
+            return;
+        }
     }
 
 

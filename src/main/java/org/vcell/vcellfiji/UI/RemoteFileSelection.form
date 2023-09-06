@@ -13,6 +13,8 @@
     <colspec value="fill:d:grow"/>
     <colspec value="left:4dlu:noGrow"/>
     <colspec value="fill:d:grow"/>
+    <colspec value="left:4dlu:noGrow"/>
+    <colspec value="fill:d:grow"/>
     <constraints>
       <xy x="20" y="20" width="754" height="400"/>
     </constraints>
@@ -21,8 +23,8 @@
     <children>
       <grid id="5d5b1" binding="credentialsPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
         <constraints>
-          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-          <forms/>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <forms defaultalign-vert="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -58,25 +60,16 @@
       </grid>
       <component id="dc4e9" class="javax.swing.JCheckBox" binding="credentialsCheckBox">
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
         <properties>
           <text value="Credentials"/>
         </properties>
       </component>
-      <component id="6caed" class="javax.swing.JCheckBox" binding="endpointCheckBox">
-        <constraints>
-          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-          <forms/>
-        </constraints>
-        <properties>
-          <text value="Custom Endpoint"/>
-        </properties>
-      </component>
       <component id="e2cb4" class="javax.swing.JButton" binding="submitS3Info">
         <constraints>
-          <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
         <properties>
@@ -85,7 +78,7 @@
       </component>
       <grid id="b491f" binding="endpointPanel" layout-manager="FlowLayout" hgap="10" vgap="10" flow-align="1">
         <constraints>
-          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
           <forms defaultalign-vert="false"/>
         </constraints>
         <properties/>
@@ -117,40 +110,43 @@
               <preferredSize width="50" height="30"/>
             </properties>
           </component>
-          <component id="7adcd" class="javax.swing.JLabel">
-            <constraints/>
-            <properties>
-              <text value="Bucket Name"/>
-            </properties>
-          </component>
-          <component id="b8a2e" class="javax.swing.JTextField" binding="s3BucketNameTextField">
-            <constraints/>
-            <properties>
-              <minimumSize width="50" height="30"/>
-              <preferredSize width="50" height="30"/>
-            </properties>
-          </component>
         </children>
       </grid>
       <component id="38e8a" class="javax.swing.JTextField" binding="linkTextField">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
         <properties>
+          <margin top="2" left="6" bottom="2" right="6"/>
           <minimumSize width="50" height="30"/>
           <preferredSize width="50" height="30"/>
         </properties>
       </component>
       <component id="21764" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
         <properties>
           <text value="Link"/>
         </properties>
       </component>
+      <component id="6caed" class="javax.swing.JCheckBox" binding="endpointCheckBox">
+        <constraints>
+          <grid row="2" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <forms/>
+        </constraints>
+        <properties>
+          <text value="Custom Endpoint"/>
+        </properties>
+      </component>
+      <hspacer id="439b9">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <forms defaultalign-horz="false"/>
+        </constraints>
+      </hspacer>
     </children>
   </grid>
 </form>

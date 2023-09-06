@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.vcell.vcellfiji.UI.VCellGUI">
-  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+  <grid id="27dc6" binding="mainPanel" layout-manager="GridBagLayout">
     <constraints>
-      <xy x="20" y="20" width="515" height="445"/>
+      <xy x="20" y="20" width="600" height="600"/>
     </constraints>
-    <properties/>
+    <properties>
+      <minimumSize width="600" height="500"/>
+      <preferredSize width="600" height="500"/>
+    </properties>
     <border type="line"/>
     <children>
       <scrollpane id="d15b4" binding="resultsScrollPane">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="2" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="1.0" weighty="1.0"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -19,6 +22,7 @@
             <constraints/>
             <properties>
               <layoutOrientation value="0"/>
+              <maximumSize width="0" height="0"/>
             </properties>
           </component>
         </children>
@@ -26,6 +30,7 @@
       <component id="2c608" class="javax.swing.JButton" binding="okayButton">
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="1.0" weighty="0.0"/>
         </constraints>
         <properties>
           <text value="Okay"/>
@@ -34,6 +39,7 @@
       <toolbar id="b2de9" binding="menuBar">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="0" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="1.0" weighty="0.0"/>
         </constraints>
         <properties>
           <borderPainted value="false"/>
@@ -59,6 +65,7 @@
       <component id="b7b9a" class="javax.swing.JCheckBox" binding="openVirtualCheckBox">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="1.0" weighty="0.0"/>
         </constraints>
         <properties>
           <text value="Open Image Virtually"/>
