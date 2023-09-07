@@ -1,0 +1,2 @@
+{"pixelResolution":{"unit":"pixel","dimensions":[1.0,1.0,1.0]},
+  "compression":{"type":"gzip","useZlib":false,"level":-1},"downsamplingFactors":[1.0,1.0,1.0],"blockSize":[40,40],"dataType":"uint8","dimensions":[512,512]}

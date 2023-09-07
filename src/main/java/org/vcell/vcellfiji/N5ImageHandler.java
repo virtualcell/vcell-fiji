@@ -68,7 +68,12 @@ public class N5ImageHandler implements Command{
         this.vGui.okayButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loadN5Dataset(vGui.datasetList.getSelectedValue());
+                try{
+                    loadN5Dataset(vGui.datasetList.getSelectedValue());
+                }
+                catch (IOException ex){
+                    return;
+                }
             }
         });
 
@@ -185,7 +190,7 @@ public class N5ImageHandler implements Command{
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         this.s3URI = new AmazonS3URI(URI.create(url));
-        this.bucketName = endpoint == null ? s3URI.getBucket(): endpoint.get("BucketName");
+        this.bucketName = s3URI.getBucket();
 //        String bucketLocation = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).build().getBucketLocation(this.bucketName);
 //        System.out.print(bucketLocation);
         if(credentials != null){
