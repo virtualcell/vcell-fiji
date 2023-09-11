@@ -131,6 +131,7 @@
             <groupId>org.scijava</groupId>
             <artifactId>scijava-plugins-commands</artifactId>
             <scope>runtime</scope>
+             <version>0.2.4</version>
         </dependency>
 
 <!--        <dependency>-->
@@ -147,19 +148,21 @@
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5</artifactId>
+            <version>2.5.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-imglib2 -->
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5-imglib2</artifactId>
+            <version>5.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/net.imglib2/imglib2 -->
         <dependency>
             <groupId>net.imglib2</groupId>
             <artifactId>imglib2</artifactId>
-            <version>6.2.0</version>
+            <version>6.1.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/net.imglib2/imglib2-ij -->
@@ -174,6 +177,7 @@
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5-aws-s3</artifactId>
+            <version>3.2.0</version>
         </dependency>
 
 
@@ -188,6 +192,7 @@
             <groupId>org.gaul</groupId>
             <artifactId>s3proxy</artifactId>
             <version>1.7.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

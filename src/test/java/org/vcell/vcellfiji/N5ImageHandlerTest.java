@@ -5,11 +5,9 @@ import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.ImageCalculator;
 import junit.framework.TestCase;
-import org.apache.commons.lang3.ClassLoaderUtils;
 import org.gaul.s3proxy.S3Proxy;
 import org.jclouds.ContextBuilder;
 import org.jclouds.blobstore.BlobStoreContext;
-import sun.misc.ClassLoaderUtil;
 
 import java.io.File;
 import java.io.IOException;
