@@ -1,23 +1,15 @@
 package org.vcell.vcellfiji;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
-import com.ibm.icu.impl.ClassLoaderUtil;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.ImageCalculator;
 import junit.framework.TestCase;
+import org.apache.commons.lang3.ClassLoaderUtils;
 import org.gaul.s3proxy.S3Proxy;
-import org.gaul.s3proxy.junit.S3ProxyRule;
 import org.jclouds.ContextBuilder;
 import org.jclouds.blobstore.BlobStoreContext;
-import org.junit.Rule;
+import sun.misc.ClassLoaderUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +39,7 @@ public class N5ImageHandlerTest extends TestCase {
 
     private final String testBucketName = "nfive";
 
-    private S3Proxy s3ProxyCreds;
+    private final S3Proxy s3ProxyCreds;
 
     public S3Proxy s3ProxyNoCreds;
 
@@ -80,7 +72,7 @@ public class N5ImageHandlerTest extends TestCase {
 
     private File getTestResourceFiles(String filePath){
         try {
-            URL url = ClassLoaderUtil.getClassLoader().getResource(filePath);
+            URL url = ClassLoader.getSystemClassLoader().getResource(filePath);
             return new File(url.toURI().getPath());
         }
         catch (URISyntaxException e){
