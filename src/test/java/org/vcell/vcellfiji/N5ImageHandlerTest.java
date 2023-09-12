@@ -8,6 +8,7 @@ import junit.framework.TestCase;
 import org.gaul.s3proxy.S3Proxy;
 import org.jclouds.ContextBuilder;
 import org.jclouds.blobstore.BlobStoreContext;
+import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.Properties;
     S3Proxy Rule does not work properly so I'm just using the native S3 proxy and manually controlling the initialization of the s3 mock server
  */
 
-public class N5ImageHandlerTest extends TestCase {
+public class N5ImageHandlerTest {
 
     private final String s3AccessKey = "access";
     private final String s3SecretKey = "secret";
@@ -37,11 +38,12 @@ public class N5ImageHandlerTest extends TestCase {
 
     private final String testBucketName = "nfive";
 
-    private final S3Proxy s3ProxyCreds;
+    private S3Proxy s3ProxyCreds;
 
     public S3Proxy s3ProxyNoCreds;
 
-    public N5ImageHandlerTest(){
+    @Before
+    public void createS3Proxy() throws Exception {
         Properties properties = new Properties();
         properties.setProperty("jclouds.filesystem.basedir", this.getTestResourceFiles("").getPath());
 
@@ -66,6 +68,14 @@ public class N5ImageHandlerTest extends TestCase {
                 .endpoint(URI.create(s3NoCredsEndpoint))
                 .build();
 
+        s3ProxyCreds.start();
+        s3ProxyNoCreds.start();
+    }
+
+    @After
+    public void destroyS3Proxy() throws Exception {
+        s3ProxyCreds.stop();
+        s3ProxyNoCreds.stop();
     }
 
     private File getTestResourceFiles(String filePath){
@@ -78,12 +88,14 @@ public class N5ImageHandlerTest extends TestCase {
         }
     }
 
+    @Test
     public void testN5DatasetList(){
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
         n5ImageHandler.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
         this.dataSetListTest(n5ImageHandler.getN5DatasetList());
     }
 
+    @Test
     public void testGettingImgPlus() throws IOException {
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
         n5ImageHandler.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
@@ -92,11 +104,9 @@ public class N5ImageHandlerTest extends TestCase {
         this.fiveDStackTests(imagePlus);
     }
 
+    @Test
     // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
-    public void testS3Client() throws Exception {
-        s3ProxyCreds.start();
-        s3ProxyNoCreds.start();
-
+    public void testS3Client() {
         HashMap<String, String> endpointCreds = new HashMap<>();
         HashMap<String, String> endpointNoCreds = new HashMap<>();
         HashMap<String, String> credentials = new HashMap<>();
@@ -124,9 +134,6 @@ public class N5ImageHandlerTest extends TestCase {
 
         n5ImageHandler.createS3Client(keyPath, credentials, endpointCreds);
         this.remoteN5ImgPlusTests(n5ImageHandler);
-
-        s3ProxyCreds.stop();
-        s3ProxyNoCreds.stop();
     }
 
     private void createTestBucketAndObjects(){
@@ -153,23 +160,23 @@ public class N5ImageHandlerTest extends TestCase {
         int[] controlDimensions = controlImgPlus.getDimensions();
 
         for(int i = 0; i<controlDimensions.length; i++){
-            assertEquals(controlDimensions[i], variableDimensions[i]);
+            Assert.assertEquals(controlDimensions[i], variableDimensions[i]);
         }
-        assertEquals("Same bit depth",controlImgPlus.getBitDepth(), variableImgPlus.getBitDepth());
+        Assert.assertEquals("Same bit depth",controlImgPlus.getBitDepth(), variableImgPlus.getBitDepth());
         ImagePlus difference = ImageCalculator.run(controlImgPlus, variableImgPlus, "difference create");
 
         //Everything should be 0 since the images should be exactly the same, thus the difference results in 0
-        assertEquals(0.0, difference.getStatistics().histMax);
-        assertEquals(0.0, difference.getStatistics().histMin);
-        assertEquals("Difference is Zero",0.0, difference.getStatistics().stdDev);
+        Assert.assertEquals(0.0, difference.getStatistics().histMax, 0.0);
+        Assert.assertEquals(0.0, difference.getStatistics().histMin, 0.0);
+        Assert.assertEquals("Difference is Zero",0.0, difference.getStatistics().stdDev, 0.0);
 //        imagePlus.getStatistics().
     }
 
     private void dataSetListTest(ArrayList<String> dataSetList){
-        assertEquals(3, dataSetList.size());
-        assertTrue("Has test.c0.s0",dataSetList.contains("test/c0/s0"));
-        assertTrue("Has 5DStack",dataSetList.contains("5DStack"));
-        assertTrue("Has 5Channels",dataSetList.contains("5Channels"));
+        Assert.assertEquals(3, dataSetList.size());
+        Assert.assertTrue("Has test.c0.s0",dataSetList.contains("test/c0/s0"));
+        Assert.assertTrue("Has 5DStack",dataSetList.contains("5DStack"));
+        Assert.assertTrue("Has 5Channels",dataSetList.contains("5Channels"));
     }
 
 }
