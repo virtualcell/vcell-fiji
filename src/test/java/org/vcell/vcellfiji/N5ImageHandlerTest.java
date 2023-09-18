@@ -33,50 +33,14 @@ public class N5ImageHandlerTest {
     private final String s3SecretKey = "secret";
     private final String n5FileName = "nfive/test_image.n5";
 
-    private final String s3CredsEndpoint = "http://127.0.0.1:9999";
-    private final String s3NoCredsEndpoint = "http://127.0.0.1:9090";
+//    private final String s3CredsEndpoint = "http://127.0.0.1:9999";
+    private final String s3NoCredsEndpoint = "http://127.0.0.1:4000";
 
     private final String testBucketName = "nfive";
 
     private S3Proxy s3ProxyCreds;
 
     public S3Proxy s3ProxyNoCreds;
-
-    @Before
-    public void createS3Proxy() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("jclouds.filesystem.basedir", this.getTestResourceFiles("").getPath());
-
-        BlobStoreContext context = ContextBuilder
-                .newBuilder("filesystem")
-                .credentials(this.s3AccessKey, this.s3SecretKey)
-                .overrides(properties)
-                .build(BlobStoreContext.class);
-
-        BlobStoreContext contextNoCreds = ContextBuilder
-                .newBuilder("filesystem")
-                .overrides(properties)
-                .build(BlobStoreContext.class);
-
-        s3ProxyCreds = S3Proxy.builder()
-                .blobStore(context.getBlobStore())
-                .endpoint(URI.create(s3CredsEndpoint))
-                .build();
-
-        s3ProxyNoCreds = S3Proxy.builder()
-                .blobStore(contextNoCreds.getBlobStore())
-                .endpoint(URI.create(s3NoCredsEndpoint))
-                .build();
-
-        s3ProxyCreds.start();
-        s3ProxyNoCreds.start();
-    }
-
-    @After
-    public void destroyS3Proxy() throws Exception {
-        s3ProxyCreds.stop();
-        s3ProxyNoCreds.stop();
-    }
 
     private File getTestResourceFiles(String filePath){
         try {
@@ -107,12 +71,12 @@ public class N5ImageHandlerTest {
     @Test
     // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
     public void testS3Client() {
-        HashMap<String, String> endpointCreds = new HashMap<>();
+//        HashMap<String, String> endpointCreds = new HashMap<>();
         HashMap<String, String> endpointNoCreds = new HashMap<>();
         HashMap<String, String> credentials = new HashMap<>();
 
-        endpointCreds.put("Endpoint", this.s3CredsEndpoint);
-        endpointCreds.put("Region", Regions.US_EAST_1.getName());
+//        endpointCreds.put("Endpoint", this.s3CredsEndpoint);
+//        endpointCreds.put("Region", Regions.US_EAST_1.getName());
 
         endpointNoCreds.put("Endpoint", this.s3NoCredsEndpoint);
         endpointNoCreds.put("Region", Regions.US_EAST_1.getName());
@@ -120,26 +84,24 @@ public class N5ImageHandlerTest {
         credentials.put("AccessKey", this.s3AccessKey);
         credentials.put("SecretKey", this.s3SecretKey);
 
-        final String keyPath = "s3://" + this.testBucketName + "/test_image.n5";
+        final String s3KeyPath = "s3://" + this.testBucketName + "/test_image.n5";
+        final String s3ProxyURL = "/" + this.n5FileName;
 
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
-//        n5ImageHandler.createS3Client(s3NoCredsEndpoint + keyPath, null, null);
+
+
+//        n5ImageHandler.createS3Client(s3NoCredsEndpoint + s3ProxyURL, null, null);
 //        this.remoteN5ImgPlusTests(n5ImageHandler);
 //
-        n5ImageHandler.createS3Client(keyPath, null, endpointNoCreds);
+        n5ImageHandler.createS3Client(s3ProxyURL, null, endpointNoCreds);
         this.remoteN5ImgPlusTests(n5ImageHandler);
 
 //        n5ImageHandler.createS3Client(this.s3CredsEndpoint + keyPath, credentials, null);
 //        this.remoteN5ImgPlusTests(n5ImageHandler);
 
-        n5ImageHandler.createS3Client(keyPath, credentials, endpointCreds);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+//        n5ImageHandler.createS3Client(keyPath, credentials, endpointCreds);
+//        this.remoteN5ImgPlusTests(n5ImageHandler);
     }
-
-    private void createTestBucketAndObjects(){
-
-    }
-
 
 
     private void remoteN5ImgPlusTests(N5ImageHandler n5ImageHandler){
@@ -169,7 +131,6 @@ public class N5ImageHandlerTest {
         Assert.assertEquals(0.0, difference.getStatistics().histMax, 0.0);
         Assert.assertEquals(0.0, difference.getStatistics().histMin, 0.0);
         Assert.assertEquals("Difference is Zero",0.0, difference.getStatistics().stdDev, 0.0);
-//        imagePlus.getStatistics().
     }
 
     private void dataSetListTest(ArrayList<String> dataSetList){

@@ -15,10 +15,25 @@ on:
     release:
       types: [published, edited]
 
+
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
+
+#    https://docs.github.com/en/actions/using-containerized-services/about-service-containers
+    services:
+      s3proxy:
+        image: andrewgaul/s3proxy
+        ports:
+          - 4000:80
+        env:
+          JCLOUDS_FILESYSTEM_BASEDIR: /data
+          S3PROXY_AUTHORIZATION: none
+          JCLOUDS_PROVIDER: filesystem
+        volumes:
+          - ${{ github.workspace }}/src/main/test/resources:/data
 
     steps:
     - uses: actions/checkout@v3
@@ -28,6 +43,11 @@ jobs:
         java-version: '8'
         distribution: 'temurin'
         cache: maven
+
+    #Before building the Repo a docker container needs to intialized such that the test cases can work properly
+#    https://github.com/addnab/docker-run-action
+
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 

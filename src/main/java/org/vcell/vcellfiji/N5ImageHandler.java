@@ -52,7 +52,8 @@ public class N5ImageHandler implements Command{
     private File selectedLocalFile;
     private AmazonS3 s3Client;
     private String bucketName;
-    private AmazonS3URI s3URI;
+
+    private String s3ObjectKey;
 
     @Override
     public void run() {
@@ -151,7 +152,7 @@ public class N5ImageHandler implements Command{
     }
 
     public N5AmazonS3Reader getN5AmazonS3Reader(){
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3URI.getKey())){
+        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3ObjectKey)){
             return n5AmazonS3Reader;
         }
         catch (IOException e){
@@ -189,10 +190,21 @@ public class N5ImageHandler implements Command{
     //Can make it so that our bucket links contain the region in it, making it significantly easier to determine it
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
-        this.s3URI = new AmazonS3URI(URI.create(url));
-        this.bucketName = s3URI.getBucket();
-//        String bucketLocation = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).build().getBucketLocation(this.bucketName);
-//        System.out.print(bucketLocation);
+        URI uri = URI.create(url);
+
+        // believe that it's a s3 URL
+        try{
+            AmazonS3URI s3URI = new AmazonS3URI(uri);
+            this.s3ObjectKey = s3URI.getKey();
+            this.bucketName = s3URI.getBucket();
+        }
+        // otherwise assume it is one of our URLs
+        catch (IllegalArgumentException e){
+            String[] pathSubStrings = uri.getPath().split("/", 3);
+            this.s3ObjectKey = pathSubStrings[2];
+            this.bucketName = pathSubStrings[1];
+        }
+
         if(credentials != null){
             s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
         }
@@ -203,6 +215,12 @@ public class N5ImageHandler implements Command{
         }
         // if nothing is given, default user and return so that code after if statement does not execute
         if(endpoint == null && credentials == null){
+            s3ClientBuilder
+                    .withRegion("site-low")
+                    .withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()))
+                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("", ""))
+                    .build();
+
             this.s3Client = AmazonS3ClientBuilder.standard().withRegion("site-low").withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
             return;
         }
@@ -218,7 +236,7 @@ public class N5ImageHandler implements Command{
         selectedLocalFile = null;
 
         try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
-            return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(s3URI.getKey())));
+            return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(this.s3ObjectKey)));
         }
         catch (IOException e){
             throw new RuntimeException(e);
