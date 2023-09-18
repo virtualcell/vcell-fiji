@@ -42,7 +42,9 @@ jobs:
 
     - name: Put test resources in S3Proxy Container
       run: |
+        curl http://127.0.0.1:4000/ | grep -c "nfive"
         sudo cp -r ${{ github.workspace }}/src/test/resources /dockerImage/data
+        curl http://127.0.0.1:4000/ | grep -c "nfive"
 
     - name: Set up JDK 8
       uses: actions/setup-java@v3
