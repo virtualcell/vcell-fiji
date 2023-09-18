@@ -33,7 +33,7 @@ jobs:
           S3PROXY_AUTHORIZATION: none
           JCLOUDS_PROVIDER: filesystem
         volumes:
-          - ${{ github.workspace }}/src/main/test/resources:/data
+          - ${{ github.workspace }}/src/test/resources:/data
 
     steps:
     - uses: actions/checkout@v3
