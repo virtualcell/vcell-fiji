@@ -18,9 +18,11 @@ on:
 
 
 jobs:
-  build:
 
+  build:
     runs-on: ubuntu-latest
+
+
 
 #    https://docs.github.com/en/actions/using-containerized-services/about-service-containers
     services:
@@ -33,10 +35,15 @@ jobs:
           S3PROXY_AUTHORIZATION: none
           JCLOUDS_PROVIDER: filesystem
         volumes:
-          - ${{ github.workspace }}/src/test/resources:/data
+          - /dockerImage/data:/data
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Put test resources in S3Proxy Container
+      run: |
+        cp ${{ github.workplace }}/src/test/resources /dockerImage/data
+
     - name: Set up JDK 8
       uses: actions/setup-java@v3
       with:
