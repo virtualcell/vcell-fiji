@@ -63,7 +63,7 @@ public class N5ImageHandlerTest {
 
     @Test
     // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
-    public void testS3Client() {
+    public void testS3Client() throws IOException {
 //        HashMap<String, String> endpointCreds = new HashMap<>();
         HashMap<String, String> endpointNoCreds = new HashMap<>();
         HashMap<String, String> credentials = new HashMap<>();
@@ -97,16 +97,11 @@ public class N5ImageHandlerTest {
     }
 
 
-    private void remoteN5ImgPlusTests(N5ImageHandler n5ImageHandler){
-        try {
+    private void remoteN5ImgPlusTests(N5ImageHandler n5ImageHandler) throws IOException {
             String dataSet = "5DStack";
             ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(dataSet, n5ImageHandler.getN5AmazonS3Reader());
             dataSetListTest(n5ImageHandler.getS3N5DatasetList());
             fiveDStackTests(imagePlus);
-        }
-        catch (Exception e){
-            throw new RuntimeException(e);
-        }
     }
 
     private void fiveDStackTests(ImagePlus variableImgPlus){
