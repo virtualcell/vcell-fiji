@@ -42,7 +42,7 @@ jobs:
 
     - name: Put test resources in S3Proxy Container
       run: |
-        sudo cp -r ${{ github.workspace }}/src/test/resources /dockerImage/data
+        aws --endpoint-url=http://127.0.0.1:4000 --region site2-low s3 cp ${{ github.workspace }}/src/test/resources s3://nfive/ --recursive
         curl http://127.0.0.1:4000/ | grep -c "nfive"
 
     - name: Set up JDK 8
