@@ -5,9 +5,6 @@ import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.ImageCalculator;
 import junit.framework.TestCase;
-import org.gaul.s3proxy.S3Proxy;
-import org.jclouds.ContextBuilder;
-import org.jclouds.blobstore.BlobStoreContext;
 import org.junit.*;
 
 import java.io.File;
@@ -37,10 +34,6 @@ public class N5ImageHandlerTest {
     private final String s3NoCredsEndpoint = "http://127.0.0.1:4000";
 
     private final String testBucketName = "nfive";
-
-    private S3Proxy s3ProxyCreds;
-
-    public S3Proxy s3ProxyNoCreds;
 
     private File getTestResourceFiles(String filePath){
         try {

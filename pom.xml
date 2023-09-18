@@ -193,19 +193,6 @@
             <artifactId>jsoup</artifactId>
             <version>1.16.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.gaul</groupId>
-            <artifactId>s3proxy</artifactId>
-            <version>1.7.1</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.jclouds</groupId>
-                    <artifactId>jclouds-gson</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
 </project>
