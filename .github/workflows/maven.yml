@@ -42,7 +42,7 @@ jobs:
 
     - name: Put test resources in S3Proxy Container
       run: |
-        cp ${{ github.workplace }}/src/test/resources /dockerImage/data
+        cp ${{ github.workspace }}/src/test/resources /dockerImage/data
 
     - name: Set up JDK 8
       uses: actions/setup-java@v3
