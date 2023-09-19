@@ -36,8 +36,8 @@ jobs:
           JCLOUDS_REGIONS: site2-low
           S3PROXY_IDENTITY: jj
           S3PROXY_CREDENTIAL: jj
-
-          S3PROXY_AUTHORIZATION: aws-v2-or-v4
+          S3PROXY_AUTHORIZATION: none
+          
           LOG_LEVEL: info
           S3PROXY_ENDPOINT: http://0.0.0.0:80
           S3PROXY_VIRTUALHOST: ""
