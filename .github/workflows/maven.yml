@@ -32,8 +32,32 @@ jobs:
           - 4000:80
         env:
           JCLOUDS_FILESYSTEM_BASEDIR: /data
-          S3PROXY_AUTHORIZATION: none
+          S3PROXY_AUTHORIZATION: "aws-v2-or-v4"
           JCLOUDS_PROVIDER: filesystem
+          JCLOUDS_REGIONS: "site2-low" \
+
+          LOG_LEVEL: "info"
+          S3PROXY_ENDPOINT: "http://0.0.0.0:80" \
+          S3PROXY_IDENTITY: "local-identity" \
+          S3PROXY_CREDENTIAL: "local-credential"
+          S3PROXY_VIRTUALHOST: ""
+          S3PROXY_KEYSTORE_PATH: "keystore.jks" \
+          S3PROXY_KEYSTORE_PASSWORD: "password" \
+          S3PROXY_CORS_ALLOW_ALL: "false" \
+          S3PROXY_CORS_ALLOW_ORIGINS: "" \
+          S3PROXY_CORS_ALLOW_METHODS: "" \
+          S3PROXY_CORS_ALLOW_HEADERS: "" \
+          S3PROXY_IGNORE_UNKNOWN_HEADERS: "false" \
+          S3PROXY_ENCRYPTED_BLOBSTORE: "" \
+          S3PROXY_ENCRYPTED_BLOBSTORE_PASSWORD: "" \
+          S3PROXY_ENCRYPTED_BLOBSTORE_SALT: "" \
+          JCLOUDS_ENDPOINT: "" \
+          JCLOUDS_REGION: "" \
+          JCLOUDS_IDENTITY: "remote-identity" \
+          JCLOUDS_CREDENTIAL: "remote-credential" \
+          JCLOUDS_KEYSTONE_VERSION: "" \
+          JCLOUDS_KEYSTONE_SCOPE: "" \
+          JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME: "" \
         volumes:
           - /dockerImage/data:/data
 
@@ -42,8 +66,8 @@ jobs:
 
     - name: Put test resources in S3Proxy Container
       run: |
-        aws --endpoint-url=http://127.0.0.1:4000 --region site2-low s3 cp ${{ github.workspace }}/src/test/resources s3://nfive/ --recursive
-        curl http://127.0.0.1:4000/ | grep -c "nfive"
+        aws --endpoint-url=http://127.0.0.1:4000 --region site2-low s3 mb s3://nfive
+        aws --endpoint-url=http://127.0.0.1:4000 --region site2-low s3 cp ${{ github.workspace }}/src/test/resources/nfive s3://nfive --recursive
 
     - name: Set up JDK 8
       uses: actions/setup-java@v3
