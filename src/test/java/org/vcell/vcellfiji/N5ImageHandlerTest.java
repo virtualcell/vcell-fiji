@@ -26,14 +26,7 @@ import java.util.Properties;
 
 public class N5ImageHandlerTest {
 
-    private final String s3AccessKey = "access";
-    private final String s3SecretKey = "secret";
     private final String n5FileName = "nfive/test_image.n5";
-
-//    private final String s3CredsEndpoint = "http://127.0.0.1:9999";
-    private final String s3NoCredsEndpoint = "http://127.0.0.1:4000";
-
-    private final String testBucketName = "nfive";
 
     private File getTestResourceFiles(String filePath){
         try {
@@ -64,36 +57,34 @@ public class N5ImageHandlerTest {
     @Test
     // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
     public void testS3Client() throws IOException {
-//        HashMap<String, String> endpointCreds = new HashMap<>();
-        HashMap<String, String> endpointNoCreds = new HashMap<>();
+        HashMap<String, String> s3Endpoint = new HashMap<>();
         HashMap<String, String> credentials = new HashMap<>();
 
-//        endpointCreds.put("Endpoint", this.s3CredsEndpoint);
-//        endpointCreds.put("Region", Regions.US_EAST_1.getName());
+        s3Endpoint.put("Endpoint", "http://127.0.0.1:4000");
+        s3Endpoint.put("Region", Regions.US_EAST_1.getName());
 
-        endpointNoCreds.put("Endpoint", this.s3NoCredsEndpoint);
-        endpointNoCreds.put("Region", Regions.US_EAST_1.getName());
+        credentials.put("AccessKey", "jj");
+        credentials.put("SecretKey", "jj");
 
-        credentials.put("AccessKey", this.s3AccessKey);
-        credentials.put("SecretKey", this.s3SecretKey);
-
-        final String s3KeyPath = "s3://" + this.testBucketName + "/test_image.n5";
+        String testBucketName = "nfive";
+        final String s3KeyPath = "s3://" + testBucketName + "/test_image.n5";
         final String s3ProxyURL = "/" + this.n5FileName;
 
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
 
+        // Environment variables are set in github actions VM
 
-//        n5ImageHandler.createS3Client(s3NoCredsEndpoint + s3ProxyURL, null, null);
-//        this.remoteN5ImgPlusTests(n5ImageHandler);
-//
-        n5ImageHandler.createS3Client(s3ProxyURL, null, endpointNoCreds);
+        n5ImageHandler.createS3Client(s3ProxyURL, null, null);
         this.remoteN5ImgPlusTests(n5ImageHandler);
 
-//        n5ImageHandler.createS3Client(this.s3CredsEndpoint + keyPath, credentials, null);
-//        this.remoteN5ImgPlusTests(n5ImageHandler);
+        n5ImageHandler.createS3Client(s3ProxyURL, null, s3Endpoint);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
 
-//        n5ImageHandler.createS3Client(keyPath, credentials, endpointCreds);
-//        this.remoteN5ImgPlusTests(n5ImageHandler);
+        n5ImageHandler.createS3Client(s3ProxyURL, credentials, null);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+        n5ImageHandler.createS3Client(s3ProxyURL, credentials, s3Endpoint);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
     }
 
 
