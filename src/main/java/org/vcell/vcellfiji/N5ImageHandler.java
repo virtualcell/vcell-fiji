@@ -32,14 +32,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-// Command plugins
-/* TODO:
-     Security check for the S3Client builder, there seems to be an encrypted version of it and that should be checked
-     Test cases for handling all cases regarding
-
-
-
- */
 
 /*
     Able to open N5 files locally, display the datasets that can be chosen from it, and open the datasets within ImageJ.
@@ -112,9 +104,6 @@ public class N5ImageHandler implements Command{
 
 
     public ImagePlus getImgPlusFromN5File(String selectedDataset, N5Reader n5Reader) throws IOException {
-//        N5CosemMetadataParser metadataParser = new N5CosemMetadataParser();
-//        CosemToImagePlus cosemToImagePlus = new CosemToImagePlus();
-
         // Theres definitly a better way to do this, I trie using a variable to change the cached cells first parameter type but it didn't seem to work :/
         switch (n5Reader.getDatasetAttributes(selectedDataset).getDataType()){
             case UINT8:
@@ -179,15 +168,7 @@ public class N5ImageHandler implements Command{
         }
     }
 
-    // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/java-dg-region-selection.html
-    // Chain of handling region is what gets set by client builder
-    // AWS_REGION Environmental variable on computer
-    // The AWS default profile on the computer
-    // Use Amazon Elastic computing instance metadata to determine region
-        // Does this mean that region is only known for buckets hosted on Amazons servers? Is that why the error is thrown? Should I use the EC2 builder to find the region?
-    // Throw error
-
-    //Can make it so that our bucket links contain the region in it, making it significantly easier to determine it
+    //When creating client's try to make one for an Amazon link, otherwise use our custom url scheme
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
@@ -221,6 +202,7 @@ public class N5ImageHandler implements Command{
             return;
         }
 
+        //creds not null, but region is
         this.s3Client = s3ClientBuilder.withRegion(defaultRegion).build();
     }
 
@@ -246,9 +228,4 @@ public class N5ImageHandler implements Command{
         return selectedLocalFile;
     }
 
-    public static void main(String[] args) {
-//        new N5ImageHandler().getS3N5DatasetList("s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5", null, null);
-        new N5ImageHandler().run();
-
-    }
 }

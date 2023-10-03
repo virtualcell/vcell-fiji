@@ -22,12 +22,6 @@ public class VCellGUI extends JFrame {
     public VCellGUI() {
         jFrame = this;
         localFileDialog = new JFileChooser();
-//        try {
-//            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-//            SwingUtilities.updateComponentTreeUI(jFrame);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
 
 
         this.setTitle("VCell Manager");

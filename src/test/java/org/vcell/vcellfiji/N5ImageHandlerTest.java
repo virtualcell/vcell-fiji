@@ -25,7 +25,6 @@ import java.util.Properties;
  */
 
 public class N5ImageHandlerTest {
-
     private final String n5FileName = "nfive/test_image.n5";
 
     private File getTestResourceFiles(String filePath){
@@ -66,8 +65,6 @@ public class N5ImageHandlerTest {
         credentials.put("AccessKey", "jj");
         credentials.put("SecretKey", "jj");
 
-        String testBucketName = "nfive";
-        final String s3KeyPath = "s3://" + testBucketName + "/test_image.n5";
         final String s3ProxyURL = "/" + this.n5FileName;
 
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
