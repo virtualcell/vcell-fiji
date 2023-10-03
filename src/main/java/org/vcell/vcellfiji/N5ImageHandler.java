@@ -191,12 +191,14 @@ public class N5ImageHandler implements Command{
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
+        String defaultRegion = "site2-low";
 
         // believe that it's a s3 URL
         try{
             AmazonS3URI s3URI = new AmazonS3URI(uri);
             this.s3ObjectKey = s3URI.getKey();
             this.bucketName = s3URI.getBucket();
+            defaultRegion = s3URI.getRegion();
         }
         // otherwise assume it is one of our URLs
         catch (IllegalArgumentException e){
@@ -215,18 +217,11 @@ public class N5ImageHandler implements Command{
         }
         // if nothing is given, default user and return so that code after if statement does not execute
         if(endpoint == null && credentials == null){
-            s3ClientBuilder
-                    .withRegion("site-low")
-                    .withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()))
-                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("", ""))
-                    .build();
-
-            this.s3Client = AmazonS3ClientBuilder.standard().withRegion("site-low").withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
+            this.s3Client = AmazonS3ClientBuilder.standard().withRegion(defaultRegion).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
             return;
         }
 
-        //  TODO: hard coding a region is not a solution
-        this.s3Client = s3ClientBuilder.withRegion("site2-low").build();
+        this.s3Client = s3ClientBuilder.withRegion(defaultRegion).build();
     }
 
 

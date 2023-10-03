@@ -63,7 +63,6 @@ public class RemoteFileSelection extends JFrame{
         }
         hashMap.put("Endpoint", this.s3EndpointTextField.getText());
         hashMap.put("Region", this.s3RegionTextField.getText());
-        hashMap.put("Bucket", null);
         return hashMap;
     }
 
