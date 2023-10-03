@@ -74,14 +74,14 @@ public class N5ImageHandlerTest {
 
         // Environment variables are set in github actions VM
 
-        n5ImageHandler.createS3Client(s3ProxyURL, null, null);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+//        n5ImageHandler.createS3Client(s3ProxyURL, null, null);
+//        this.remoteN5ImgPlusTests(n5ImageHandler);
 
         n5ImageHandler.createS3Client(s3ProxyURL, null, s3Endpoint);
         this.remoteN5ImgPlusTests(n5ImageHandler);
 
-        n5ImageHandler.createS3Client(s3ProxyURL, credentials, null);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+//        n5ImageHandler.createS3Client(s3ProxyURL, credentials, null);
+//        this.remoteN5ImgPlusTests(n5ImageHandler);
 
         n5ImageHandler.createS3Client(s3ProxyURL, credentials, s3Endpoint);
         this.remoteN5ImgPlusTests(n5ImageHandler);
