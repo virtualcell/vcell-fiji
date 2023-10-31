@@ -174,17 +174,32 @@ public class N5ImageHandler implements Command{
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
-        String defaultRegion = "site2-low";
+
+        if(credentials != null){
+            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
+        }
 
         // believe that it's a s3 URL
         try{
             AmazonS3URI s3URI = new AmazonS3URI(uri);
             this.s3ObjectKey = s3URI.getKey();
             this.bucketName = s3URI.getBucket();
-            defaultRegion = s3URI.getRegion();
             if(s3URI.isPathStyle()){
                 s3ClientBuilder.withPathStyleAccessEnabled(true);
             }
+            if(endpoint != null){
+                s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
+                this.s3Client = s3ClientBuilder.build();
+                return;
+            }
+            // if nothing is given, default user and return so that code after if statement does not execute
+            if(endpoint == null && credentials == null){
+                this.s3Client = AmazonS3ClientBuilder.standard().withRegion(s3URI.getRegion()).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
+                return;
+            }
+            //creds not null, but region is
+            this.s3Client = s3ClientBuilder.withRegion(s3URI.getRegion()).build();
+            return;
         }
         // otherwise assume it is one of our URLs
         // http://vcell:8000/bucket/object/object2
@@ -193,30 +208,10 @@ public class N5ImageHandler implements Command{
             this.s3ObjectKey = pathSubStrings[2];
             this.bucketName = pathSubStrings[1];
             s3ClientBuilder.withPathStyleAccessEnabled(true);
-            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), defaultRegion));
-            if(credentials != null){
-                s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
-            }
+            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), "site2-low"));
             this.s3Client = s3ClientBuilder.build();
             return;
         }
-
-        if(credentials != null){
-            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
-        }
-        if(endpoint != null){
-            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
-            this.s3Client = s3ClientBuilder.build();
-            return;
-        }
-        // if nothing is given, default user and return so that code after if statement does not execute
-        if(endpoint == null && credentials == null){
-            this.s3Client = AmazonS3ClientBuilder.standard().withRegion(defaultRegion).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
-            return;
-        }
-
-        //creds not null, but region is
-        this.s3Client = s3ClientBuilder.withRegion(defaultRegion).build();
     }
 
 
