@@ -15,19 +15,77 @@ on:
     release:
       types: [published, edited]
 
-jobs:
-  build:
 
+
+jobs:
+
+  build:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: jj
+      AWS_SECRET_ACCESS_KEY: jj
+      AWS_DEFAULT_REGION: 'site2-low'
+      AWS_ENDPOINT_URL: "http://127.0.0.1:4000"
+
+
+
+#    https://docs.github.com/en/actions/using-containerized-services/about-service-containers
+    services:
+      s3proxy:
+        image: andrewgaul/s3proxy
+        ports:
+          - 4000:80
+        env:
+          JCLOUDS_FILESYSTEM_BASEDIR: /data
+          JCLOUDS_PROVIDER: filesystem
+          JCLOUDS_REGIONS: site2-low
+          S3PROXY_IDENTITY: jj
+          S3PROXY_CREDENTIAL: jj
+
+          LOG_LEVEL: info
+          S3PROXY_ENDPOINT: http://0.0.0.0:80
+          S3PROXY_AUTHORIZATION: "aws-v2-or-v4"
+          S3PROXY_VIRTUALHOST: ""
+          S3PROXY_KEYSTORE_PATH: keystore.jks
+          S3PROXY_KEYSTORE_PASSWORD: password
+          S3PROXY_CORS_ALLOW_ALL: false
+          S3PROXY_CORS_ALLOW_ORIGINS: ""
+          S3PROXY_CORS_ALLOW_METHODS: ""
+          S3PROXY_CORS_ALLOW_HEADERS: ""
+          S3PROXY_IGNORE_UNKNOWN_HEADERS: false
+          S3PROXY_ENCRYPTED_BLOBSTORE: ""
+          S3PROXY_ENCRYPTED_BLOBSTORE_PASSWORD: ""
+          S3PROXY_ENCRYPTED_BLOBSTORE_SALT: ""
+
+          JCLOUDS_ENDPOINT: ""
+          JCLOUDS_REGION: ""
+          JCLOUDS_IDENTITY: remote-identity
+          JCLOUDS_CREDENTIAL: remote-credential
+          JCLOUDS_KEYSTONE_VERSION: ""
+          JCLOUDS_KEYSTONE_SCOPE: ""
+          JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME: ""
+        volumes:
+          - /dockerImage/data:/data
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Put test resources in S3Proxy Container
+      run: |
+        aws s3 mb s3://nfive
+        aws s3 cp ${{ github.workspace }}/src/test/resources/nfive s3://nfive --recursive
+
     - name: Set up JDK 8
       uses: actions/setup-java@v3
       with:
         java-version: '8'
         distribution: 'temurin'
         cache: maven
+
+    #Before building the Repo a docker container needs to intialized such that the test cases can work properly
+#    https://github.com/addnab/docker-run-action
+
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
