@@ -1,11 +1,13 @@
 package org.vcell.vcellfiji;
 
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import ij.ImagePlus;
@@ -180,12 +182,23 @@ public class N5ImageHandler implements Command{
             this.s3ObjectKey = s3URI.getKey();
             this.bucketName = s3URI.getBucket();
             defaultRegion = s3URI.getRegion();
+            if(s3URI.isPathStyle()){
+                s3ClientBuilder.withPathStyleAccessEnabled(true);
+            }
         }
         // otherwise assume it is one of our URLs
+        // http://vcell:8000/bucket/object/object2
         catch (IllegalArgumentException e){
             String[] pathSubStrings = uri.getPath().split("/", 3);
             this.s3ObjectKey = pathSubStrings[2];
             this.bucketName = pathSubStrings[1];
+            s3ClientBuilder.withPathStyleAccessEnabled(true);
+            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), defaultRegion));
+            if(credentials != null){
+                s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
+            }
+            this.s3Client = s3ClientBuilder.build();
+            return;
         }
 
         if(credentials != null){
