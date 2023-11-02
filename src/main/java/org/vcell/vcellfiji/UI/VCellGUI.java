@@ -6,14 +6,14 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 public class VCellGUI extends JFrame {
-    private JButton LocalFiles;
+    public JButton LocalFiles;
     public JPanel mainPanel;
     private final JFrame jFrame;
     public JFileChooser localFileDialog;
     private JToolBar menuBar;
     public JList<String> datasetList;
     private JScrollPane resultsScrollPane;
-    private JButton remoteFiles;
+    public JButton remoteFiles;
     public JButton okayButton;
     public JCheckBox openVirtualCheckBox;
 
