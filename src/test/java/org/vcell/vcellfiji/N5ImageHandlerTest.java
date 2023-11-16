@@ -65,22 +65,22 @@ public class N5ImageHandlerTest {
         credentials.put("AccessKey", "jj");
         credentials.put("SecretKey", "jj");
 
-        final String s3ProxyURL = "/" + this.n5FileName;
+        final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName;
 
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
 
         // Environment variables are set in github actions VM
 
-//        n5ImageHandler.createS3Client(s3ProxyURL, null, null);
-//        this.remoteN5ImgPlusTests(n5ImageHandler);
-
-        n5ImageHandler.createS3Client(s3ProxyURL, null, s3Endpoint);
+        n5ImageHandler.createS3Client(s3ProxyURI, null, null);
         this.remoteN5ImgPlusTests(n5ImageHandler);
 
-//        n5ImageHandler.createS3Client(s3ProxyURL, credentials, null);
-//        this.remoteN5ImgPlusTests(n5ImageHandler);
+        n5ImageHandler.createS3Client(s3ProxyURI, null, s3Endpoint);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
 
-        n5ImageHandler.createS3Client(s3ProxyURL, credentials, s3Endpoint);
+        n5ImageHandler.createS3Client(s3ProxyURI, credentials, null);
+        this.remoteN5ImgPlusTests(n5ImageHandler);
+
+        n5ImageHandler.createS3Client(s3ProxyURI, credentials, s3Endpoint);
         this.remoteN5ImgPlusTests(n5ImageHandler);
     }
 

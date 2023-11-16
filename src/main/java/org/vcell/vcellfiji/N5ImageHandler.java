@@ -31,53 +31,113 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 
 /*
     Able to open N5 files locally, display the datasets that can be chosen from it, and open the datasets within ImageJ.
     Flow of operations is select an N5 file, get dataset list, select a dataset and then open it.
+    http://vcellapi-beta.cam.uchc.edu:8088/test/test.n5
+
  */
 
 @Plugin(type = Command.class, menuPath = "Plugins>VCell>N5 Dataset Viewer")
-public class N5ImageHandler implements Command{
+public class N5ImageHandler implements Command, ActionListener {
     private VCellGUI vGui;
     private File selectedLocalFile;
     private AmazonS3 s3Client;
     private String bucketName;
-
     private String s3ObjectKey;
+    private SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater;
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        enableCriticalButtons(false);
+
+        if(e.getSource() == vGui.localFileDialog){
+            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
+                @Override
+                protected ArrayList<String> doInBackground() throws Exception {
+                    selectedLocalFile = vGui.localFileDialog.getSelectedFile();
+                    ArrayList<String> n5DataSetList = getN5DatasetList();
+                    publish(n5DataSetList);
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    enableCriticalButtons(true);
+                }
+
+                @Override
+                protected void process(List<ArrayList<String>> chunks) {
+                    displayN5Results(chunks.get(0));
+                }
+            };
+            n5DatasetListUpdater.execute();
+        }
+
+        else if (e.getSource() == vGui.okayButton) {
+            SwingWorker swingWorker = new SwingWorker() {
+                @Override
+                protected Object doInBackground() throws Exception {
+                    try{
+                        loadN5Dataset(vGui.datasetList.getSelectedValue());
+                        return null;
+                    }
+                    catch (IOException ex){
+                        return null;
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    enableCriticalButtons(true);
+                }
+            };
+            swingWorker.execute();
+        }
+        // https://stackoverflow.com/questions/16937997/java-swingworker-thread-to-update-main-gui
+        // Why swing updating does not work
+
+        else if (e.getSource() == vGui.remoteFileSelection.submitS3Info){
+            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
+                @Override
+                protected ArrayList<String> doInBackground() throws Exception {
+                    createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
+                    ArrayList<String> list = getS3N5DatasetList();
+                    publish(list);
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    enableCriticalButtons(true);
+                }
+
+                @Override
+                protected void process(List<ArrayList<String>> chunks) {
+                    displayN5Results(chunks.get(0));
+                }
+            };
+            n5DatasetListUpdater.execute();
+        }
+    }
+
+    private void enableCriticalButtons(boolean enable) {
+        vGui.remoteFileSelection.submitS3Info.setEnabled(enable);
+        vGui.okayButton.setEnabled(enable);
+        vGui.LocalFiles.setEnabled(enable);
+        vGui.remoteFiles.setEnabled(enable);
+    }
 
     @Override
     public void run() {
         this.vGui = new VCellGUI();
-        this.vGui.localFileDialog.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectedLocalFile = vGui.localFileDialog.getSelectedFile();
-                displayN5Results(getN5DatasetList());
-            }
-        });
+        this.vGui.localFileDialog.addActionListener(this);
 
-        this.vGui.okayButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try{
-                    loadN5Dataset(vGui.datasetList.getSelectedValue());
-                }
-                catch (IOException ex){
-                    return;
-                }
-            }
-        });
+        this.vGui.okayButton.addActionListener(this);
 
-        this.vGui.remoteFileSelection.submitS3Info.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
-                ArrayList<String> list = getS3N5DatasetList();
-                displayN5Results(list);
-            }
-        });
+        this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
     }
 
     public ArrayList<String> getN5DatasetList(){
@@ -97,9 +157,7 @@ public class N5ImageHandler implements Command{
     }
 
     public void displayN5Results(ArrayList<String> datasetList){
-        SwingUtilities.invokeLater(() ->{
-            this.vGui.updateDatasetList(datasetList);
-        });
+        this.vGui.updateDatasetList(datasetList);
     }
 
 
@@ -172,38 +230,44 @@ public class N5ImageHandler implements Command{
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
-        String defaultRegion = "site2-low";
+
+        if(credentials != null){
+            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
+        }
 
         // believe that it's a s3 URL
         try{
             AmazonS3URI s3URI = new AmazonS3URI(uri);
             this.s3ObjectKey = s3URI.getKey();
             this.bucketName = s3URI.getBucket();
-            defaultRegion = s3URI.getRegion();
+            if(s3URI.isPathStyle()){
+                s3ClientBuilder.withPathStyleAccessEnabled(true);
+            }
+            if(endpoint != null){
+                s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
+                this.s3Client = s3ClientBuilder.build();
+                return;
+            }
+            // if nothing is given, default user and return so that code after if statement does not execute
+            if(endpoint == null && credentials == null){
+                this.s3Client = AmazonS3ClientBuilder.standard().withRegion(s3URI.getRegion()).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
+                return;
+            }
+            //creds not null, but region is
+            this.s3Client = s3ClientBuilder.withRegion(s3URI.getRegion()).build();
+            return;
         }
         // otherwise assume it is one of our URLs
+        // http://vcell:8000/bucket/object/object2
         catch (IllegalArgumentException e){
             String[] pathSubStrings = uri.getPath().split("/", 3);
             this.s3ObjectKey = pathSubStrings[2];
             this.bucketName = pathSubStrings[1];
-        }
-
-        if(credentials != null){
-            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));
-        }
-        if(endpoint != null){
-            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
+            s3ClientBuilder.withPathStyleAccessEnabled(true);
+            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), "site2-low"));
             this.s3Client = s3ClientBuilder.build();
             return;
         }
-        // if nothing is given, default user and return so that code after if statement does not execute
-        if(endpoint == null && credentials == null){
-            this.s3Client = AmazonS3ClientBuilder.standard().withRegion(defaultRegion).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
-            return;
-        }
-
-        //creds not null, but region is
-        this.s3Client = s3ClientBuilder.withRegion(defaultRegion).build();
     }
 
 
@@ -228,4 +292,8 @@ public class N5ImageHandler implements Command{
         return selectedLocalFile;
     }
 
+    public static void main(String[] args) {
+        N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        n5ImageHandler.run();
+    }
 }
