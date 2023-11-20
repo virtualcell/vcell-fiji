@@ -15,7 +15,7 @@ public class VCellGUI extends JFrame {
     private JScrollPane resultsScrollPane;
     public JButton remoteFiles;
     public JButton okayButton;
-    public JCheckBox openVirtualCheckBox;
+    public JCheckBox openMemoryCheckBox;
 
     public RemoteFileSelection remoteFileSelection;
 

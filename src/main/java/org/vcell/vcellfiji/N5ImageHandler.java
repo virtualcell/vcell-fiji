@@ -189,12 +189,12 @@ public class N5ImageHandler implements Command, ActionListener {
 
 
     private void displayN5Dataset(ImagePlus imagePlus){
-        if (this.vGui.openVirtualCheckBox.isSelected()){
-            imagePlus.show();
-        }
-        else{
+        if (this.vGui.openMemoryCheckBox.isSelected()){
             ImagePlus memoryImagePlus = new Duplicator().run(imagePlus);
             memoryImagePlus.show();
+        }
+        else{
+            imagePlus.show();
         }
     }
 
