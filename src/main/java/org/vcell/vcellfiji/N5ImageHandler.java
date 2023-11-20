@@ -18,6 +18,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.command.Command;
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
 import org.vcell.vcellfiji.UI.VCellGUI;
@@ -48,6 +50,8 @@ public class N5ImageHandler implements Command, ActionListener {
     private AmazonS3 s3Client;
     private String bucketName;
     private String s3ObjectKey;
+    @Parameter
+    private LogService logService;
     private SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater;
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -66,6 +70,12 @@ public class N5ImageHandler implements Command, ActionListener {
                 @Override
                 protected void done() {
                     enableCriticalButtons(true);
+                    try{
+                        get();
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
                 }
 
                 @Override
@@ -80,18 +90,19 @@ public class N5ImageHandler implements Command, ActionListener {
             SwingWorker swingWorker = new SwingWorker() {
                 @Override
                 protected Object doInBackground() throws Exception {
-                    try{
-                        loadN5Dataset(vGui.datasetList.getSelectedValue());
-                        return null;
-                    }
-                    catch (IOException ex){
-                        return null;
-                    }
+                    loadN5Dataset(vGui.datasetList.getSelectedValue());
+                    return null;
                 }
 
                 @Override
                 protected void done() {
                     enableCriticalButtons(true);
+                    try{
+                        get();
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
                 }
             };
             swingWorker.execute();
@@ -112,6 +123,12 @@ public class N5ImageHandler implements Command, ActionListener {
                 @Override
                 protected void done() {
                     enableCriticalButtons(true);
+                    try{
+                        get();
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
                 }
 
                 @Override
@@ -120,6 +137,7 @@ public class N5ImageHandler implements Command, ActionListener {
                 }
             };
             n5DatasetListUpdater.execute();
+            n5DatasetListUpdater.getState();
         }
     }
 
