@@ -22,7 +22,7 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
-import org.vcell.vcellfiji.UI.VCellGUI;
+import org.vcell.vcellfiji.UI.N5ViewerGUI;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -45,7 +45,7 @@ import java.util.List;
 
 @Plugin(type = Command.class, menuPath = "Plugins>VCell>N5 Dataset Viewer")
 public class N5ImageHandler implements Command, ActionListener {
-    private VCellGUI vGui;
+    private N5ViewerGUI vGui;
     private File selectedLocalFile;
     private AmazonS3 s3Client;
     private String bucketName;
@@ -144,13 +144,13 @@ public class N5ImageHandler implements Command, ActionListener {
     private void enableCriticalButtons(boolean enable) {
         vGui.remoteFileSelection.submitS3Info.setEnabled(enable);
         vGui.okayButton.setEnabled(enable);
-        vGui.LocalFiles.setEnabled(enable);
+        vGui.localFiles.setEnabled(enable);
         vGui.remoteFiles.setEnabled(enable);
     }
 
     @Override
     public void run() {
-        this.vGui = new VCellGUI();
+        this.vGui = new N5ViewerGUI();
         this.vGui.localFileDialog.addActionListener(this);
 
         this.vGui.okayButton.addActionListener(this);
