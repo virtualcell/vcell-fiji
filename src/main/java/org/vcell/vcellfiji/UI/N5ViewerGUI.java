@@ -113,7 +113,7 @@ public class N5ViewerGUI extends JFrame {
         this.setContentPane(this.mainPanel);
         this.setSize(500, 400);
         this.setVisible(true);
-        this.remoteFileSelection = new RemoteFileSelection();
+        this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 
 
     }

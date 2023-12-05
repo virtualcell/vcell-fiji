@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 
-public class RemoteFileSelection extends JFrame{
+public class RemoteFileSelection extends JDialog{
     private JPanel mainPanel;
     private JTextField linkTextField;
     private JTextField s3AccessKeyTextField;
@@ -19,7 +19,8 @@ public class RemoteFileSelection extends JFrame{
     private JPanel credentialsPanel;
     private JPanel endpointPanel;
 
-    public RemoteFileSelection(){
+    public RemoteFileSelection(JFrame parentFrame){
+        super(parentFrame, true);
         this.setTitle("Remote File Selection");
         this.setContentPane(this.mainPanel);
         this.setSize(500, 350);
