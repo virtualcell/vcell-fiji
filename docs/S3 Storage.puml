@@ -5,9 +5,8 @@
 
 box Remote #Lightblue
 entity "Remote VCell" #seagreen
-queue "VCell API"
+queue "VCell RPC"
 database "Storage"
-queue "Storage Proxy"
 queue "S3 API"
 end box
 
@@ -25,19 +24,28 @@ title Cloud Object Storage
 
 == Simulate Model ==
 
-User -> "VCell App": Make model as specific file type
-"VCell App" -> "VCell API": Initiate simulation
-"VCell API" -> "Remote VCell": Begin simulation
+User -> "VCell App": Take this model along with parameters and simulate it
+"VCell App" -> "VCell RPC": Initiate simulation
+"VCell RPC" -> "Remote VCell": Begin simulation
 
 "Remote VCell" --> "Storage": Store results of simulation
-"Remote VCell" --> "VCell App": All Finished notice
+"VCell RPC" --> "VCell App": All Finished notice
+
+
+== Export Simulation ==
+
+User -> "VCell App": I want this simulation results in N5 format
+"VCell App" -> "VCell RPC": Create copy of simulation ID XXXXX results in N5 format
+"VCell RPC" -> "Remote VCell": Begin N5 convert
+"Remote VCell" --> "Storage": Save N5 copy in specific S3 proxy folder
 
 == Access Model==
 
 group The user can utilize any plugin to access the models including the one we are making
-User -> VCellJ: Access model with unique ID XXXX
+User -> VCellJ: Access model with unique ID XXXX through URL https://example
 User -> N5
 User -> MoBIE
+note over "N5": For one's not vcellj it won't \nwork for now because domains
 
 activate "S3 API" #Green
 VCellJ -> "S3 API": Request model XXXX
@@ -46,13 +54,13 @@ MoBIE -> "S3 API"
 deactivate "S3 API"
 end group
 
-"S3 API" -> "Storage Proxy": Approve request
+
+"S3 API" -> "Storage": Approve request and access desired N5 file
 note over "S3 API": Depending on the type\n of request different  \nresponses will be had\n ex. HEAD,GET,PUT
-"Storage Proxy" -> "Storage": Tell storage system\n ID XXXX desires to be pulled
-"Storage" --> "Storage Proxy": Return model
-"Storage Proxy" --> "S3 API": Return model
-"S3 API" --> VCellJ: Return model
-note over "Storage": When returning the model\nit does not have to return the \nthe whole model but can do \nchunks depending on the file\n type
+
+note over "Storage": When returning the model\nit does not have to return the \nthe whole model but can do \nchunks depending on file type, \nrequest type, and service \nhosting data.
+"Storage" --> "S3 API": Return chunks of N5 file that are needed
+"S3 API" --> VCellJ: Return needed chunks
 note over "S3 API": This API does not limit\n itself to only ImageJ.
 
 VCellJ --> User: Display image
