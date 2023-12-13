@@ -71,7 +71,9 @@ public class N5ImageHandler implements Command, ActionListener {
                 protected void done() {
                     enableCriticalButtons(true);
                     try{
-                        get();
+                        if(vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION){
+                            get();
+                        }
                     }
                     catch (Exception exception){
                         logService.error(exception);
@@ -125,6 +127,7 @@ public class N5ImageHandler implements Command, ActionListener {
                     enableCriticalButtons(true);
                     try{
                         get();
+                        vGui.remoteFileSelection.dispose();
                     }
                     catch (Exception exception){
                         logService.error(exception);

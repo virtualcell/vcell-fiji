@@ -20,6 +20,7 @@ public class N5ViewerGUI extends JFrame {
     private JPanel datasetListPanel;
     private JLabel datasetLabel;
     private JLabel openInMemory;
+    public int jFileChooserResult;
 
     public RemoteFileSelection remoteFileSelection;
 
@@ -95,7 +96,7 @@ public class N5ViewerGUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 localFileDialog.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                localFileDialog.showOpenDialog(thisJFrame);
+                jFileChooserResult = localFileDialog.showOpenDialog(thisJFrame);
 //                System.out.print(localFileDialog.getSelectedFile());
             }
         });
