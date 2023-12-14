@@ -6,7 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class N5ViewerGUI extends JFrame {
+public class N5ViewerGUI extends JFrame implements ActionListener {
     public JButton localFiles;
     public JPanel mainPanel;
     private JFrame thisJFrame;
@@ -21,6 +21,8 @@ public class N5ViewerGUI extends JFrame {
     private JLabel datasetLabel;
     private JLabel openInMemory;
     public int jFileChooserResult;
+
+    public JButton mostRecentExport;
 
     public RemoteFileSelection remoteFileSelection;
 
@@ -46,6 +48,12 @@ public class N5ViewerGUI extends JFrame {
         remoteFiles = new JButton();
         remoteFiles.setText("Remote Files");
         mainPanel.add(remoteFiles, mainPanelConstraints);
+
+        mainPanelConstraints.gridy = 0;
+        mainPanelConstraints.gridx = 2;
+        mostRecentExport = new JButton();
+        mostRecentExport.setText("Recent Export");
+        mainPanel.add(mostRecentExport, mainPanelConstraints);
 
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 3;
@@ -92,27 +100,15 @@ public class N5ViewerGUI extends JFrame {
         mainPanel.add(okayButton, mainPanelConstraints);
 
 
-        localFiles.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                localFileDialog.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                jFileChooserResult = localFileDialog.showOpenDialog(thisJFrame);
-//                System.out.print(localFileDialog.getSelectedFile());
-            }
-        });
+        localFiles.addActionListener(this);
 
-        remoteFiles.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                remoteFileSelection.setVisible(true);
-            }
-        });
+        remoteFiles.addActionListener(this);
 
         // listener for if credentials or endpoint is used
 
         this.setTitle("VCell Manager");
         this.setContentPane(this.mainPanel);
-        this.setSize(500, 400);
+        this.setSize(600, 400);
         this.setVisible(true);
         this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 
@@ -130,6 +126,16 @@ public class N5ViewerGUI extends JFrame {
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == localFiles){
+            localFileDialog.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            jFileChooserResult = localFileDialog.showOpenDialog(thisJFrame);
+        } else if (e.getSource() == remoteFiles) {
+            remoteFileSelection.setVisible(true);
+        }
     }
 }
 

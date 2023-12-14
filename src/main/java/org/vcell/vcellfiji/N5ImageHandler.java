@@ -8,6 +8,10 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
@@ -28,12 +32,11 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 
 /*
@@ -141,6 +144,49 @@ public class N5ImageHandler implements Command, ActionListener {
             };
             n5DatasetListUpdater.execute();
             n5DatasetListUpdater.getState();
+        } else if (e.getSource() == vGui.mostRecentExport) {
+            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
+                @Override
+                protected ArrayList<String> doInBackground(){
+                    HashMap <String, Object> jsonData = getJsonData();
+                    if (jsonData != null){
+                        List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
+                        LinkedTreeMap<String, String> lastElement = null;
+                        for(int i = set.size() - 1; i > -1; i--){
+                            lastElement = (LinkedTreeMap<String, String>) jsonData.get(set.get(i));
+                            if(lastElement != null && lastElement.get("format").equalsIgnoreCase("n5")){
+                                break;
+                            }
+                            lastElement = null;
+                        }
+                        if(lastElement != null){
+                            String url = lastElement.get("uri");
+                            createS3Client(url);
+                            ArrayList<String> list = getS3N5DatasetList();
+                            publish(list);
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    enableCriticalButtons(true);
+                    try{
+                        get();
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
+                }
+
+                @Override
+                protected void process(List<ArrayList<String>> chunks) {
+                    displayN5Results(chunks.get(0));
+                }
+            };
+            n5DatasetListUpdater.execute();
+            n5DatasetListUpdater.getState();
         }
     }
 
@@ -149,6 +195,7 @@ public class N5ImageHandler implements Command, ActionListener {
         vGui.okayButton.setEnabled(enable);
         vGui.localFiles.setEnabled(enable);
         vGui.remoteFiles.setEnabled(enable);
+        vGui.mostRecentExport.setEnabled(enable);
     }
 
     @Override
@@ -159,6 +206,7 @@ public class N5ImageHandler implements Command, ActionListener {
         this.vGui.okayButton.addActionListener(this);
 
         this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
+        this.vGui.mostRecentExport.addActionListener(this);
     }
 
     public ArrayList<String> getN5DatasetList(){
@@ -248,6 +296,11 @@ public class N5ImageHandler implements Command, ActionListener {
     }
 
     //When creating client's try to make one for an Amazon link, otherwise use our custom url scheme
+
+    public void createS3Client(String url){
+        createS3Client(url, null, null);
+    }
+
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
@@ -316,5 +369,23 @@ public class N5ImageHandler implements Command, ActionListener {
     public static void main(String[] args) {
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
         n5ImageHandler.run();
+    }
+
+    public HashMap<String, Object> getJsonData(){
+        try{
+            File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
+            if (jsonFile.exists() && jsonFile.length() != 0){
+                HashMap<String, Object> jsonHashMap;
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
+                jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), type);
+                return jsonHashMap;
+            }
+            return null;
+        }
+        catch (Exception e){
+            logService.error("Failed to read export metadata JSON:", e);
+            return null;
+        }
     }
 }
