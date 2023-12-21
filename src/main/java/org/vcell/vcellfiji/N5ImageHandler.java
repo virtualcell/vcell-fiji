@@ -29,6 +29,7 @@ import org.janelia.saalfeldlab.n5.*;
 import org.vcell.vcellfiji.UI.N5ViewerGUI;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.*;
+import java.util.List;
 
 
 /*
@@ -55,30 +57,64 @@ public class N5ImageHandler implements Command, ActionListener {
     private String s3ObjectKey;
     @Parameter
     private LogService logService;
-    private SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater;
+
     @Override
     public void actionPerformed(ActionEvent e) {
         enableCriticalButtons(false);
 
-        if(e.getSource() == vGui.localFileDialog){
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
+
+        if (e.getSource() == vGui.localFileDialog || e.getSource() == vGui.remoteFileSelection.submitS3Info || e.getSource() == vGui.mostRecentExport){
+            SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater = new SwingWorker<ArrayList<String>, ArrayList<String>>() {
                 @Override
                 protected ArrayList<String> doInBackground() throws Exception {
-                    selectedLocalFile = vGui.localFileDialog.getSelectedFile();
-                    ArrayList<String> n5DataSetList = getN5DatasetList();
+                    vGui.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                    ArrayList<String> n5DataSetList = null;
+
+                    if (e.getSource() == vGui.localFileDialog) {
+                        selectedLocalFile = vGui.localFileDialog.getSelectedFile();
+                        n5DataSetList = getN5DatasetList();
+                    } else if (e.getSource() == vGui.remoteFileSelection.submitS3Info) {
+                        vGui.remoteFileSelection.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                        createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
+                        n5DataSetList = getS3N5DatasetList();
+                    } else if (e.getSource() == vGui.mostRecentExport) {
+                        HashMap<String, Object> jsonData = getJsonData();
+                        if (jsonData != null) {
+                            List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
+                            LinkedTreeMap<String, String> lastElement = null;
+                            for (int i = set.size() - 1; i > -1; i--) {
+                                lastElement = (LinkedTreeMap<String, String>) jsonData.get(set.get(i));
+                                if (lastElement != null && lastElement.get("format").equalsIgnoreCase("n5")) {
+                                    break;
+                                }
+                                lastElement = null;
+                            }
+                            if (lastElement != null) {
+                                String url = lastElement.get("uri");
+                                createS3Client(url);
+                                n5DataSetList = getS3N5DatasetList();
+                            }
+                        }
+                    }
                     publish(n5DataSetList);
                     return null;
                 }
 
                 @Override
                 protected void done() {
+                    vGui.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     enableCriticalButtons(true);
-                    try{
-                        if(vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION){
+                    try {
+                        if (e.getSource() == vGui.localFileDialog && vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION) {
+                            get();
+                        } else if (e.getSource() == vGui.remoteFileSelection.submitS3Info) {
+                            vGui.remoteFileSelection.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                            get();
+                            vGui.remoteFileSelection.dispose();
+                        } else if (e.getSource() == vGui.mostRecentExport) {
                             get();
                         }
-                    }
-                    catch (Exception exception){
+                    } catch (Exception exception) {
                         logService.error(exception);
                     }
                 }
@@ -92,102 +128,30 @@ public class N5ImageHandler implements Command, ActionListener {
         }
 
         else if (e.getSource() == vGui.okayButton) {
-            SwingWorker swingWorker = new SwingWorker() {
+            SwingWorker loadImage = new SwingWorker() {
                 @Override
-                protected Object doInBackground() throws Exception {
-                    loadN5Dataset(vGui.datasetList.getSelectedValue());
+                protected Object doInBackground() {
+                    vGui.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                    try{
+                        loadN5Dataset(vGui.datasetList.getSelectedValue());
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
                     return null;
                 }
 
                 @Override
                 protected void done() {
+                    vGui.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     enableCriticalButtons(true);
-                    try{
-                        get();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
                 }
             };
-            swingWorker.execute();
+            loadImage.execute();
         }
         // https://stackoverflow.com/questions/16937997/java-swingworker-thread-to-update-main-gui
         // Why swing updating does not work
 
-        else if (e.getSource() == vGui.remoteFileSelection.submitS3Info){
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
-                @Override
-                protected ArrayList<String> doInBackground() throws Exception {
-                    createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
-                    ArrayList<String> list = getS3N5DatasetList();
-                    publish(list);
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    enableCriticalButtons(true);
-                    try{
-                        get();
-                        vGui.remoteFileSelection.dispose();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
-                }
-            };
-            n5DatasetListUpdater.execute();
-            n5DatasetListUpdater.getState();
-        } else if (e.getSource() == vGui.mostRecentExport) {
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
-                @Override
-                protected ArrayList<String> doInBackground(){
-                    HashMap <String, Object> jsonData = getJsonData();
-                    if (jsonData != null){
-                        List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
-                        LinkedTreeMap<String, String> lastElement = null;
-                        for(int i = set.size() - 1; i > -1; i--){
-                            lastElement = (LinkedTreeMap<String, String>) jsonData.get(set.get(i));
-                            if(lastElement != null && lastElement.get("format").equalsIgnoreCase("n5")){
-                                break;
-                            }
-                            lastElement = null;
-                        }
-                        if(lastElement != null){
-                            String url = lastElement.get("uri");
-                            createS3Client(url);
-                            ArrayList<String> list = getS3N5DatasetList();
-                            publish(list);
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    enableCriticalButtons(true);
-                    try{
-                        get();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
-                }
-            };
-            n5DatasetListUpdater.execute();
-            n5DatasetListUpdater.getState();
-        }
     }
 
     private void enableCriticalButtons(boolean enable) {
