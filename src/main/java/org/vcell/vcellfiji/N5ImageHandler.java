@@ -33,6 +33,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -152,6 +153,7 @@ public class N5ImageHandler implements Command, ActionListener {
         // https://stackoverflow.com/questions/16937997/java-swingworker-thread-to-update-main-gui
         // Why swing updating does not work
 
+
     }
 
     private void enableCriticalButtons(boolean enable) {
@@ -160,14 +162,15 @@ public class N5ImageHandler implements Command, ActionListener {
         vGui.localFiles.setEnabled(enable);
         vGui.remoteFiles.setEnabled(enable);
         vGui.mostRecentExport.setEnabled(enable);
+        vGui.exportTableButton.setEnabled(enable);
     }
 
     @Override
     public void run() {
         this.vGui = new N5ViewerGUI();
         this.vGui.localFileDialog.addActionListener(this);
-
         this.vGui.okayButton.addActionListener(this);
+//        this.vGui.exportTableButton.addActionListener(this);
 
         this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
         this.vGui.mostRecentExport.addActionListener(this);
@@ -335,21 +338,16 @@ public class N5ImageHandler implements Command, ActionListener {
         n5ImageHandler.run();
     }
 
-    public HashMap<String, Object> getJsonData(){
-        try{
-            File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
-            if (jsonFile.exists() && jsonFile.length() != 0){
-                HashMap<String, Object> jsonHashMap;
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
-                jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), type);
-                return jsonHashMap;
-            }
-            return null;
+    public static HashMap<String, Object> getJsonData() throws FileNotFoundException {
+        File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
+        if (jsonFile.exists() && jsonFile.length() != 0){
+            HashMap<String, Object> jsonHashMap;
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
+            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), type);
+            return jsonHashMap;
         }
-        catch (Exception e){
-            logService.error("Failed to read export metadata JSON:", e);
-            return null;
-        }
+        return null;
+
     }
 }
