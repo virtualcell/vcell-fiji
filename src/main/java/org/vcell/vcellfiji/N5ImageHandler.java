@@ -70,7 +70,6 @@ public class N5ImageHandler implements Command, ActionListener {
                 protected ArrayList<String> doInBackground() throws Exception {
                     vGui.setCursor(new Cursor(Cursor.WAIT_CURSOR));
                     ArrayList<String> n5DataSetList = null;
-
                     if (e.getSource() == vGui.localFileDialog) {
                         selectedLocalFile = vGui.localFileDialog.getSelectedFile();
                         n5DataSetList = getN5DatasetList();
@@ -79,19 +78,15 @@ public class N5ImageHandler implements Command, ActionListener {
                         createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
                         n5DataSetList = getS3N5DatasetList();
                     } else if (e.getSource() == vGui.mostRecentExport) {
-                        HashMap<String, Object> jsonData = getJsonData();
-                        if (jsonData != null) {
-                            List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
-                            LinkedTreeMap<String, String> lastElement = null;
-                            for (int i = set.size() - 1; i > -1; i--) {
-                                lastElement = (LinkedTreeMap<String, String>) jsonData.get(set.get(i));
-                                if (lastElement != null && lastElement.get("format").equalsIgnoreCase("n5")) {
-                                    break;
-                                }
-                                lastElement = null;
-                            }
+                        ExportDataRepresentation jsonData = getJsonData();
+                        if (jsonData != null && jsonData.formatData.containsKey("N5")) {
+                            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get("N5");
+                            Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
+                            String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
+
+                            ExportDataRepresentation.SimulationExportDataRepresentation lastElement = jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
                             if (lastElement != null) {
-                                String url = lastElement.get("uri");
+                                String url = lastElement.uri;
                                 createS3Client(url);
                                 n5DataSetList = getS3N5DatasetList();
                             }
@@ -338,13 +333,12 @@ public class N5ImageHandler implements Command, ActionListener {
         n5ImageHandler.run();
     }
 
-    public static HashMap<String, Object> getJsonData() throws FileNotFoundException {
+    public static ExportDataRepresentation getJsonData() throws FileNotFoundException {
         File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
         if (jsonFile.exists() && jsonFile.length() != 0){
-            HashMap<String, Object> jsonHashMap;
+            ExportDataRepresentation jsonHashMap;
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
-            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), type);
+            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class);
             return jsonHashMap;
         }
         return null;
