@@ -28,9 +28,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
     private JLabel datasetLabel;
     private JLabel openInMemory;
     public int jFileChooserResult;
-    private JDialog exportTableDialog;
-    private JPanel exportTablePanel;
-    private DefaultTableModel exportTableModel;
+    private N5ExportTable n5ExportTable;
 
     public JButton mostRecentExport;
 
@@ -130,6 +128,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 
 
+        n5ExportTable = new N5ExportTable();
     }
 
     public void updateDatasetList(ArrayList<String> arrayList){
@@ -153,97 +152,12 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         } else if (e.getSource() == remoteFiles) {
             remoteFileSelection.setVisible(true);
         } else if (e.getSource() == exportTableButton) {
-            displayExportTable();
+            n5ExportTable.displayExportTable();
         }
     }
 
     public void refreshDataList(){
 
-    }
-
-    public void updateTableModel(){
-        try{
-            HashMap<String, Object> jsonData = N5ImageHandler.getJsonData();
-            if (jsonData != null){
-                List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
-                String lastElement = exportTableModel.getRowCount() == 0 ? null: (String) exportTableModel.getValueAt(0,0);
-                for(int i = set.size() - 1; i > -1; i--){
-                    if(lastElement != null && lastElement.equals(set.get(i))){
-                        break;
-                    }
-                    addRowFromJson(jsonData, set.get(i));
-                }
-            }
-            exportTableModel.fireTableDataChanged();
-        }
-        catch (Exception e){
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void initalizeTableData(){
-        HashMap<String, Object> jsonData = null;
-        try {
-            jsonData = N5ImageHandler.getJsonData();
-            if (jsonData != null){
-                List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
-                for (String s : set) {
-                    addRowFromJson(jsonData, s);
-                }
-            }
-            exportTableModel.fireTableDataChanged();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void addRowFromJson(HashMap<String, Object> jsonData, String s){
-        exportTableModel.addRow(new Object[]{""});
-    }
-
-    public void displayExportTable(){
-        if (exportTableDialog == null){
-            exportTablePanel = new JPanel();
-
-            DefaultTableModel defaultTableModel = new DefaultTableModel();
-            defaultTableModel.addColumn("Test");
-            defaultTableModel.addColumn("Test2");
-            Object[] testRow = {"k", "b"};
-            defaultTableModel.addRow(testRow);
-
-            JTable jTable = new JTable(defaultTableModel);
-            JScrollPane jScrollPane = new JScrollPane(jTable);
-
-            jScrollPane.setSize(500, 400);
-            jScrollPane.setPreferredSize(new Dimension(500, 400));
-            jScrollPane.setMinimumSize(new Dimension(500, 400));
-
-            JLabel jLabel = new JLabel("Recent Exports. List is volatile save important export metadata elsewhere.");
-            JButton refresh = new JButton("Refresh List");
-            JButton open = new JButton("Open");
-
-            JPanel topBar = new JPanel();
-            topBar.setLayout(new FlowLayout());
-            refresh.addActionListener(this);
-            open.addActionListener(this);
-            topBar.add(jLabel);
-            topBar.add(open);
-            topBar.add(refresh);
-
-            exportTablePanel.setLayout(new BorderLayout());
-            exportTablePanel.add(topBar, BorderLayout.NORTH);
-            exportTablePanel.add(jScrollPane);
-
-            exportTablePanel.setPreferredSize(new Dimension(800, 500));
-            JOptionPane pane = new JOptionPane(exportTablePanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[] {"Close"});
-            exportTableDialog = pane.createDialog("VCell Exports");
-            exportTableDialog.setModal(false);
-            exportTableDialog.setResizable(true);
-            exportTableDialog.setVisible(true);
-        }
-        else {
-            exportTableDialog.setVisible(true);
-        }
     }
 
 
