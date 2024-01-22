@@ -188,8 +188,6 @@ public class N5ImageHandler implements Command, ActionListener {
                 };
             }
             return fList;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -236,20 +234,12 @@ public class N5ImageHandler implements Command, ActionListener {
     }
 
     public N5AmazonS3Reader getN5AmazonS3Reader(){
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3ObjectKey)){
-            return n5AmazonS3Reader;
-        }
-        catch (IOException e){
-            throw new RuntimeException(e);
-        }
+        return new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3ObjectKey);
     }
 
     public N5FSReader getN5FSReader(){
-        try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
-            return n5FSReader;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new N5FSReader(selectedLocalFile.getPath());
+
     }
 
     public void loadN5Dataset(String selectedDataset) throws IOException {
@@ -320,9 +310,6 @@ public class N5ImageHandler implements Command, ActionListener {
 
         try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
             return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(this.s3ObjectKey)));
-        }
-        catch (IOException e){
-            throw new RuntimeException(e);
         }
     }
 
