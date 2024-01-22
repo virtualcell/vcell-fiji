@@ -34,7 +34,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
     public RemoteFileSelection remoteFileSelection;
 
-    public N5ViewerGUI() {
+    public N5ViewerGUI(N5ImageHandler n5ImageHandler) {
         thisJFrame = this;
         localFileDialog = new JFileChooser();
         mainPanel = new JPanel();
@@ -128,7 +128,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 
 
-        n5ExportTable = new N5ExportTable();
+        n5ExportTable = new N5ExportTable(n5ImageHandler);
     }
 
     public void updateDatasetList(ArrayList<String> arrayList){
@@ -155,11 +155,6 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
             n5ExportTable.displayExportTable();
         }
     }
-
-    public void refreshDataList(){
-
-    }
-
 
 }
 

@@ -56,8 +56,14 @@ public class N5ImageHandler implements Command, ActionListener {
     private AmazonS3 s3Client;
     private String bucketName;
     private String s3ObjectKey;
+    public static final String formatName = "N5";
     @Parameter
     private LogService logService;
+
+    private HashMap<DataType, Type> typeHashMap = new HashMap<DataType, Type>() {{
+        put(DataType.UINT8, UnsignedByteType.class);
+    }
+    };
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -79,8 +85,8 @@ public class N5ImageHandler implements Command, ActionListener {
                         n5DataSetList = getS3N5DatasetList();
                     } else if (e.getSource() == vGui.mostRecentExport) {
                         ExportDataRepresentation jsonData = getJsonData();
-                        if (jsonData != null && jsonData.formatData.containsKey("N5")) {
-                            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get("N5");
+                        if (jsonData != null && jsonData.formatData.containsKey(formatName)) {
+                            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get(formatName);
                             Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
                             String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
 
@@ -162,7 +168,7 @@ public class N5ImageHandler implements Command, ActionListener {
 
     @Override
     public void run() {
-        this.vGui = new N5ViewerGUI();
+        this.vGui = new N5ViewerGUI(this);
         this.vGui.localFileDialog.addActionListener(this);
         this.vGui.okayButton.addActionListener(this);
 //        this.vGui.exportTableButton.addActionListener(this);
