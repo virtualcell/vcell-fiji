@@ -36,10 +36,12 @@ public class ExportDataRepresentation {
 
         public ArrayList<String> defaultParameterValues;
         public ArrayList<String> setParameterValues;
+        public String savedFileName;
 
         public SimulationExportDataRepresentation(String exportDate, String uri, String jobID, String dataID, String simulationName,
                                                   String applicationName, String biomodelName, String variables, String startAndEndTime,
-                                                  ArrayList<String> defaultParameterValues, ArrayList<String> setParameterValues){
+                                                  ArrayList<String> defaultParameterValues, ArrayList<String> setParameterValues,
+                                                  String savedFileName){
             this.exportDate = exportDate;
             this.uri = uri;
             this.jobID = jobID;

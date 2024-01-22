@@ -1,5 +1,8 @@
 package org.vcell.vcellfiji.UI;
 
+import ij.ImagePlus;
+import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
+import org.janelia.saalfeldlab.n5.*;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.vcell.vcellfiji.ExportDataRepresentation;
@@ -11,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -122,8 +126,15 @@ public class N5ExportTable implements ActionListener {
             int[] selectedRows = jTable.getSelectedRows();
             for(int row: selectedRows){
                 String uri = n5ExportTableModel.getRowData(row).uri;
+                String datasetName = n5ExportTableModel.getRowData(row).savedFileName;
                 n5ImageHandler.createS3Client(uri);
-                n5ImageHandler.displayN5Results(n5ImageHandler.getS3N5DatasetList());
+                N5AmazonS3Reader n5Reader = n5ImageHandler.getN5AmazonS3Reader();
+                try {
+                    ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(datasetName, n5Reader);
+                    imagePlus.show();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         }
     }
@@ -138,6 +149,7 @@ public class N5ExportTable implements ActionListener {
             add("Default Parameters");
             add("Set Parameters");
             add("Date Exported");
+            add("Dataset Name");
         }};
 
         private final List<ExportDataRepresentation.SimulationExportDataRepresentation> tableData = new ArrayList<>();
@@ -181,6 +193,8 @@ public class N5ExportTable implements ActionListener {
             }
             else if (columnIndex == headers.indexOf("Set Parameters")) {
                 return String.valueOf(data.setParameterValues);
+            }else if (columnIndex == headers.indexOf("Dataset Name")) {
+                return String.valueOf(data.savedFileName);
             }
             return null;
         }
