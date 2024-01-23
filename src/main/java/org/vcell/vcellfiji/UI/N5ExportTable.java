@@ -17,6 +17,8 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
@@ -30,6 +32,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JPanel exportTablePanel;
     private N5ExportTableModel n5ExportTableModel;
     private JButton open;
+    private JButton copyLink;
+    private JButton refreshButton;
     private JTable jTable;
     private JTextPane jTextPane;
     @Parameter
@@ -44,27 +48,21 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     public void updateTableModel(){
         try{
             ExportDataRepresentation jsonData = N5ImageHandler.getJsonData();
-//            if (jsonData != null){
-//                List<String> globalJobIDs = jsonData.globalJobIDs;
-//                String lastElement = tableModel.getRowCount() == 0 ? null: tableModel.tableData.get(tableModel.tableData.size() - 1).jobID;
-//                for(int i = globalJobIDs.size() - 1; i > -1; i--){
-//                    // first index is JobID, second is data format
-//                    String[] tokens = globalJobIDs.get(i).split(",");
-//                    if(lastElement != null && lastElement.equals(tokens[0])){
-//                        break;
-//                    }
-//                    addRowFromJson(tokens[0], tokens[1], jsonData);
-//                }
-//            }
-//            tableModel.refreshData();
+            if (jsonData != null){
+                ExportDataRepresentation.FormatExportDataRepresentation formatData = jsonData.formatData.get(N5ImageHandler.formatName);
+                Stack<String> formatJobIDs = formatData.formatJobIDs;
+                ExportDataRepresentation.SimulationExportDataRepresentation lastTableElement = n5ExportTableModel.getLastRowData();
+                ExportDataRepresentation.SimulationExportDataRepresentation recentExport = formatData.simulationDataMap.get(formatJobIDs.pop());
+                while (!recentExport.jobID.equals(lastTableElement.jobID)){
+                    n5ExportTableModel.addRowData(recentExport, 0);
+                    recentExport = formatData.simulationDataMap.get(formatJobIDs.pop());
+                }
+            }
+            jTable.updateUI();
         }
         catch (Exception e){
             logService.error("Failed Update Export Viewer Table Model:", e);
         }
-    }
-
-    private void copyLink(){
-
     }
 
     public void initalizeTableData(){
@@ -75,7 +73,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 ExportDataRepresentation.FormatExportDataRepresentation formatExportData = jsonData.formatData.get(N5ImageHandler.formatName);
                 Stack<String> jobStack = formatExportData.formatJobIDs;
                 while (!jobStack.isEmpty()){
-                    n5ExportTableModel.addRowData(formatExportData.simulationDataMap.get(jobStack.pop()));
+                    n5ExportTableModel.appendRowData(formatExportData.simulationDataMap.get(jobStack.pop()));
                 }
             }
             n5ExportTableModel.fireTableDataChanged();
@@ -99,8 +97,9 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
         JTextArea label = new JTextArea("Recent Exports. List is volatile save important export metadata elsewhere.");
         label.setLineWrap(true);
-        JButton refresh = new JButton("Refresh List");
+        refreshButton = new JButton("Refresh List");
         open = new JButton("Open");
+        copyLink = new JButton("Copy Link");
 
         jTextPane = new JTextPane();
 //        jTextPane.setSize(800, 200);
@@ -111,7 +110,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
         JPanel buttonsPanel = new JPanel(new FlowLayout());
         buttonsPanel.add(open);
-        buttonsPanel.add(refresh);
+        buttonsPanel.add(refreshButton);
+        buttonsPanel.add(copyLink);
 
         JPanel buttonsAndDescription = new JPanel(new BorderLayout());
         buttonsAndDescription.setPreferredSize(new Dimension(paneWidth / 2, 20));
@@ -136,8 +136,9 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         exportTableDialog.setResizable(true);
         exportTableDialog.setVisible(true);
 
-        refresh.addActionListener(this);
+        refreshButton.addActionListener(this);
         open.addActionListener(this);
+        copyLink.addActionListener(this);
         jTable.getSelectionModel().addListSelectionListener(this);
 
         initalizeTableData();
@@ -156,6 +157,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     public void actionPerformed(ActionEvent e) {
         if(e.getSource().equals(open)){
             int[] selectedRows = jTable.getSelectedRows();
+            exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
             for(int row: selectedRows){
                 String uri = n5ExportTableModel.getRowData(row).uri;
                 String datasetName = n5ExportTableModel.getRowData(row).savedFileName;
@@ -164,10 +166,18 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 try {
                     ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(datasetName, n5Reader);
                     imagePlus.show();
+                    exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 } catch (IOException ex) {
+                    exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     throw new RuntimeException(ex);
                 }
             }
+        } else if (e.getSource().equals(copyLink)) {
+            ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(jTable.getSelectedRow());
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(new StringSelection(selectedRow.uri), null);
+        } else if (e.getSource().equals(refreshButton)) {
+            updateTableModel();
         }
     }
 
@@ -238,8 +248,15 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             return tableData.get(rowIndex);
         }
 
-        public void addRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData){
+        public void addRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, int index){
+            tableData.add(index, rowData);
+        }
+        public void appendRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData){
             tableData.add(rowData);
         }
+        public ExportDataRepresentation.SimulationExportDataRepresentation getLastRowData(){
+            return tableData.get(0);
+        }
+
     }
 }
