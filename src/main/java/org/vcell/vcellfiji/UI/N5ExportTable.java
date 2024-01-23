@@ -9,7 +9,13 @@ import org.vcell.vcellfiji.ExportDataRepresentation;
 import org.vcell.vcellfiji.N5ImageHandler;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,15 +25,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class N5ExportTable implements ActionListener {
+public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JDialog exportTableDialog;
     private JPanel exportTablePanel;
     private N5ExportTableModel n5ExportTableModel;
     private JButton open;
     private JTable jTable;
+    private JTextPane jTextPane;
     @Parameter
     private LogService logService;
     private N5ImageHandler n5ImageHandler;
+    private final int paneWidth = 800;
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
         initialize();
@@ -53,6 +61,10 @@ public class N5ExportTable implements ActionListener {
         catch (Exception e){
             logService.error("Failed Update Export Viewer Table Model:", e);
         }
+    }
+
+    private void copyLink(){
+
     }
 
     public void initalizeTableData(){
@@ -85,28 +97,48 @@ public class N5ExportTable implements ActionListener {
         jScrollPane.setPreferredSize(new Dimension(500, 400));
         jScrollPane.setMinimumSize(new Dimension(500, 400));
 
-        JLabel jLabel = new JLabel("Recent Exports. List is volatile save important export metadata elsewhere.");
+        JTextArea label = new JTextArea("Recent Exports. List is volatile save important export metadata elsewhere.");
+        label.setLineWrap(true);
         JButton refresh = new JButton("Refresh List");
         open = new JButton("Open");
 
+        jTextPane = new JTextPane();
+//        jTextPane.setSize(800, 200);
+        jTextPane.setEditable(false);
+        JScrollPane jtextScrollPane = new JScrollPane(jTextPane);
+        jtextScrollPane.setSize(paneWidth / 2, 200);
+        jtextScrollPane.setPreferredSize(new Dimension(paneWidth / 2, 80));
+
+        JPanel buttonsPanel = new JPanel(new FlowLayout());
+        buttonsPanel.add(open);
+        buttonsPanel.add(refresh);
+
+        JPanel buttonsAndDescription = new JPanel(new BorderLayout());
+        buttonsAndDescription.setPreferredSize(new Dimension(paneWidth / 2, 20));
+        label.setBackground(buttonsAndDescription.getBackground());
+        buttonsAndDescription.add(buttonsPanel, BorderLayout.SOUTH);
+        buttonsAndDescription.add(label, BorderLayout.NORTH);
+
         JPanel topBar = new JPanel();
-        topBar.setLayout(new FlowLayout());
-        refresh.addActionListener(this);
-        open.addActionListener(this);
-        topBar.add(jLabel);
-        topBar.add(open);
-        topBar.add(refresh);
+        topBar.setPreferredSize(new Dimension(paneWidth / 2, 100));
+        topBar.setLayout(new BorderLayout());
+        topBar.add(buttonsAndDescription, BorderLayout.WEST);
+        topBar.add(jtextScrollPane, BorderLayout.EAST);
 
         exportTablePanel.setLayout(new BorderLayout());
         exportTablePanel.add(topBar, BorderLayout.NORTH);
         exportTablePanel.add(jScrollPane);
 
-        exportTablePanel.setPreferredSize(new Dimension(800, 500));
+        exportTablePanel.setPreferredSize(new Dimension(paneWidth, 600));
         JOptionPane pane = new JOptionPane(exportTablePanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[]{"Close"});
         exportTableDialog = pane.createDialog("VCell Exports");
         exportTableDialog.setModal(false);
         exportTableDialog.setResizable(true);
         exportTableDialog.setVisible(true);
+
+        refresh.addActionListener(this);
+        open.addActionListener(this);
+        jTable.getSelectionModel().addListSelectionListener(this);
 
         initalizeTableData();
     }
@@ -139,6 +171,17 @@ public class N5ExportTable implements ActionListener {
         }
     }
 
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+        int row = jTable.getSelectedRow();
+        StyleContext styleContext = new StyleContext();
+//        AttributeSet attributeSet = styleContext.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.)
+        String defaultParameterValues = n5ExportTableModel.getRowData(row).defaultParameterValues.toString();
+        String actualParameterValues = n5ExportTableModel.getRowData(row).setParameterValues.toString();
+        jTextPane.setText("Set Parameter Values: " + actualParameterValues + "\n \nDefault Parameter Values: " + defaultParameterValues);
+        jTextPane.updateUI();
+    }
+
     static class N5ExportTableModel extends AbstractTableModel {
         public final ArrayList<String> headers = new ArrayList<String>(){{
             add("BM Name");
@@ -146,8 +189,6 @@ public class N5ExportTable implements ActionListener {
             add("Sim Name");
             add("Time Slice");
             add("Variables");
-            add("Default Parameters");
-            add("Set Parameters");
             add("Date Exported");
             add("Dataset Name");
         }};
@@ -187,13 +228,7 @@ public class N5ExportTable implements ActionListener {
                 return data.variables;
             } else if (columnIndex == headers.indexOf("Date Exported")) {
                 return data.exportDate;
-            }
-            else if (columnIndex == headers.indexOf("Default Parameters")) {
-                return String.valueOf(data.defaultParameterValues);
-            }
-            else if (columnIndex == headers.indexOf("Set Parameters")) {
-                return String.valueOf(data.setParameterValues);
-            }else if (columnIndex == headers.indexOf("Dataset Name")) {
+            } else if (columnIndex == headers.indexOf("Dataset Name")) {
                 return String.valueOf(data.savedFileName);
             }
             return null;
