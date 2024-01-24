@@ -1,4 +1,4 @@
-package org.vcell.vcellfiji.UI;
+package org.vcell.N5.UI;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

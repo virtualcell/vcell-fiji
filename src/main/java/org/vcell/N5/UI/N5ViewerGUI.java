@@ -1,16 +1,12 @@
-package org.vcell.vcellfiji.UI;
+package org.vcell.N5.UI;
 
-import org.vcell.vcellfiji.N5ImageHandler;
+import org.vcell.N5.N5ImageHandler;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class N5ViewerGUI extends JFrame implements ActionListener {
     public JButton localFiles;

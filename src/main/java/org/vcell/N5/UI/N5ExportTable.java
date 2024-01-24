@@ -1,20 +1,16 @@
-package org.vcell.vcellfiji.UI;
+package org.vcell.N5.UI;
 
 import ij.ImagePlus;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
-import org.janelia.saalfeldlab.n5.*;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
-import org.vcell.vcellfiji.ExportDataRepresentation;
-import org.vcell.vcellfiji.N5ImageHandler;
+import org.vcell.N5.ExportDataRepresentation;
+import org.vcell.N5.N5ImageHandler;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;

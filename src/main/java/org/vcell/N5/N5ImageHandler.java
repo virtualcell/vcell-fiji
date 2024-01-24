@@ -1,4 +1,4 @@
-package org.vcell.vcellfiji;
+package org.vcell.N5;
 
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -24,7 +24,8 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
-import org.vcell.vcellfiji.UI.N5ViewerGUI;
+import org.vcell.N5.ExportDataRepresentation;
+import org.vcell.N5.UI.N5ViewerGUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +38,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.*;
-import java.util.List;
 
 
 /*

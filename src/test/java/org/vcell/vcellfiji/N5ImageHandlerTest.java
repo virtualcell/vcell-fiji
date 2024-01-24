@@ -4,17 +4,15 @@ import com.amazonaws.regions.Regions;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.ImageCalculator;
-import junit.framework.TestCase;
 import org.junit.*;
+import org.vcell.N5.N5ImageHandler;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 
 
 /*
