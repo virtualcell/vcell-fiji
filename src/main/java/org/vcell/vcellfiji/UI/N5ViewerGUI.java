@@ -1,10 +1,16 @@
 package org.vcell.vcellfiji.UI;
 
+import org.vcell.vcellfiji.N5ImageHandler;
+
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class N5ViewerGUI extends JFrame implements ActionListener {
     public JButton localFiles;
@@ -16,17 +22,19 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
     private JScrollPane resultsScrollPane;
     public JButton remoteFiles;
     public JButton okayButton;
+    public JButton exportTableButton;
     public JCheckBox openMemoryCheckBox;
     private JPanel datasetListPanel;
     private JLabel datasetLabel;
     private JLabel openInMemory;
     public int jFileChooserResult;
+    private N5ExportTable n5ExportTable;
 
     public JButton mostRecentExport;
 
     public RemoteFileSelection remoteFileSelection;
 
-    public N5ViewerGUI() {
+    public N5ViewerGUI(N5ImageHandler n5ImageHandler) {
         thisJFrame = this;
         localFileDialog = new JFileChooser();
         mainPanel = new JPanel();
@@ -41,7 +49,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         mainPanelConstraints.gridy = 0;
         localFiles = new JButton();
         localFiles.setText("Local Files");
-        mainPanel.add(localFiles, mainPanelConstraints);
+//        mainPanel.add(localFiles, mainPanelConstraints);
 
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 1;
@@ -57,12 +65,18 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 3;
+        exportTableButton = new JButton();
+        exportTableButton.setText("Export Table");
+        mainPanel.add(exportTableButton, mainPanelConstraints);
+
+        mainPanelConstraints.gridy = 0;
+        mainPanelConstraints.gridx = 4;
         openInMemory = new JLabel();
         openInMemory.setText("Open Image in Memory");
         mainPanel.add(openInMemory, mainPanelConstraints);
 
         mainPanelConstraints.gridy = 0;
-        mainPanelConstraints.gridx = 4;
+        mainPanelConstraints.gridx = 5;
         openMemoryCheckBox = new JCheckBox();
         mainPanel.add(openMemoryCheckBox, mainPanelConstraints);
 
@@ -82,7 +96,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         resultsScrollPane = new JScrollPane(datasetList);
         datasetListPanel.add(resultsScrollPane, datasetConstraints);
 
-        mainPanelConstraints.gridwidth = 4;
+        mainPanelConstraints.gridwidth = 5;
         mainPanelConstraints.gridy = 1;
         mainPanelConstraints.ipady = 40;
         mainPanelConstraints.gridx = 0;
@@ -94,7 +108,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         mainPanelConstraints = new GridBagConstraints();
         mainPanelConstraints.gridy = 2;
         mainPanelConstraints.gridx = 0;
-        mainPanelConstraints.gridwidth = 4;
+        mainPanelConstraints.gridwidth = 5;
         okayButton = new JButton();
         okayButton.setText("Open Dataset");
         mainPanel.add(okayButton, mainPanelConstraints);
@@ -103,6 +117,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         localFiles.addActionListener(this);
 
         remoteFiles.addActionListener(this);
+        exportTableButton.addActionListener(this);
 
         // listener for if credentials or endpoint is used
 
@@ -113,6 +128,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 
 
+        n5ExportTable = new N5ExportTable(n5ImageHandler);
     }
 
     public void updateDatasetList(ArrayList<String> arrayList){
@@ -135,7 +151,10 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
             jFileChooserResult = localFileDialog.showOpenDialog(thisJFrame);
         } else if (e.getSource() == remoteFiles) {
             remoteFileSelection.setVisible(true);
+        } else if (e.getSource() == exportTableButton) {
+            n5ExportTable.displayExportTable();
         }
     }
+
 }
 

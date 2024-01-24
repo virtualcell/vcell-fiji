@@ -10,8 +10,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.reflect.TypeToken;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
@@ -29,14 +27,17 @@ import org.janelia.saalfeldlab.n5.*;
 import org.vcell.vcellfiji.UI.N5ViewerGUI;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.*;
+import java.util.List;
 
 
 /*
@@ -53,141 +54,101 @@ public class N5ImageHandler implements Command, ActionListener {
     private AmazonS3 s3Client;
     private String bucketName;
     private String s3ObjectKey;
+    public static final String formatName = "N5";
     @Parameter
     private LogService logService;
-    private SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater;
+
+    private HashMap<DataType, Type> typeHashMap = new HashMap<DataType, Type>() {{
+        put(DataType.UINT8, UnsignedByteType.class);
+    }
+    };
+
     @Override
     public void actionPerformed(ActionEvent e) {
         enableCriticalButtons(false);
 
-        if(e.getSource() == vGui.localFileDialog){
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
+
+        if (e.getSource() == vGui.localFileDialog || e.getSource() == vGui.remoteFileSelection.submitS3Info || e.getSource() == vGui.mostRecentExport){
+            SwingWorker<ArrayList<String>, ArrayList<String>> n5DatasetListUpdater = new SwingWorker<ArrayList<String>, ArrayList<String>>() {
                 @Override
                 protected ArrayList<String> doInBackground() throws Exception {
-                    selectedLocalFile = vGui.localFileDialog.getSelectedFile();
-                    ArrayList<String> n5DataSetList = getN5DatasetList();
-                    publish(n5DataSetList);
-                    return null;
+                    vGui.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                    ArrayList<String> n5DataSetList = null;
+                    if (e.getSource() == vGui.localFileDialog) {
+                        selectedLocalFile = vGui.localFileDialog.getSelectedFile();
+                        n5DataSetList = getN5DatasetList();
+                    } else if (e.getSource() == vGui.remoteFileSelection.submitS3Info) {
+                        vGui.remoteFileSelection.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                        createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
+                        n5DataSetList = getS3N5DatasetList();
+                    } else if (e.getSource() == vGui.mostRecentExport) {
+                        ExportDataRepresentation jsonData = getJsonData();
+                        if (jsonData != null && jsonData.formatData.containsKey(formatName)) {
+                            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get(formatName);
+                            Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
+                            String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
+
+                            ExportDataRepresentation.SimulationExportDataRepresentation lastElement = jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
+                            if (lastElement != null) {
+                                String url = lastElement.uri;
+                                String dataset = lastElement.savedFileName;
+                                createS3Client(url);
+                                n5DataSetList = new ArrayList<String>(){{
+                                    add(dataset);
+                                }};
+                            }
+                        }
+                    }
+                    return n5DataSetList;
                 }
 
                 @Override
                 protected void done() {
+                    vGui.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     enableCriticalButtons(true);
-                    try{
-                        if(vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION){
-                            get();
+                    try {
+                        if (e.getSource() == vGui.localFileDialog && vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION) {
+                            displayN5Results(get());
+                        } else if (e.getSource() == vGui.remoteFileSelection.submitS3Info) {
+                            displayN5Results(get());
+                            vGui.remoteFileSelection.dispose();
+                        } else if (e.getSource() == vGui.mostRecentExport) {
+                            loadN5Dataset(get().get(0));
                         }
-                    }
-                    catch (Exception exception){
+                    } catch (Exception exception) {
                         logService.error(exception);
                     }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
                 }
             };
             n5DatasetListUpdater.execute();
         }
 
         else if (e.getSource() == vGui.okayButton) {
-            SwingWorker swingWorker = new SwingWorker() {
+            SwingWorker loadImage = new SwingWorker() {
                 @Override
-                protected Object doInBackground() throws Exception {
-                    loadN5Dataset(vGui.datasetList.getSelectedValue());
+                protected Object doInBackground() {
+                    vGui.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                    try{
+                        loadN5Dataset(vGui.datasetList.getSelectedValue());
+                    }
+                    catch (Exception exception){
+                        logService.error(exception);
+                    }
                     return null;
                 }
 
                 @Override
                 protected void done() {
+                    vGui.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     enableCriticalButtons(true);
-                    try{
-                        get();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
                 }
             };
-            swingWorker.execute();
+            loadImage.execute();
         }
         // https://stackoverflow.com/questions/16937997/java-swingworker-thread-to-update-main-gui
         // Why swing updating does not work
 
-        else if (e.getSource() == vGui.remoteFileSelection.submitS3Info){
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
-                @Override
-                protected ArrayList<String> doInBackground() throws Exception {
-                    createS3Client(vGui.remoteFileSelection.getS3URL(), vGui.remoteFileSelection.returnCredentials(), vGui.remoteFileSelection.returnEndpoint());
-                    ArrayList<String> list = getS3N5DatasetList();
-                    publish(list);
-                    return null;
-                }
 
-                @Override
-                protected void done() {
-                    enableCriticalButtons(true);
-                    try{
-                        get();
-                        vGui.remoteFileSelection.dispose();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
-                }
-            };
-            n5DatasetListUpdater.execute();
-            n5DatasetListUpdater.getState();
-        } else if (e.getSource() == vGui.mostRecentExport) {
-            n5DatasetListUpdater= new SwingWorker<ArrayList<String>, ArrayList<String>>() {
-                @Override
-                protected ArrayList<String> doInBackground(){
-                    HashMap <String, Object> jsonData = getJsonData();
-                    if (jsonData != null){
-                        List<String> set = (ArrayList<String>) jsonData.get("jobIDs");
-                        LinkedTreeMap<String, String> lastElement = null;
-                        for(int i = set.size() - 1; i > -1; i--){
-                            lastElement = (LinkedTreeMap<String, String>) jsonData.get(set.get(i));
-                            if(lastElement != null && lastElement.get("format").equalsIgnoreCase("n5")){
-                                break;
-                            }
-                            lastElement = null;
-                        }
-                        if(lastElement != null){
-                            String url = lastElement.get("uri");
-                            createS3Client(url);
-                            ArrayList<String> list = getS3N5DatasetList();
-                            publish(list);
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    enableCriticalButtons(true);
-                    try{
-                        get();
-                    }
-                    catch (Exception exception){
-                        logService.error(exception);
-                    }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
-                }
-            };
-            n5DatasetListUpdater.execute();
-            n5DatasetListUpdater.getState();
-        }
     }
 
     private void enableCriticalButtons(boolean enable) {
@@ -196,14 +157,15 @@ public class N5ImageHandler implements Command, ActionListener {
         vGui.localFiles.setEnabled(enable);
         vGui.remoteFiles.setEnabled(enable);
         vGui.mostRecentExport.setEnabled(enable);
+        vGui.exportTableButton.setEnabled(enable);
     }
 
     @Override
     public void run() {
-        this.vGui = new N5ViewerGUI();
+        this.vGui = new N5ViewerGUI(this);
         this.vGui.localFileDialog.addActionListener(this);
-
         this.vGui.okayButton.addActionListener(this);
+//        this.vGui.exportTableButton.addActionListener(this);
 
         this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
         this.vGui.mostRecentExport.addActionListener(this);
@@ -220,8 +182,6 @@ public class N5ImageHandler implements Command, ActionListener {
                 };
             }
             return fList;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -234,21 +194,21 @@ public class N5ImageHandler implements Command, ActionListener {
         // Theres definitly a better way to do this, I trie using a variable to change the cached cells first parameter type but it didn't seem to work :/
         switch (n5Reader.getDatasetAttributes(selectedDataset).getDataType()){
             case UINT8:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedByteType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedByteType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case UINT16:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedShortType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedShortType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case UINT32:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedIntType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<UnsignedIntType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case INT8:
-                return ImageJFunctions.wrap((CachedCellImg<ByteType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<ByteType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case INT16:
-                return ImageJFunctions.wrap((CachedCellImg<ShortType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<ShortType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case INT32:
-                return ImageJFunctions.wrap((CachedCellImg<IntType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<IntType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case FLOAT32:
-                return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
             case FLOAT64:
-                return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>)N5Utils.open(n5Reader, selectedDataset), "");
+                return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
 //                final ARGBARGBDoubleConverter<ARGBDoubleType> converters = new ARGBARGBDoubleConverter<>();
 //                final CachedCellImg<DoubleType, ?> cachedCellImg = N5Utils.open(n5Reader, selectedDataset);
 //                return ImageJFunctions.showRGB(cachedCellImg, converters, "");
@@ -268,20 +228,12 @@ public class N5ImageHandler implements Command, ActionListener {
     }
 
     public N5AmazonS3Reader getN5AmazonS3Reader(){
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3ObjectKey)){
-            return n5AmazonS3Reader;
-        }
-        catch (IOException e){
-            throw new RuntimeException(e);
-        }
+        return new N5AmazonS3Reader(this.s3Client, this.bucketName, this.s3ObjectKey);
     }
 
     public N5FSReader getN5FSReader(){
-        try (N5FSReader n5FSReader = new N5FSReader(selectedLocalFile.getPath())) {
-            return n5FSReader;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new N5FSReader(selectedLocalFile.getPath());
+
     }
 
     public void loadN5Dataset(String selectedDataset) throws IOException {
@@ -353,9 +305,6 @@ public class N5ImageHandler implements Command, ActionListener {
         try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
             return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(this.s3ObjectKey)));
         }
-        catch (IOException e){
-            throw new RuntimeException(e);
-        }
     }
 
 
@@ -371,21 +320,15 @@ public class N5ImageHandler implements Command, ActionListener {
         n5ImageHandler.run();
     }
 
-    public HashMap<String, Object> getJsonData(){
-        try{
-            File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
-            if (jsonFile.exists() && jsonFile.length() != 0){
-                HashMap<String, Object> jsonHashMap;
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
-                jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), type);
-                return jsonHashMap;
-            }
-            return null;
+    public static ExportDataRepresentation getJsonData() throws FileNotFoundException {
+        File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
+        if (jsonFile.exists() && jsonFile.length() != 0){
+            ExportDataRepresentation jsonHashMap;
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class);
+            return jsonHashMap;
         }
-        catch (Exception e){
-            logService.error("Failed to read export metadata JSON:", e);
-            return null;
-        }
+        return null;
+
     }
 }
