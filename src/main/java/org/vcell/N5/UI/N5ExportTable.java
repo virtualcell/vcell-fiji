@@ -38,7 +38,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private final int paneWidth = 800;
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
-        initialize();
         this.n5ImageHandler = n5ImageHandler;
     }
     public void updateTableModel(){
