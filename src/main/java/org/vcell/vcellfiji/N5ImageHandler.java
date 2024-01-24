@@ -10,8 +10,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.reflect.TypeToken;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
@@ -93,13 +91,15 @@ public class N5ImageHandler implements Command, ActionListener {
                             ExportDataRepresentation.SimulationExportDataRepresentation lastElement = jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
                             if (lastElement != null) {
                                 String url = lastElement.uri;
+                                String dataset = lastElement.savedFileName;
                                 createS3Client(url);
-                                n5DataSetList = getS3N5DatasetList();
+                                n5DataSetList = new ArrayList<String>(){{
+                                    add(dataset);
+                                }};
                             }
                         }
                     }
-                    publish(n5DataSetList);
-                    return null;
+                    return n5DataSetList;
                 }
 
                 @Override
@@ -108,22 +108,16 @@ public class N5ImageHandler implements Command, ActionListener {
                     enableCriticalButtons(true);
                     try {
                         if (e.getSource() == vGui.localFileDialog && vGui.jFileChooserResult == JFileChooser.APPROVE_OPTION) {
-                            get();
+                            displayN5Results(get());
                         } else if (e.getSource() == vGui.remoteFileSelection.submitS3Info) {
-                            vGui.remoteFileSelection.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            get();
+                            displayN5Results(get());
                             vGui.remoteFileSelection.dispose();
                         } else if (e.getSource() == vGui.mostRecentExport) {
-                            get();
+                            loadN5Dataset(get().get(0));
                         }
                     } catch (Exception exception) {
                         logService.error(exception);
                     }
-                }
-
-                @Override
-                protected void process(List<ArrayList<String>> chunks) {
-                    displayN5Results(chunks.get(0));
                 }
             };
             n5DatasetListUpdater.execute();
