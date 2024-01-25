@@ -4,6 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>org.vcell.vcellfiji</groupId>
+    <artifactId>vcell-fiji</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <parent>
         <groupId>org.scijava</groupId>
         <artifactId>pom-scijava</artifactId>
@@ -15,11 +20,6 @@
         <module>view-simulation-results</module>
 <!--        <module>ricky</module>-->
     </modules>
-
-    <groupId>org.vcell.vcellfiji</groupId>
-    <artifactId>vcell-fiji</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
 
     <name>Virtual Cell ImageJ plugin</name>
