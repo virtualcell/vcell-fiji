@@ -47,7 +47,7 @@ import java.util.*;
 
  */
 
-@Plugin(type = Command.class, menuPath = "Plugins>VCell>N5 Dataset Viewer")
+@Plugin(type = Command.class, menuPath = "Plugins>VCell>VCell Simulation Results Viewer")
 public class N5ImageHandler implements Command, ActionListener {
     private N5ViewerGUI vGui;
     private File selectedLocalFile;
