@@ -1,4 +1,4 @@
-package org.vcell.vcellfiji;
+package org.vcell.N5;
 
 import com.amazonaws.regions.Regions;
 import ij.ImagePlus;

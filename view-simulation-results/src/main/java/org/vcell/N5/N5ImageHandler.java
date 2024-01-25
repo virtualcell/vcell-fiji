@@ -1,6 +1,7 @@
 package org.vcell.N5;
 
 
+import org.vcell.N5.UI.N5ViewerGUI;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -24,8 +25,6 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.janelia.saalfeldlab.n5.*;
-import org.vcell.N5.ExportDataRepresentation;
-import org.vcell.N5.UI.N5ViewerGUI;
 
 import javax.swing.*;
 import java.awt.*;
