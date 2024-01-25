@@ -1,4 +1,4 @@
-package vcell.imagej.plugin;
+package org.vcell.Ricky;
 
 import java.io.IOException;
 import java.net.URL;

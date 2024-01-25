@@ -7,7 +7,7 @@
  */
 
 
-package vcell.imagej.plugin;
+package org.vcell.Ricky;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;

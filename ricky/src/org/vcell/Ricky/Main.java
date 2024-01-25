@@ -1,4 +1,4 @@
-package org.vcell.vcellfiji;
+package org.vcell.Ricky;
 
 public class Main {
     public static void main(String[] args) {

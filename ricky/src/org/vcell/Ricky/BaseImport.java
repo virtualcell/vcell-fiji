@@ -1,4 +1,4 @@
-package vcell.imagej.plugin;
+package org.vcell.Ricky;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -15,13 +15,11 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
 
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -32,14 +30,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import ij.gui.GenericDialog;
 import net.imagej.ImageJ;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.StyledDocument;
-import javax.swing.text.html.HTML;
+
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.HTMLFrameHyperlinkEvent;
-import javax.swing.text.html.StyleSheet;
 
 //@SuppressWarnings("unused")
 @Plugin(type = ContextCommand.class, menuPath = "Plugins>VCell> Base Version")

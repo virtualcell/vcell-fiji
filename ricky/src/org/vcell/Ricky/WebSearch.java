@@ -1,4 +1,4 @@
-package vcell.imagej.plugin;
+package org.vcell.Ricky;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -29,19 +29,12 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import ij.gui.GenericDialog;
 import net.imagej.ImageJ;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.StyledDocument;
-import javax.swing.text.html.HTML;
+
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.HTMLFrameHyperlinkEvent;
-import javax.swing.text.html.StyleSheet;
 
 //@SuppressWarnings("unused")
 @Plugin(type = ContextCommand.class, menuPath = "Plugins>VCell> Test Search")
