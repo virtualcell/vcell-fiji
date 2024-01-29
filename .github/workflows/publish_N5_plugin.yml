@@ -1,0 +1,52 @@
+name: Release to Update Site
+
+# https://imagej.net/update-sites/automatic-uploads
+# https://github.com/saalfeldlab/n5-ij/tree/master/.github
+# https://imagej.net/update-sites/setup#creating-a-hosted-update-site
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: Module to deploy as an ImageJ plugin
+        required: true
+        default: 'view-simulation-results'
+
+      username:
+        description: Username of IJ user deploying
+        required: true
+        default: 'vcell'
+
+      password:
+        description: Password for the user deploying
+        required: true
+
+      update_site:
+        description: The endpoint which hosts the available plugin
+        required: true
+        default: 'VCell-Simulations-Result-Viewer'
+
+
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    env:
+      IJ_DOWNLOAD_URL: https://downloads.imagej.net/fiji/latest/fiji-linux64.zip
+      WIKI_USER: ${{ github.event.inputs.username }}
+      UPDATE_PASS: ${{ github.event.input.password }}
+      UPDATE_SITE: ${{ github.event.inputs.update_site }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build with Maven
+        run: 'mvn -B -pl org.vcell.vcellfiji:${{ github.event.inputs.module }} -DskipTests=True package' # Skip tests, cause for concern see if there is way to do some form of composition with workflows
+      - name: Install ImageJ/Fiji
+        run: |
+          curl --silent -O ${IJ_DOWNLOAD_URL}
+          unzip fiji-linux64.zip
+          ./Fiji.app/ImageJ-linux64 --headless --update edit-update-site ${UPDATE_SITE} https://sites.imagej.net/${UPDATE_SITE}/ "webdav:${WIKI_USER}:${UPDATE_PASS}" .
+      - name: Install in ImageJ/Fiji (with Maven)
+        run: mvn -B install -Dscijava.app.directory=./Fiji.app -Ddelete.other.versions=true -Dscijava.ignoreDependencies=true
+      - name: Release to ImageJ update site
+        run: |
+          ./Fiji.app/ImageJ-linux64 --headless --update upload-complete-site --force ${UPDATE_SITE}
