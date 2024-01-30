@@ -37,6 +37,7 @@ public class HelpExplanation {
         textArea.setContentType("text/html");
         textArea.setSize(width, height);
         textArea.setPreferredSize(new Dimension(width, height));
+        text = HelpExplanation.insertBRTags(text, textArea);
         textArea.setText(text);
         textArea.setEditable(false);
 //        textArea.setLineWrap(true);
@@ -56,5 +57,36 @@ public class HelpExplanation {
 
     public void displayHelpMenu(){
         jDialog.setVisible(true);
+    }
+    private static String insertBRTags(String text, JTextPane textPane) {
+        StringBuilder result = new StringBuilder();
+        FontMetrics fontMetrics = textPane.getFontMetrics(textPane.getFont());
+        int width = textPane.getWidth() - 10; // Adjusted width to provide some padding
+
+        // Break the text into lines
+        String[] words = text.split("\\s+");
+        StringBuilder line = new StringBuilder();
+        boolean paragraph = false;
+
+        for (String word : words) {
+            if(word.contains("<p>")) paragraph = true;
+            if(!paragraph) result.append(word).append(" ");
+            if (word.contains("</p>")) {
+                paragraph = false;
+                line.append(word);
+                result.append(line);
+                line = new StringBuilder();
+            }
+            if(paragraph){
+                if (fontMetrics.stringWidth(line.toString() + " " + word) < width) {
+                    line.append(word).append(" ");
+                } else {
+                    result.append(line).append("<br>");
+                    line = new StringBuilder(word).append(" ");
+                }
+            }
+        }
+
+        return "<html><body>" + result.toString() + "</body></html>";
     }
 }
