@@ -20,7 +20,7 @@ public class HelpExplanation {
         int width = 700;
 
         JPanel helperPanel = new JPanel();
-        JTextPane textArea = new JTextPane();
+        JTextPane textPane = new JTextPane();
 
         Parser parser = Parser.builder().build();
         String md;
@@ -33,15 +33,13 @@ public class HelpExplanation {
         Node node = parser.parse(md);
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         String text = renderer.render(node);
-//        textArea.setText("Intro: \n" + intro + "Accessing Simulation Results: \n" + accessingSimulationResults + "N5 and Datasets: \n" + n5AndDataSet);
-        textArea.setContentType("text/html");
-        textArea.setSize(width, height);
-        textArea.setPreferredSize(new Dimension(width, height));
-        textArea.setText(text);
-        textArea.setEditable(false);
-//        textArea.setLineWrap(true);
-//        textArea.setWrapStyleWord(true);
-        JScrollPane scrollPane = new JScrollPane(textArea);
+        textPane.setContentType("text/html");
+        textPane.setSize(width, height);
+        textPane.setPreferredSize(new Dimension(width, height));
+        textPane.setText(text);
+        textPane.setEditable(false);
+        
+        JScrollPane scrollPane = new JScrollPane(textPane);
         scrollPane.setSize(width, height);
         helperPanel.setSize(width, height);
         helperPanel.add(scrollPane);
@@ -51,7 +49,6 @@ public class HelpExplanation {
         jDialog = pane.createDialog("Helper Menu");
         jDialog.setModal(false);
         jDialog.setPreferredSize(new Dimension(width, height));
-//        jDialog.setResizable(true);
     }
 
     public void displayHelpMenu(){
