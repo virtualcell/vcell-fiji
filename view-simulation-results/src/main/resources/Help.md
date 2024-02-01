@@ -1,28 +1,40 @@
 ### Intro
-The VCell application can export the simulations it creates into multiple formats.
-The .N5 format type is stored remotely on VCell servers, allowing other applications, such as ImageJ,
+The [VCell](https://vcell.org/) application can export spatial simulation results into multiple formats, with
+[.N5](https://imagej.net/libs/n5) being one of them. N5 exports are 
+stored remotely on VCell servers, allowing applications such as ImageJ
 to access the results of these simulations, perform various types of analyses,
 and avoid the need to save the simulation results locally.
+
+### VCell Spatial Simulation
+Simulation solvers generating 1-, 2-, or 3-dimensional spatial 
+domains can be visualized in ImageJ using this plugin. 
+Spatial dimensions and time directly correspond to fields within an ImageJ 
+image. The image's channels depict different variables within a simulation.
+
+### N5 and Datasets
+Each N5 file is a direct mapping to a VCell simulation, and datasets are the
+exports of that simulation.
+It can be visualized as a box with the 
+label of a simulation, and each
+dataset is a different export for that simulation all 
+stored within the same box. For every N5 file there is a link associated
+with it which allows it to be accessed by any application that supports N5.
+
+For example, with simulation A, if you choose to export only 2 of 3 variables,
+that constitutes one dataset. In the same simulation, if you decide to export just 1 variable,
+that would be an entirely different dataset. Now, considering simulation B, if you choose to
+export 2 of 3 variables, it results in a different N5 file and a distinct dataset.
 
 ### Accessing Simulation Results
 There are three methods for accessing simulation results within this plugin:
 
-1. Copy the export link from the VCell app, click the 'Remote Files' button, paste the link in the text box, and then open it.
-This method is best when you need to save a set of exports for the long term future.
+1. Get an N5 link, click the 'Remote Files' button, paste the link in the text box,
+then view and select the dataset you want to open.
 
-2. Click the recent export button to open the most recent simulation you exported in the N5 format.
+2. For exports executed on the same device this plugin is installed the following access
+methods are available.
+   1. Click the recent export button.
 
-3. Open the export table and access any export within that table using the open button. The table's information
-is stored locally on your computer. If your computer's drive fails, the table will be empty, but any links
-saved elsewhere can still be used.
-
-
-### N5 and Datasets
-N5 files correspond one-to-one with simulations within VCell in terms of grouping. 
-Data sets serve as the grouping category for different export variances.
-For example, with simulation A, if you choose to export only 2 of 3 variables,
-that constitutes one dataset. In the same simulation, if you decide to export just 1 variable,
-that would be an entirely different dataset.
-
-Now, considering simulation B, if you choose to export 2 of 3 variables, it results in a different N5 file and a distinct dataset.
+   2. The export table is populated with past exports and all the affiliated metadata
+   needed to understand what was exported.
 

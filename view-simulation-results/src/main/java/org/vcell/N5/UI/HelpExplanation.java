@@ -38,7 +38,7 @@ public class HelpExplanation {
         textPane.setPreferredSize(new Dimension(width, height));
         textPane.setText(text);
         textPane.setEditable(false);
-        
+
         JScrollPane scrollPane = new JScrollPane(textPane);
         scrollPane.setSize(width, height);
         helperPanel.setSize(width, height);
