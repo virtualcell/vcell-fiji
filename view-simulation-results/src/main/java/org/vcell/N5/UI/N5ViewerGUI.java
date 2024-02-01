@@ -27,8 +27,10 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
     private N5ExportTable n5ExportTable;
 
     public JButton mostRecentExport;
+    private JButton questionMark;
 
     public RemoteFileSelection remoteFileSelection;
+    private HelpExplanation helpExplanation;
 
     public N5ViewerGUI(N5ImageHandler n5ImageHandler) {
         thisJFrame = this;
@@ -68,13 +70,18 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 4;
         openInMemory = new JLabel();
-        openInMemory.setText("Open Image in Memory");
+        openInMemory.setText("Open in Memory");
         mainPanel.add(openInMemory, mainPanelConstraints);
 
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 5;
         openMemoryCheckBox = new JCheckBox();
         mainPanel.add(openMemoryCheckBox, mainPanelConstraints);
+
+        mainPanelConstraints.gridy = 0;
+        mainPanelConstraints.gridx = 6;
+        questionMark = new JButton("?");
+        mainPanel.add(questionMark, mainPanelConstraints);
 
 
         GridBagConstraints datasetConstraints = new GridBagConstraints();
@@ -111,7 +118,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
 
         localFiles.addActionListener(this);
-
+        questionMark.addActionListener(this);
         remoteFiles.addActionListener(this);
         exportTableButton.addActionListener(this);
 
@@ -125,6 +132,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
 
         n5ExportTable = new N5ExportTable(n5ImageHandler);
+        helpExplanation = new HelpExplanation();
     }
 
     public void updateDatasetList(ArrayList<String> arrayList){
@@ -149,6 +157,8 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
             remoteFileSelection.setVisible(true);
         } else if (e.getSource() == exportTableButton) {
             n5ExportTable.displayExportTable();
+        } else if (e.getSource() == questionMark) {
+            helpExplanation.displayHelpMenu();
         }
     }
 
