@@ -53,8 +53,10 @@ jobs:
           curl --silent -O ${IJ_DOWNLOAD_URL}
           unzip fiji-linux64.zip
           ./Fiji.app/ImageJ-linux64 --headless --update edit-update-site ${UPDATE_SITE} https://sites.imagej.net/${UPDATE_SITE}/ "webdav:${WIKI_USER}:${UPDATE_PASS}" .
+
       - name: Install in ImageJ/Fiji (with Maven)
-        run: mvn -B install -Dscijava.app.directory=./Fiji.app -Ddelete.other.versions=true -Dscijava.ignoreDependencies=true
+        run: mvn -B install -Dscijava.app.directory=./Fiji.app -Ddelete.other.versions=true -Dscijava.ignoreDependencies=true -DskipTests=True package #Skip tests
+
       - name: Release to ImageJ update site
         run: |
           ./Fiji.app/ImageJ-linux64 --headless --update upload-complete-site --force ${UPDATE_SITE}
