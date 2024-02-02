@@ -10,7 +10,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>vcell-view-simulation-results</artifactId>
+    <artifactId>view-simulation-results</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <name>VCell View Simulation Results</name>
