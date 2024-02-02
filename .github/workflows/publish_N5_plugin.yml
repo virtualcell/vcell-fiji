@@ -55,7 +55,7 @@ jobs:
           ./Fiji.app/ImageJ-linux64 --headless --update edit-update-site ${UPDATE_SITE} https://sites.imagej.net/${UPDATE_SITE}/ "webdav:${WIKI_USER}:${UPDATE_PASS}" .
 
       - name: Install in ImageJ/Fiji (with Maven)
-        run: mvn -B install -Dscijava.app.directory=./Fiji.app -Ddelete.other.versions=true -Dscijava.ignoreDependencies=true -DskipTests=True package #Skip tests
+        run: mvn -B -pl org.vcell.vcellfiji:${{ github.event.inputs.module }} install -Dscijava.app.directory=./Fiji.app -Ddelete.other.versions=true -Dscijava.ignoreDependencies=true -DskipTests=True package #Skip tests
 
       - name: Release to ImageJ update site
         run: |
