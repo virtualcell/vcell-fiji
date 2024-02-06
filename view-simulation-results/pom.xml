@@ -10,7 +10,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>vcell-view-simulation-results</artifactId>
+    <artifactId>view-simulation-results</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <name>VCell View Simulation Results</name>
@@ -156,12 +156,6 @@
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.16.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark</artifactId>
-            <version>0.20.0</version>
         </dependency>
     </dependencies>
 

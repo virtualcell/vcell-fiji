@@ -1,6 +1,7 @@
 package org.vcell.N5.UI;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
@@ -18,12 +19,34 @@ public class RemoteFileSelection extends JDialog{
     public JButton submitS3Info;
     private JPanel credentialsPanel;
     private JPanel endpointPanel;
+    private int panelWidth = 500;
+    private int panelHeight = 350;
 
     public RemoteFileSelection(JFrame parentFrame){
         super(parentFrame, true);
         this.setTitle("Remote File Selection");
+        credentialsPanel = new JPanel();
+        endpointPanel = new JPanel();
+        this.mainPanel = new JPanel();
+
+        credentialsCheckBox = new JCheckBox("S3 Credentials");
+        endpointCheckBox = new JCheckBox("S3 Endpoint");
+
+        GridBagConstraints mainPanelConstraints = new GridBagConstraints();
+        linkTextField = new JTextField();
+        linkTextField.setPreferredSize(new Dimension((panelWidth - 100), 35));
+        mainPanelConstraints.gridx = 0;
+        mainPanelConstraints.gridy = 0;
+        mainPanel.add(linkTextField, mainPanelConstraints);
+
+        submitS3Info = new JButton("Open N5 URL");
+        mainPanelConstraints.gridx = 0;
+        mainPanelConstraints.gridy = 1;
+        mainPanel.add(submitS3Info);
+
+
         this.setContentPane(this.mainPanel);
-        this.setSize(500, 350);
+        this.setSize(panelWidth, panelHeight);
         this.setResizable(true);
 
 
