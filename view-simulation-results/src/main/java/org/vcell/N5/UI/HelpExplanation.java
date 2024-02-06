@@ -1,16 +1,12 @@
 package org.vcell.N5.UI;
 
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
+
+import com.google.common.io.CharStreams;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class HelpExplanation {
     private JDialog jDialog;
@@ -22,17 +18,14 @@ public class HelpExplanation {
         JPanel helperPanel = new JPanel();
         JTextPane textPane = new JTextPane();
 
-        Parser parser = Parser.builder().build();
-        String md;
-        URL mdPath = ClassLoader.getSystemClassLoader().getResource("Help.md");
+        String text;
         try {
-            md = new String(Files.readAllBytes(Paths.get(mdPath.getPath())));
+            InputStream inputStream = ClassLoader.getSystemResourceAsStream("Help.html");
+            text = CharStreams.toString(new InputStreamReader(inputStream));
+//            text = new String(Files.readAllBytes(Paths.get(mdPath.getPath())));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Node node = parser.parse(md);
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
-        String text = renderer.render(node);
         textPane.setContentType("text/html");
         textPane.setSize(width, height);
         textPane.setPreferredSize(new Dimension(width, height));
