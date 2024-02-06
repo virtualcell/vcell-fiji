@@ -34,7 +34,7 @@ jobs:
       IJ_DOWNLOAD_URL: https://downloads.imagej.net/fiji/latest/fiji-linux64.zip
       WIKI_USER: ${{ github.event.inputs.username }}
       UPDATE_PASS: ${{ secrets.VCELL_UPLOAD_PASSWORD }}
-      UPDATE_SITE: ${{ github.event.input.update_site }}
+      UPDATE_SITE: ${{ github.event.inputs.update_site }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
