@@ -29,6 +29,13 @@ public class RemoteFileSelection extends JDialog{
         endpointPanel = new JPanel();
         this.mainPanel = new JPanel();
 
+        s3BucketNameTextField = new JTextField();
+        s3RegionTextField = new JTextField();
+        s3AccessKeyTextField = new JTextField();
+        s3EndpointTextField = new JTextField();
+        s3SecretKeyTextField = new JTextField();
+
+
         credentialsCheckBox = new JCheckBox("S3 Credentials");
         endpointCheckBox = new JCheckBox("S3 Endpoint");
 
