@@ -1,11 +1,14 @@
 package org.vcell.N5.UI;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.SimResultsLoader;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -17,8 +20,11 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -42,7 +48,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     }
     public void updateTableModel(){
         try{
-            ExportDataRepresentation jsonData = N5ImageHandler.getJsonData();
+            ExportDataRepresentation jsonData = getJsonData();
             if (jsonData != null){
                 ExportDataRepresentation.FormatExportDataRepresentation formatData = jsonData.formatData.get(N5ImageHandler.formatName);
                 Stack<String> formatJobIDs = formatData.formatJobIDs;
@@ -63,7 +69,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     public void initalizeTableData(){
         ExportDataRepresentation jsonData = null;
         try {
-            jsonData = N5ImageHandler.getJsonData();
+            jsonData = getJsonData();
             if (jsonData != null){
                 ExportDataRepresentation.FormatExportDataRepresentation formatExportData = jsonData.formatData.get(N5ImageHandler.formatName);
                 Stack<String> jobStack = formatExportData.formatJobIDs;
@@ -156,10 +162,11 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             for(int row: selectedRows){
                 String uri = n5ExportTableModel.getRowData(row).uri;
                 String datasetName = n5ExportTableModel.getRowData(row).savedFileName;
-                n5ImageHandler.createS3Client(uri);
-                N5AmazonS3Reader n5Reader = n5ImageHandler.getN5AmazonS3Reader();
+                SimResultsLoader simResultsLoader = new SimResultsLoader(uri);
+                simResultsLoader.createS3Client();
+                simResultsLoader.setDataSetChosen(datasetName);
                 try {
-                    ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(datasetName, n5Reader);
+                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
                     imagePlus.show();
                     exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 } catch (IOException ex) {
@@ -185,6 +192,30 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         String actualParameterValues = n5ExportTableModel.getRowData(row).setParameterValues.toString();
         jTextPane.setText("Set Parameter Values: " + actualParameterValues + "\n \nDefault Parameter Values: " + defaultParameterValues);
         jTextPane.updateUI();
+    }
+
+    public static ExportDataRepresentation.SimulationExportDataRepresentation getLastJSONElement() throws FileNotFoundException {
+        ExportDataRepresentation jsonData = getJsonData();
+        if (jsonData != null && jsonData.formatData.containsKey(N5ImageHandler.formatName)) {
+            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get(N5ImageHandler.formatName);
+            Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
+            String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
+
+            return jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
+        }
+        return null;
+    }
+
+    public static ExportDataRepresentation getJsonData() throws FileNotFoundException {
+        File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
+        if (jsonFile.exists() && jsonFile.length() != 0){
+            ExportDataRepresentation jsonHashMap;
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class);
+            return jsonHashMap;
+        }
+        return null;
+
     }
 
     static class N5ExportTableModel extends AbstractTableModel {
