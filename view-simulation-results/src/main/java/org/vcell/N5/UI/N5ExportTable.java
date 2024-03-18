@@ -227,6 +227,9 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     @Override
     public void valueChanged(ListSelectionEvent e) {
         int row = exportListTable.getSelectedRow();
+        if (row > exportListTable.getRowCount() || row < 0){
+            return;
+        }
 //        AttributeSet attributeSet = styleContext.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.)
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
         variableTextPanel.setText("Variables: " + rowData.variables);
