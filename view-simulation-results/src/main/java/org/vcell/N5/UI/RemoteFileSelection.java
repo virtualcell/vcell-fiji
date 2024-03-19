@@ -23,7 +23,7 @@ public class RemoteFileSelection extends JDialog{
     private int panelHeight = 350;
 
     public RemoteFileSelection(JFrame parentFrame){
-        super(parentFrame, true);
+        super(parentFrame, false);
         this.setTitle("Remote File Selection");
         credentialsPanel = new JPanel();
         endpointPanel = new JPanel();

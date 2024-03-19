@@ -11,32 +11,28 @@ import java.util.ArrayList;
 public class N5ViewerGUI extends JFrame implements ActionListener {
     public JButton localFiles;
     public JPanel mainPanel;
-    private JFrame thisJFrame;
+    private final JFrame thisJFrame;
     public JFileChooser localFileDialog;
     private JToolBar menuBar;
     public JList<String> datasetList;
-    private JScrollPane resultsScrollPane;
     public JButton remoteFiles;
     public JButton okayButton;
     public JButton exportTableButton;
     public JCheckBox openMemoryCheckBox;
-    private JPanel datasetListPanel;
-    private JLabel datasetLabel;
-    private JLabel openInMemory;
     public int jFileChooserResult;
-    private N5ExportTable n5ExportTable;
+    private final N5ExportTable n5ExportTable;
 
     public JButton mostRecentExport;
-    private JButton questionMark;
+    private final JButton questionMark;
 
     public RemoteFileSelection remoteFileSelection;
-    private HelpExplanation helpExplanation;
+    private final HelpExplanation helpExplanation;
 
     public N5ViewerGUI(N5ImageHandler n5ImageHandler) {
         thisJFrame = this;
         localFileDialog = new JFileChooser();
         mainPanel = new JPanel();
-        datasetListPanel = new JPanel();
+        JPanel datasetListPanel = new JPanel();
         mainPanel.setLayout(new GridBagLayout());
         datasetListPanel.setLayout(new GridBagLayout());
         datasetList = new JList<>();
@@ -69,7 +65,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
         mainPanelConstraints.gridy = 0;
         mainPanelConstraints.gridx = 4;
-        openInMemory = new JLabel();
+        JLabel openInMemory = new JLabel();
         openInMemory.setText("Open in Memory");
         mainPanel.add(openInMemory, mainPanelConstraints);
 
@@ -87,17 +83,17 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         GridBagConstraints datasetConstraints = new GridBagConstraints();
         datasetConstraints.gridx = 0;
         datasetConstraints.gridy = 0;
-        datasetLabel = new JLabel();
+        JLabel datasetLabel = new JLabel();
         datasetLabel.setText("Dataset List");
-        datasetListPanel.add(datasetLabel, datasetConstraints);
+//        datasetListPanel.add(datasetLabel, datasetConstraints);
 
         datasetConstraints.gridx = 0;
         datasetConstraints.gridy = 1;
         datasetConstraints.gridwidth = 1;
         datasetConstraints.ipady = 70;
         datasetConstraints.ipadx = 100;
-        resultsScrollPane = new JScrollPane(datasetList);
-        datasetListPanel.add(resultsScrollPane, datasetConstraints);
+        JScrollPane resultsScrollPane = new JScrollPane(datasetList);
+//        datasetListPanel.add(resultsScrollPane, datasetConstraints);
 
         mainPanelConstraints.gridwidth = 5;
         mainPanelConstraints.gridy = 1;
@@ -114,7 +110,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
         mainPanelConstraints.gridwidth = 5;
         okayButton = new JButton();
         okayButton.setText("Open Dataset");
-        mainPanel.add(okayButton, mainPanelConstraints);
+//        mainPanel.add(okayButton, mainPanelConstraints);
 
 
         localFiles.addActionListener(this);
@@ -126,7 +122,7 @@ public class N5ViewerGUI extends JFrame implements ActionListener {
 
         this.setTitle("VCell Manager");
         this.setContentPane(this.mainPanel);
-        this.setSize(600, 400);
+        this.setSize(600, 100);
         this.setVisible(true);
         this.remoteFileSelection = new RemoteFileSelection(thisJFrame);
 

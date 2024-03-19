@@ -24,6 +24,7 @@ import java.util.HashMap;
 
 public class N5ImageHandlerTest {
     private final String n5FileName = "nfive/test_image.n5";
+    private final String datasetName = "5DStack";
 
     private File getTestResourceFiles(String filePath){
         try {
@@ -37,16 +38,17 @@ public class N5ImageHandlerTest {
 
     @Test
     public void testN5DatasetList(){
-        N5ImageHandler n5ImageHandler = new N5ImageHandler();
-        n5ImageHandler.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
-        this.dataSetListTest(n5ImageHandler.getN5DatasetList());
+        SimResultsLoader simResultsLoader = new SimResultsLoader();
+        simResultsLoader.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
+        this.dataSetListTest(simResultsLoader.getN5DatasetList());
     }
 
     @Test
     public void testGettingImgPlus() throws IOException {
-        N5ImageHandler n5ImageHandler = new N5ImageHandler();
-        n5ImageHandler.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
-        ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File("5DStack", n5ImageHandler.getN5FSReader());
+        SimResultsLoader simResultsLoader = new SimResultsLoader();
+        simResultsLoader.setDataSetChosen(datasetName);
+        simResultsLoader.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
+        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
 
         this.fiveDStackTests(imagePlus);
     }
@@ -63,31 +65,30 @@ public class N5ImageHandlerTest {
         credentials.put("AccessKey", "jj");
         credentials.put("SecretKey", "jj");
 
-        final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName;
+        final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName + "?datasetName=" + datasetName;
 
-        N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        SimResultsLoader simResultsLoader = new SimResultsLoader(s3ProxyURI);
 
         // Environment variables are set in github actions VM
 
-        n5ImageHandler.createS3Client(s3ProxyURI, null, null);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+        simResultsLoader.createS3Client(null, null);
+        this.remoteN5ImgPlusTests(simResultsLoader);
 
-        n5ImageHandler.createS3Client(s3ProxyURI, null, s3Endpoint);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+        simResultsLoader.createS3Client(null, s3Endpoint);
+        this.remoteN5ImgPlusTests(simResultsLoader);
 
-        n5ImageHandler.createS3Client(s3ProxyURI, credentials, null);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+        simResultsLoader.createS3Client(credentials, null);
+        this.remoteN5ImgPlusTests(simResultsLoader);
 
-        n5ImageHandler.createS3Client(s3ProxyURI, credentials, s3Endpoint);
-        this.remoteN5ImgPlusTests(n5ImageHandler);
+        simResultsLoader.createS3Client(credentials, s3Endpoint);
+        this.remoteN5ImgPlusTests(simResultsLoader);
     }
 
 
-    private void remoteN5ImgPlusTests(N5ImageHandler n5ImageHandler) throws IOException {
-            String dataSet = "5DStack";
-            ImagePlus imagePlus = n5ImageHandler.getImgPlusFromN5File(dataSet, n5ImageHandler.getN5AmazonS3Reader());
-            dataSetListTest(n5ImageHandler.getS3N5DatasetList());
-            fiveDStackTests(imagePlus);
+    private void remoteN5ImgPlusTests(SimResultsLoader simResultsLoader) throws IOException {
+        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+        dataSetListTest(simResultsLoader.getS3N5DatasetList());
+        fiveDStackTests(imagePlus);
     }
 
     private void fiveDStackTests(ImagePlus variableImgPlus){
