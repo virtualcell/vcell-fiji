@@ -3,6 +3,7 @@ package org.vcell.N5;
 import com.amazonaws.regions.Regions;
 import ij.ImagePlus;
 import ij.io.Opener;
+import ij.plugin.Duplicator;
 import ij.plugin.ImageCalculator;
 import org.junit.*;
 import org.vcell.N5.N5ImageHandler;
@@ -50,7 +51,9 @@ public class N5ImageHandlerTest {
         simResultsLoader.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
         ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
 
-        this.fiveDStackTests(imagePlus);
+        fiveDStackTests(imagePlus);
+        imagePlus = new Duplicator().run(imagePlus);
+        fiveDStackTests(imagePlus);
     }
 
     @Test
@@ -88,6 +91,8 @@ public class N5ImageHandlerTest {
     private void remoteN5ImgPlusTests(SimResultsLoader simResultsLoader) throws IOException {
         ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
         dataSetListTest(simResultsLoader.getS3N5DatasetList());
+        fiveDStackTests(imagePlus);
+        imagePlus = new Duplicator().run(imagePlus); //Tests taking the N5 file from streaming to in memory
         fiveDStackTests(imagePlus);
     }
 
