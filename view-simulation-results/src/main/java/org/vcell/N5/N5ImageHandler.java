@@ -117,13 +117,15 @@ public class N5ImageHandler implements Command, ActionListener {
 
     @Override
     public void run() {
-        this.vGui = new N5ViewerGUI(this);
-        this.vGui.localFileDialog.addActionListener(this);
-        this.vGui.okayButton.addActionListener(this);
-//        this.vGui.exportTableButton.addActionListener(this);
-
-        this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
-        this.vGui.mostRecentExport.addActionListener(this);
+//        this.vGui = new N5ViewerGUI(this);
+//        this.vGui.localFileDialog.addActionListener(this);
+//        this.vGui.okayButton.addActionListener(this);
+////        this.vGui.exportTableButton.addActionListener(this);
+//
+//        this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
+//        this.vGui.mostRecentExport.addActionListener(this);
+        N5ExportTable exportTable = new N5ExportTable(this);
+        exportTable.displayExportTable();
     }
 
     public void displayN5Dataset(ImagePlus imagePlus) throws IOException {
