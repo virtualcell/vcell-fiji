@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.AmazonS3URI;
 import ij.ImagePlus;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.type.numeric.integer.*;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -20,7 +21,10 @@ import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -136,34 +140,22 @@ public class SimResultsLoader {
     public ImagePlus getImgPlusFromN5File(String selectedDataset) throws IOException {
         N5Reader n5Reader = selectedLocalFile != null ? getN5FSReader() : getN5AmazonS3Reader();
         // Theres definitly a better way to do this, I trie using a variable to change the cached cells first parameter type but it didn't seem to work :/
-        switch (n5Reader.getDatasetAttributes(selectedDataset).getDataType()){
-            case UINT8:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedByteType, ?>) N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case UINT16:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedShortType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case UINT32:
-                return ImageJFunctions.wrap((CachedCellImg<UnsignedIntType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case INT8:
-                return ImageJFunctions.wrap((CachedCellImg<ByteType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case INT16:
-                return ImageJFunctions.wrap((CachedCellImg<ShortType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case INT32:
-                return ImageJFunctions.wrap((CachedCellImg<IntType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case FLOAT32:
-                return ImageJFunctions.wrap((CachedCellImg<FloatType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
-            case FLOAT64:
-                return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>)N5Utils.open(n5Reader, selectedDataset), selectedDataset);
+        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, selectedDataset), selectedDataset);
+
 //                final ARGBARGBDoubleConverter<ARGBDoubleType> converters = new ARGBARGBDoubleConverter<>();
 //                final CachedCellImg<DoubleType, ?> cachedCellImg = N5Utils.open(n5Reader, selectedDataset);
 //                return ImageJFunctions.showRGB(cachedCellImg, converters, "");
-        }
-        return null;
     }
 
     public void setURI(URI uri){
         this.uri = uri;
         if(!(uri.getQuery() == null)){
             dataSetChosen = uri.getQuery().split("=")[1]; // query should be "dataSetName=name", thus splitting it by = and getting the second entry gives the name
+            try {
+                dataSetChosen = URLDecoder.decode(dataSetChosen, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
