@@ -1,0 +1,32 @@
+package org.vcell.N5;
+
+public class N5DataSetFile {
+    public String uri;
+    public String[] variables;
+    public double[][] histMax;
+    public double[][] histMin;
+    public double[][] histAverage;
+    public N5DataSetFile(String uri, String[] variables, double[][] histMax, double[][] histMin, double[][] histAverage){
+        this.uri = uri;
+        this.histMax = histMax;
+        this.histMin = histMin;
+        this.histAverage = histAverage;
+        this.variables = variables;
+    }
+
+    public static N5DataSetFile[] alphaTestFiles(){
+        N5DataSetFile frapSimulationResults = new N5DataSetFile("https://vcellapi-beta.cam.uchc.edu:8088/n5Data/ezequiel23/b5b12db07b6bc1bc15456fb59b530a19.n5?dataSetName=IJ+Plugin+Test+Raw",
+                new String[]{"Dex"},
+                new double[][]{{10.0, 9.990392675155721, 9.83580092714469, 9.520539931524715, 9.162150060086567, 8.82335160436397, 8.523689113752786, 8.265381795870683, 8.044751960699015, 7.856809648125466,
+                        7.6964442490469365, 7.559497112763759, 7.442415154355558}},
+                new double[][]{{
+                        0.0, 0.010215663873287447, 0.23461088459151397, 0.7634632958615505, 1.4139554046033762, 2.063749284472463, 2.6639075003302817, 3.200125640968558, 3.671910452018279, 4.083815254159328,
+                        4.441933641025697, 4.752525652114409, 5.021489447662615, 5.25417298783172, 5.4553370523518065, 5.62917275251317, 5.7793451286004585, 5.909046810912881, 6.0210510711120975}},
+                new double[][]{{
+                        6.728509585652239, 6.7285095856523345, 6.728509585652324, 6.72850958565233, 6.728509585652335, 6.728509585652381, 6.728509585652381, 6.728509585652362, 6.728509585652365,
+                        6.728509585652356, 6.7285095856523185, 6.728509585652278, 6.7285095856522865, 6.728509585652241, 6.728509585652113, 6.728509585652124, 6.7285095856521355, 6.728509585652127, 6.728509585652108}});
+
+        return new N5DataSetFile[]{frapSimulationResults};
+    }
+
+}
