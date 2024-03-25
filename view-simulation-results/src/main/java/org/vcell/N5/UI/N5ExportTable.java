@@ -52,12 +52,12 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JTextPane variableTextPanel;
     private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
     private RemoteFileSelection remoteFileSelection;
-    @Parameter
     private LogService logService;
     private final int paneWidth = 800;
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
         remoteFileSelection = new RemoteFileSelection();
+        logService = n5ImageHandler.logService;
     }
 
     public void initalizeTableData(){
@@ -253,6 +253,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                     imagePlus.show();
                 }
             } catch (IOException ex) {
+                logService.log(LogService.ERROR, ex);
                 throw new RuntimeException(ex);
             } finally {
                 SwingUtilities.invokeLater(new Runnable() {

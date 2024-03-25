@@ -53,7 +53,7 @@ public class N5ImageHandler implements Command, ActionListener {
     public static final String formatName = "N5";
     private SimResultsLoader simResultsLoader;
     @Parameter
-    private LogService logService;
+    public LogService logService;
 
     @Override
     public void actionPerformed(ActionEvent e) {
