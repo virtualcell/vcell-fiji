@@ -116,7 +116,7 @@ public class SimResultsLoader {
         this.selectedLocalFile = selectedLocalFile;
     }
 
-    public ImagePlus getImgPlusFromLocalN5File(){
+    public ImagePlus getImgPlusFromLocalN5File() throws IOException {
         N5Reader n5Reader = new N5FSReader(selectedLocalFile.getPath());
         return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, dataSetChosen), dataSetChosen);
     }
@@ -126,7 +126,7 @@ public class SimResultsLoader {
     }
 
     public ImagePlus getImgPlusFromN5File(String selectedDataset) throws IOException {
-        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, s3ObjectKey);
+        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
         return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, selectedDataset), selectedDataset);
     }
 
