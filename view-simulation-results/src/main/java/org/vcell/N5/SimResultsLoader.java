@@ -12,6 +12,7 @@ import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
 import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 
@@ -113,6 +114,11 @@ public class SimResultsLoader {
 
     public void setSelectedLocalFile(File selectedLocalFile){
         this.selectedLocalFile = selectedLocalFile;
+    }
+
+    public ImagePlus getImgPlusFromLocalN5File(){
+        N5Reader n5Reader = new N5FSReader(selectedLocalFile.getPath());
+        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, dataSetChosen), dataSetChosen);
     }
 
     public ImagePlus getImgPlusFromN5File() throws IOException {

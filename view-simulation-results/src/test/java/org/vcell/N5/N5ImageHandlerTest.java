@@ -61,7 +61,7 @@ public class N5ImageHandlerTest {
         SimResultsLoader simResultsLoader = new SimResultsLoader();
         simResultsLoader.setDataSetChosen(datasetName);
         simResultsLoader.setSelectedLocalFile(this.getTestResourceFiles(n5FileName));
-        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+        ImagePlus imagePlus = simResultsLoader.getImgPlusFromLocalN5File();
 
         fiveDStackTests(imagePlus);
         imagePlus = new Duplicator().run(imagePlus);
