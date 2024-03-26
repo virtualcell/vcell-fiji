@@ -7,13 +7,17 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
 import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.ij.N5IJUtils;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
+import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 
 import java.io.File;
@@ -21,6 +25,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,6 +37,7 @@ public class SimResultsLoader {
     private String s3ObjectKey;
     private URI uri;
     private String dataSetChosen;
+    private String uriSafeDataSetChosen;
 
     public SimResultsLoader(){
 
@@ -90,7 +96,7 @@ public class SimResultsLoader {
         createS3Client(uri.toString(), null, null);
     }
     public void createS3Client(HashMap<String, String> credentials, HashMap<String, String> endpoint){createS3Client(uri.toString(), credentials, endpoint);}
-    public ArrayList<String> getS3N5DatasetList(){
+    public ArrayList<String> getS3N5DatasetList() throws IOException {
 
         // used as a flag to tell that remote access is occurring, and that there is no local files
         try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
@@ -122,27 +128,26 @@ public class SimResultsLoader {
     }
 
     public ImagePlus getImgPlusFromN5File() throws IOException {
-        return getImgPlusFromN5File(dataSetChosen);
-    }
-
-    public ImagePlus getImgPlusFromN5File(String selectedDataset) throws IOException {
+//        AmazonS3KeyValueAccess amazonS3KeyValueAccess = new AmazonS3KeyValueAccess(s3Client, bucketName, false);
+//        N5KeyValueReader n5KeyValueReader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), true);
         N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
-        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, selectedDataset), selectedDataset);
+        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), dataSetChosen);
     }
 
     public void setURI(URI uri){
         this.uri = uri;
         if(!(uri.getQuery() == null)){
-            dataSetChosen = uri.getQuery().split("=")[1]; // query should be "dataSetName=name", thus splitting it by = and getting the second entry gives the name
+            uriSafeDataSetChosen = uri.getQuery().split("=")[1]; // query should be "dataSetName=name", thus splitting it by = and getting the second entry gives the name
             try {
-                dataSetChosen = URLDecoder.decode(dataSetChosen, "UTF-8");
+                dataSetChosen = URLDecoder.decode(uriSafeDataSetChosen, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public void setDataSetChosen(String dataSetChosen){
+    public void setDataSetChosen(String dataSetChosen) throws UnsupportedEncodingException {
         this.dataSetChosen = dataSetChosen;
+        uriSafeDataSetChosen = URLEncoder.encode(dataSetChosen, "UTF-8");
     }
 }

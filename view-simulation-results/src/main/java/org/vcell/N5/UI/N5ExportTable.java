@@ -274,9 +274,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
-                String datasetName = n5ExportTableModel.getRowData(row).savedFileName;
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri);
-                simResultsLoader.setDataSetChosen(datasetName);
                 filesToOpen.add(simResultsLoader);
             }
             openN5FileDataset(filesToOpen, openInMemory.isSelected());
