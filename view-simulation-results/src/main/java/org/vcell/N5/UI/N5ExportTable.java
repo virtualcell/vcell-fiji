@@ -3,6 +3,7 @@ package org.vcell.N5.UI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
+import ij.plugin.Duplicator;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.vcell.N5.ExportDataRepresentation;
@@ -15,7 +16,6 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -42,17 +42,22 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JButton open;
     private JButton copyLink;
     private JButton refreshButton;
+    private JButton useN5Link;
+    private JButton questionMark;
+    private JCheckBox openInMemory;
     private JCheckBox todayInterval;
     private JCheckBox monthInterval;
     private JCheckBox yearlyInterval;
     private JCheckBox anyInterval;
     private JTextPane variableTextPanel;
     private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-    @Parameter
+    private RemoteFileSelection remoteFileSelection;
     private LogService logService;
     private final int paneWidth = 800;
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
+        remoteFileSelection = new RemoteFileSelection();
+        logService = n5ImageHandler.logService;
     }
 
     public void initalizeTableData(){
@@ -156,11 +161,38 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         refreshButton = new JButton("Refresh");
         open = new JButton("Open");
         copyLink = new JButton("Copy Link");
+        useN5Link = new JButton("Use N5 Link");
+        questionMark = new JButton("?");
+        openInMemory = new JCheckBox("Open In Memory");
 
-        JPanel buttonsPanel = new JPanel(new FlowLayout());
-        buttonsPanel.add(open);
-        buttonsPanel.add(refreshButton);
-        buttonsPanel.add(copyLink);
+
+        JPanel userButtonsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+        Insets buttonMargin = new Insets(2, 5, 2, 5);
+        gridBagConstraints.insets = buttonMargin;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        open.setMargin(buttonMargin);
+        userButtonsPanel.add(open, gridBagConstraints);
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        refreshButton.setMargin(buttonMargin);
+        userButtonsPanel.add(refreshButton, gridBagConstraints);
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        copyLink.setMargin(buttonMargin);
+        userButtonsPanel.add(copyLink, gridBagConstraints);
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        useN5Link.setMargin(buttonMargin);
+        userButtonsPanel.add(useN5Link, gridBagConstraints);
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        questionMark.setMargin(buttonMargin);
+//        buttonsPanel.add(questionMark);
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        userButtonsPanel.add(openInMemory, gridBagConstraints);
 
         todayInterval = new JCheckBox("Past 24 Hours");
         monthInterval = new JCheckBox("Past Month");
@@ -184,43 +216,82 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         JPanel topBar = new JPanel();
         topBar.setPreferredSize(new Dimension(paneWidth, 100));
         topBar.setLayout(new BorderLayout());
-        topBar.add(buttonsPanel, BorderLayout.EAST);
+        topBar.add(userButtonsPanel, BorderLayout.EAST);
         topBar.add(timeFilter, BorderLayout.WEST);
         topBar.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
 
         refreshButton.addActionListener(this);
         open.addActionListener(this);
         copyLink.addActionListener(this);
+        questionMark.addActionListener(this);
+        useN5Link.addActionListener(this);
+        remoteFileSelection.submitS3Info.addActionListener(this);
 
         return topBar;
+    }
+
+    public void enableCriticalButtons(boolean enable){
+        useN5Link.setEnabled(enable);
+        open.setEnabled(enable);
+        refreshButton.setEnabled(enable);
+        copyLink.setEnabled(enable);
+        remoteFileSelection.submitS3Info.setEnabled(enable);
+    }
+
+    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
+        enableCriticalButtons(false);
+        exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        Thread openN5FileDataset = new Thread(() -> {
+            enableCriticalButtons(false);
+            try{
+                for(SimResultsLoader simResultsLoader: filesToOpen){
+                    simResultsLoader.createS3Client();
+                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+                    if(openInMemory){
+                        imagePlus = new Duplicator().run(imagePlus);
+                    }
+                    imagePlus.show();
+                }
+            } catch (IOException ex) {
+                logService.log(LogService.ERROR, ex);
+                throw new RuntimeException(ex);
+            } finally {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        enableCriticalButtons(true);
+                    }
+                });
+            }
+        });
+        openN5FileDataset.start();
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if(e.getSource().equals(open)){
-            int[] selectedRows = exportListTable.getSelectedRows();
-            exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-            for(int row: selectedRows){
+            ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
+            for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
-                String datasetName = n5ExportTableModel.getRowData(row).savedFileName;
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri);
-                simResultsLoader.createS3Client();
-                simResultsLoader.setDataSetChosen(datasetName);
-                try {
-                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    imagePlus.show();
-                    exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                } catch (IOException ex) {
-                    exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                    throw new RuntimeException(ex);
-                }
+                filesToOpen.add(simResultsLoader);
             }
+            openN5FileDataset(filesToOpen, openInMemory.isSelected());
         } else if (e.getSource().equals(copyLink)) {
             ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(new StringSelection(selectedRow.uri), null);
         } else if (e.getSource().equals(refreshButton)) {
             initalizeTableData();
+        } else if (e.getSource().equals(questionMark)) {
+            new HelpExplanation().displayHelpMenu();
+        } else if (e.getSource().equals(useN5Link)) {
+            remoteFileSelection.setVisible(true);
+        } else if (e.getSource().equals(remoteFileSelection.submitS3Info)) {
+            SimResultsLoader simResultsLoader = new SimResultsLoader(remoteFileSelection.getS3URL());
+            openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, openInMemory.isSelected());
+            remoteFileSelection.setVisible(false);
         }
     }
 
