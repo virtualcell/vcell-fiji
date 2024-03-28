@@ -164,6 +164,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
         openInMemory = new JCheckBox("Open In Memory");
+        openInMemory.setSelected(true);
 
 
         JPanel userButtonsPanel = new JPanel(new GridBagLayout());
