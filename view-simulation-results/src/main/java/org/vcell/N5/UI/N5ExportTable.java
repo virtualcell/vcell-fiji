@@ -274,7 +274,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
-                SimResultsLoader simResultsLoader = new SimResultsLoader(uri);
+                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
             openN5FileDataset(filesToOpen, openInMemory.isSelected());
@@ -289,7 +289,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
         } else if (e.getSource().equals(remoteFileSelection.submitS3Info)) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(remoteFileSelection.getS3URL());
+            SimResultsLoader simResultsLoader = new SimResultsLoader(remoteFileSelection.getS3URL(), "");
             openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, openInMemory.isSelected());
             remoteFileSelection.setVisible(false);
         }

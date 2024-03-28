@@ -74,7 +74,7 @@ public class N5ImageHandlerTest {
 
         final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName + "?datasetName=" + datasetName;
 
-        SimResultsLoader simResultsLoader = new SimResultsLoader(s3ProxyURI);
+        SimResultsLoader simResultsLoader = new SimResultsLoader(s3ProxyURI, "");
 
         // Environment variables are set in github actions VM
 
@@ -95,7 +95,7 @@ public class N5ImageHandlerTest {
     public void testS3AlphaInstance() throws IOException{
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
             simResultsLoader.createS3Client();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
 
@@ -110,7 +110,7 @@ public class N5ImageHandlerTest {
     public void testS3AlphaInstanceLoadedIntoMemory() throws IOException {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
             simResultsLoader.createS3Client();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
             alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTMAX);
