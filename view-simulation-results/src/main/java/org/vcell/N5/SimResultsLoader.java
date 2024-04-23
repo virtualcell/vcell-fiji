@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import ij.ImagePlus;
+import loci.common.DebugTools;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -15,6 +16,8 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +27,8 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import static org.vcell.N5.N5ImageHandler.logService;
 
 public class SimResultsLoader {
     private File selectedLocalFile;
@@ -45,6 +50,7 @@ public class SimResultsLoader {
     }
 
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
+        logService.debug("Creating S3 Client");
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
 
@@ -72,7 +78,7 @@ public class SimResultsLoader {
             }
             //creds not null, but region is
             this.s3Client = s3ClientBuilder.withRegion(s3URI.getRegion()).build();
-            return;
+            logService.debug("Created S3 Client With Modern URL");
         }
         // otherwise assume it is one of our URLs
         // http://vcell:8000/bucket/object/object2
@@ -83,7 +89,7 @@ public class SimResultsLoader {
             s3ClientBuilder.withPathStyleAccessEnabled(true);
             s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), "site2-low"));
             this.s3Client = s3ClientBuilder.build();
-            return;
+            logService.debug("Created S3 Client With Legacy URL");
         }
     }
     //When creating client's try to make one for an Amazon link, otherwise use our custom url scheme
@@ -102,6 +108,7 @@ public class SimResultsLoader {
 
     public ArrayList<String> getN5DatasetList() throws IOException {
         // auto closes reader
+        logService.debug("Getting List of N5 Datasets");
         try (N5FSReader n5Reader = new N5FSReader(selectedLocalFile.getPath())) {
             String[] metaList = n5Reader.deepList("/");
             ArrayList<String> fList = new ArrayList<>();
@@ -110,6 +117,7 @@ public class SimResultsLoader {
                     fList.add(s);
                 };
             }
+            logService.debug("Got List of N5 Datasets");
             return fList;
         }
     }
@@ -126,8 +134,12 @@ public class SimResultsLoader {
     public ImagePlus getImgPlusFromN5File() throws IOException {
 //        AmazonS3KeyValueAccess amazonS3KeyValueAccess = new AmazonS3KeyValueAccess(s3Client, bucketName, false);
 //        N5KeyValueReader n5KeyValueReader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), true);
+
+        logService.debug("Reading N5 File Into ImageJ ImagePlus Class");
         N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
-        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
+        ImagePlus imagePlus = ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
+        logService.debug("Read N5 File Into ImageJ");
+        return imagePlus;
     }
 
     public void setURI(URI uri){

@@ -52,12 +52,10 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JTextPane variableTextPanel;
     private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
     private RemoteFileSelection remoteFileSelection;
-    private LogService logService;
     private final int paneWidth = 800;
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
         remoteFileSelection = new RemoteFileSelection();
-        logService = n5ImageHandler.logService;
     }
 
     public void initalizeTableData(){
@@ -246,15 +244,18 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             enableCriticalButtons(false);
             try{
                 for(SimResultsLoader simResultsLoader: filesToOpen){
+                    N5ImageHandler.logService.debug("Creating S3 Client from Table");
                     simResultsLoader.createS3Client();
                     ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+                    N5ImageHandler.logService.debug("Got ImagePlus in Table");
                     if(openInMemory){
+                        N5ImageHandler.logService.debug("Loading Image Into Memory");
                         imagePlus = new Duplicator().run(imagePlus);
+                        N5ImageHandler.logService.debug("Loaded Image Into Memory");
                     }
                     imagePlus.show();
                 }
             } catch (IOException ex) {
-                logService.log(LogService.ERROR, ex);
                 throw new RuntimeException(ex);
             } finally {
                 SwingUtilities.invokeLater(new Runnable() {

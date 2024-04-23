@@ -1,6 +1,7 @@
 package org.vcell.N5;
 
 
+import org.scijava.service.Service;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.UI.N5ViewerGUI;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -53,7 +54,7 @@ public class N5ImageHandler implements Command, ActionListener {
     public static final String formatName = "N5";
     private SimResultsLoader simResultsLoader;
     @Parameter
-    public LogService logService;
+    public static LogService logService;
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -98,6 +99,7 @@ public class N5ImageHandler implements Command, ActionListener {
                     }
                 }
             };
+            N5ImageHandler.logService.debug("Generating Dataset List");
             n5DatasetListUpdater.execute();
         }
         // https://stackoverflow.com/questions/16937997/java-swingworker-thread-to-update-main-gui
@@ -106,13 +108,16 @@ public class N5ImageHandler implements Command, ActionListener {
 
     }
 
-    private void enableCriticalButtons(boolean enable) {
+    public void enableCriticalButtons(boolean enable) {
+        logService.debug("Disabling Critical Buttons");
         vGui.remoteFileSelection.submitS3Info.setEnabled(enable);
         vGui.okayButton.setEnabled(enable);
         vGui.localFiles.setEnabled(enable);
         vGui.remoteFiles.setEnabled(enable);
         vGui.mostRecentExport.setEnabled(enable);
         vGui.exportTableButton.setEnabled(enable);
+        logService.debug("Enabling Critical Buttons");
+        logService.error("Test Error");
     }
 
     @Override
@@ -125,6 +130,7 @@ public class N5ImageHandler implements Command, ActionListener {
 //        this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
 //        this.vGui.mostRecentExport.addActionListener(this);
         N5ExportTable exportTable = new N5ExportTable(this);
+        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         exportTable.displayExportTable();
     }
 
