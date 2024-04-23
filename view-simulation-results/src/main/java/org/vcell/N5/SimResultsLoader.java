@@ -8,7 +8,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import ij.ImagePlus;
-import loci.common.DebugTools;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -17,7 +16,6 @@ import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.LogService;
-import org.scijava.plugin.Parameter;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.vcell.N5.N5ImageHandler.logService;
-
 public class SimResultsLoader {
     private File selectedLocalFile;
     private AmazonS3 s3Client;
@@ -38,6 +34,8 @@ public class SimResultsLoader {
     private URI uri;
     private String dataSetChosen;
     private String userSetFileName;
+
+    private final LogService logService = N5ImageHandler.getLogger();
 
     public SimResultsLoader(){
 

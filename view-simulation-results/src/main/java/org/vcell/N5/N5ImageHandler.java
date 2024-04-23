@@ -1,44 +1,22 @@
 package org.vcell.N5;
 
 
-import org.scijava.service.Service;
+import org.scijava.log.slf4j.SLF4JLogService;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.UI.N5ViewerGUI;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.AnonymousAWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.AmazonS3URI;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
-import net.imglib2.cache.img.CachedCellImg;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.numeric.integer.*;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
-import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.command.Command;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.janelia.saalfeldlab.n5.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.*;
 
 
 /*
@@ -120,6 +98,10 @@ public class N5ImageHandler implements Command, ActionListener {
         logService.error("Test Error");
     }
 
+    static {
+
+    }
+
     @Override
     public void run() {
 //        this.vGui = new N5ViewerGUI(this);
@@ -130,6 +112,9 @@ public class N5ImageHandler implements Command, ActionListener {
 //        this.vGui.remoteFileSelection.submitS3Info.addActionListener(this);
 //        this.vGui.mostRecentExport.addActionListener(this);
         N5ExportTable exportTable = new N5ExportTable(this);
+        if(N5ImageHandler.logService == null){
+            N5ImageHandler.logService = new SLF4JLogService();
+        }
         N5ImageHandler.logService.setLevel(LogService.DEBUG);
         exportTable.displayExportTable();
     }
@@ -142,6 +127,13 @@ public class N5ImageHandler implements Command, ActionListener {
         else{
             imagePlus.show();
         }
+    }
+
+    public static LogService getLogger(){
+        if (logService == null){
+            logService = new SLF4JLogService();
+        }
+        return logService;
     }
 
     public static void main(String[] args) {

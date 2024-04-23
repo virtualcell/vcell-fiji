@@ -176,6 +176,13 @@
             <artifactId>jsoup</artifactId>
             <version>1.16.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.scijava/scijava-log-slf4j -->
+        <dependency>
+            <groupId>org.scijava</groupId>
+            <artifactId>scijava-log-slf4j</artifactId>
+            <version>1.0.6</version>
+        </dependency>
+
     </dependencies>
 
 </project>

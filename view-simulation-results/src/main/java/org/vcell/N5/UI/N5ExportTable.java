@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import org.scijava.log.LogService;
-import org.scijava.plugin.Parameter;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.SimResultsLoader;
@@ -53,6 +52,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
     private RemoteFileSelection remoteFileSelection;
     private final int paneWidth = 800;
+
+    private final LogService logService = N5ImageHandler.getLogger();
 
     public N5ExportTable(N5ImageHandler n5ImageHandler){
         remoteFileSelection = new RemoteFileSelection();
@@ -244,14 +245,14 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             enableCriticalButtons(false);
             try{
                 for(SimResultsLoader simResultsLoader: filesToOpen){
-                    N5ImageHandler.logService.debug("Creating S3 Client from Table");
+                    logService.debug("Creating S3 Client from Table");
                     simResultsLoader.createS3Client();
                     ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    N5ImageHandler.logService.debug("Got ImagePlus in Table");
+                    logService.debug("Got ImagePlus in Table");
                     if(openInMemory){
-                        N5ImageHandler.logService.debug("Loading Image Into Memory");
+                        logService.debug("Loading Image Into Memory");
                         imagePlus = new Duplicator().run(imagePlus);
-                        N5ImageHandler.logService.debug("Loaded Image Into Memory");
+                        logService.debug("Loaded Image Into Memory");
                     }
                     imagePlus.show();
                 }

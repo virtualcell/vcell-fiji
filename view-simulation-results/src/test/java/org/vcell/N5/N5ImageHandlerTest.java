@@ -41,6 +41,11 @@ public class N5ImageHandlerTest {
         }
     }
 
+    @Before
+    public void run(){
+        N5ImageHandler.getLogger();
+    }
+
     @Test
     public void testN5DatasetList() throws IOException {
         SimResultsLoader simResultsLoader = new SimResultsLoader();
