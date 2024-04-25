@@ -130,30 +130,21 @@
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5</artifactId>
+            <version>3.2.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-imglib2 -->
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5-imglib2</artifactId>
+            <version>7.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-aws-s3 -->
         <dependency>
             <groupId>org.janelia.saalfeldlab</groupId>
             <artifactId>n5-aws-s3</artifactId>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-zarr -->
-        <dependency>
-            <groupId>org.janelia.saalfeldlab</groupId>
-            <artifactId>n5-zarr</artifactId>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.janelia.saalfeldlab/n5-ij -->
-        <dependency>
-            <groupId>org.janelia.saalfeldlab</groupId>
-            <artifactId>n5-ij</artifactId>
+            <version>4.1.1</version>
         </dependency>
 
 

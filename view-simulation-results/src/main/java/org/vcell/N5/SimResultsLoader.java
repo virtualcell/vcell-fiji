@@ -139,10 +139,10 @@ public class SimResultsLoader {
 
         N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
         long start = System.currentTimeMillis();
-        logger.debug("Reading N5 File Into Virtual Image");
+        logger.debug("Reading N5 File " + userSetFileName + " Into Virtual Image");
         ImagePlus imagePlus = ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
         long end = System.currentTimeMillis();
-        logger.debug("Read N5 File Into ImageJ taking: " + ((end - start) / 1000) + "s");
+        logger.debug("Read N5 File " + userSetFileName + " Into ImageJ taking: " + ((end - start) / 1000) + "s");
         return imagePlus;
     }
 
@@ -172,10 +172,10 @@ public class SimResultsLoader {
                     ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
                     if(openInMemory){
                         long start = System.currentTimeMillis();
-                        logger.debug("Loading Virtual N5 File Into Memory");
+                        logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
                         imagePlus = new Duplicator().run(imagePlus);
                         long end = System.currentTimeMillis();
-                        logger.debug("Loaded Virtual N5 File Into Memory taking: " + ((end - start)/ 1000) + "s");
+                        logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
                     }
                     imagePlus.show();
                 }
