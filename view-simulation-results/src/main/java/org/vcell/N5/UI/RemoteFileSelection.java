@@ -64,19 +64,7 @@ public class RemoteFileSelection extends JDialog{
         this.credentialsPanel.setVisible(false);
         this.endpointPanel.setVisible(false);
 
-        this.credentialsCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                credentialsPanel.setVisible(!credentialsPanel.isVisible());
-            }
-        });
-
-        this.endpointCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                endpointPanel.setVisible(!endpointPanel.isVisible());
-            }
-        });
+        submitS3Info.addActionListener(this);
     }
 
     public HashMap<String, String> returnCredentials(){
