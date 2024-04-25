@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.SimResultsLoader;
@@ -32,30 +32,30 @@ import java.util.List;
 import java.util.Stack;
 
 public class N5ExportTable implements ActionListener, ListSelectionListener {
-    private JDialog exportTableDialog;
+    public static JDialog exportTableDialog;
     private N5ExportTableModel n5ExportTableModel;
     private ParameterTableModel parameterTableModel;
     private JTable parameterTable;
     private JTable exportListTable;
 
-    private JButton open;
-    private JButton copyLink;
-    private JButton refreshButton;
-    private JButton useN5Link;
-    private JButton questionMark;
-    private JCheckBox openInMemory;
+    private static JButton open;
+    private static JButton copyLink;
+    private static JButton refreshButton;
+    private static JButton useN5Link;
+    private static JButton questionMark;
+    public static JCheckBox openInMemory;
     private JCheckBox todayInterval;
     private JCheckBox monthInterval;
     private JCheckBox yearlyInterval;
     private JCheckBox anyInterval;
     private JTextPane variableTextPanel;
-    private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-    private RemoteFileSelection remoteFileSelection;
+    private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+    private static RemoteFileSelection remoteFileSelection;
     private final int paneWidth = 800;
 
-    private final LogService logService = N5ImageHandler.getLogger();
+    private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
-    public N5ExportTable(N5ImageHandler n5ImageHandler){
+    public N5ExportTable(){
         remoteFileSelection = new RemoteFileSelection();
     }
 
@@ -230,45 +230,12 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         return topBar;
     }
 
-    public void enableCriticalButtons(boolean enable){
+    public static void enableCriticalButtons(boolean enable){
         useN5Link.setEnabled(enable);
         open.setEnabled(enable);
         refreshButton.setEnabled(enable);
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
-    }
-
-    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        enableCriticalButtons(false);
-        exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        Thread openN5FileDataset = new Thread(() -> {
-            enableCriticalButtons(false);
-            try{
-                for(SimResultsLoader simResultsLoader: filesToOpen){
-                    logService.debug("Creating S3 Client from Table");
-                    simResultsLoader.createS3Client();
-                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    logService.debug("Got ImagePlus in Table");
-                    if(openInMemory){
-                        logService.debug("Loading Image Into Memory");
-                        imagePlus = new Duplicator().run(imagePlus);
-                        logService.debug("Loaded Image Into Memory");
-                    }
-                    imagePlus.show();
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                        enableCriticalButtons(true);
-                    }
-                });
-            }
-        });
-        openN5FileDataset.start();
     }
 
     @Override
@@ -280,7 +247,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
-            openN5FileDataset(filesToOpen, openInMemory.isSelected());
+            SimResultsLoader.openN5FileDataset(filesToOpen, openInMemory.isSelected());
         } else if (e.getSource().equals(copyLink)) {
             ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -291,10 +258,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(remoteFileSelection.submitS3Info)) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(remoteFileSelection.getS3URL(), "");
-            openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, openInMemory.isSelected());
-            remoteFileSelection.setVisible(false);
         }
     }
 

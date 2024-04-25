@@ -29,33 +29,24 @@ public class N5ImageHandler implements Command {
         exportTable = new N5ExportTable();
         initializeLogService();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
-        N5ExportTable exportTable = new N5ExportTable(this);
-        if(N5ImageHandler.logService == null){
-            N5ImageHandler.logService = new SLF4JLogService();
-        }
-        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         exportTable.displayExportTable();
     }
 
-    public void displayN5Dataset(ImagePlus imagePlus) throws IOException {
-        if (this.vGui.openMemoryCheckBox.isSelected()){
-            ImagePlus memoryImagePlus = new Duplicator().run(imagePlus);
-            memoryImagePlus.show();
-        }
-        else{
-            imagePlus.show();
-        }
+    public static Logger getLogger(Class classToLog){
+        return logService.subLogger(classToLog.getCanonicalName(), LogService.DEBUG);
     }
 
-    public static LogService getLogger(){
-        if (logService == null){
-            logService = new SLF4JLogService();
+    public static void initializeLogService(){
+        if (N5ImageHandler.logService == null){
+            N5ImageHandler.logService = new SLF4JLogService();
+            N5ImageHandler.logService.initialize();
         }
-        return logService;
     }
 
     public static void main(String[] args) {
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
+        initializeLogService();
         n5ImageHandler.run();
     }
+
 }

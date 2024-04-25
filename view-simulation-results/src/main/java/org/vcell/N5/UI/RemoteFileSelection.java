@@ -1,26 +1,27 @@
 package org.vcell.N5.UI;
 
+import org.vcell.N5.SimResultsLoader;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 
-public class RemoteFileSelection extends JDialog{
+public class RemoteFileSelection extends JDialog implements ActionListener{
     private JPanel mainPanel;
-    private JTextField linkTextField;
-    private JTextField s3AccessKeyTextField;
-    private JTextField s3SecretKeyTextField;
+    private final JTextField linkTextField;
+    private final JTextField s3AccessKeyTextField;
+    private final JTextField s3SecretKeyTextField;
     public JCheckBox credentialsCheckBox;
-    private JTextField s3EndpointTextField;
-    private JTextField s3RegionTextField;
+    private final JTextField s3EndpointTextField;
+    private final JTextField s3RegionTextField;
     private JTextField s3BucketNameTextField;
     public JCheckBox endpointCheckBox;
     public JButton submitS3Info;
     private JPanel credentialsPanel;
     private JPanel endpointPanel;
-    private int panelWidth = 500;
-    private int panelHeight = 350;
 
     public RemoteFileSelection(){
         this(null);
@@ -38,12 +39,12 @@ public class RemoteFileSelection extends JDialog{
         s3EndpointTextField = new JTextField();
         s3SecretKeyTextField = new JTextField();
 
-
         credentialsCheckBox = new JCheckBox("S3 Credentials");
         endpointCheckBox = new JCheckBox("S3 Endpoint");
 
         GridBagConstraints mainPanelConstraints = new GridBagConstraints();
         linkTextField = new JTextField();
+        int panelWidth = 500;
         linkTextField.setPreferredSize(new Dimension((panelWidth - 100), 35));
         mainPanelConstraints.gridx = 0;
         mainPanelConstraints.gridy = 0;
@@ -54,12 +55,10 @@ public class RemoteFileSelection extends JDialog{
         mainPanelConstraints.gridy = 1;
         mainPanel.add(submitS3Info);
 
-
         this.setContentPane(this.mainPanel);
+        int panelHeight = 350;
         this.setSize(panelWidth, panelHeight);
         this.setResizable(true);
-
-
 
         this.credentialsPanel.setVisible(false);
         this.endpointPanel.setVisible(false);
@@ -93,5 +92,10 @@ public class RemoteFileSelection extends JDialog{
     }
 
 
-
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        SimResultsLoader simResultsLoader = new SimResultsLoader(getS3URL(), "");
+        SimResultsLoader.openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, N5ExportTable.openInMemory.isSelected());
+        this.setVisible(false);
+    }
 }

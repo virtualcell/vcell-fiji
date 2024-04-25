@@ -43,7 +43,7 @@ public class N5ImageHandlerTest {
 
     @Before
     public void run(){
-        N5ImageHandler.getLogger();
+        N5ImageHandler.initializeLogService();
     }
 
     @Test
