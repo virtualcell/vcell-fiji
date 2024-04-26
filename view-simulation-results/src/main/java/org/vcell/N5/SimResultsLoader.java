@@ -7,14 +7,17 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
 import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
+import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
 import org.vcell.N5.UI.N5ExportTable;
@@ -134,10 +137,10 @@ public class SimResultsLoader {
     }
 
     public ImagePlus getImgPlusFromN5File() throws IOException {
-//        AmazonS3KeyValueAccess amazonS3KeyValueAccess = new AmazonS3KeyValueAccess(s3Client, bucketName, false);
-//        N5KeyValueReader n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), true);
+        AmazonS3KeyValueAccess amazonS3KeyValueAccess = new AmazonS3KeyValueAccess(s3Client, bucketName, false);
+        N5KeyValueReader n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), true);
 
-        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
+//        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
         long start = System.currentTimeMillis();
         logger.debug("Reading N5 File " + userSetFileName + " Into Virtual Image");
         ImagePlus imagePlus = ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
