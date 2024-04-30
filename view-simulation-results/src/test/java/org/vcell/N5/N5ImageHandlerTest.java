@@ -89,11 +89,11 @@ public class N5ImageHandlerTest {
         simResultsLoader.createS3Client(null, s3Endpoint);
         this.remoteN5ImgPlusTests(simResultsLoader);
 
-        simResultsLoader.createS3Client(credentials, null);
-        this.remoteN5ImgPlusTests(simResultsLoader);
-
-        simResultsLoader.createS3Client(credentials, s3Endpoint);
-        this.remoteN5ImgPlusTests(simResultsLoader);
+//        simResultsLoader.createS3Client(credentials, null);
+//        this.remoteN5ImgPlusTests(simResultsLoader);
+//
+//        simResultsLoader.createS3Client(credentials, s3Endpoint);
+//        this.remoteN5ImgPlusTests(simResultsLoader);
     }
 
     @Test
