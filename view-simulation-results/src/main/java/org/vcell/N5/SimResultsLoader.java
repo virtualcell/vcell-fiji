@@ -92,6 +92,7 @@ public class SimResultsLoader {
             this.s3ObjectKey = pathSubStrings[2];
             this.bucketName = pathSubStrings[1];
             s3ClientBuilder.withPathStyleAccessEnabled(true);
+            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
             s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), "site2-low"));
             this.s3Client = s3ClientBuilder.build();
             logger.debug("Created S3 Client With Legacy URL");
