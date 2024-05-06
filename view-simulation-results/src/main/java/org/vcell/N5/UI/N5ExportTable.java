@@ -1,10 +1,6 @@
 package org.vcell.N5.UI;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import ij.ImagePlus;
-import ij.plugin.Duplicator;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.SimResultsLoader;
@@ -20,10 +16,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,30 +25,36 @@ import java.util.List;
 import java.util.Stack;
 
 public class N5ExportTable implements ActionListener, ListSelectionListener {
-    private JDialog exportTableDialog;
+    public static JDialog exportTableDialog;
     private N5ExportTableModel n5ExportTableModel;
     private ParameterTableModel parameterTableModel;
     private JTable parameterTable;
     private JTable exportListTable;
+    private JScrollPane tableScrollPane;
 
-    private JButton open;
-    private JButton copyLink;
-    private JButton refreshButton;
-    private JButton useN5Link;
-    private JButton questionMark;
-    private JCheckBox openInMemory;
+    private static JButton open;
+    private static JButton copyLink;
+    private static JButton refreshButton;
+    private static JButton useN5Link;
+    private static JButton questionMark;
+    public static JCheckBox openInMemory;
+    private static JButton switchMainTableContext;
+    private final String optionForExampleTableButtonText = "Show Export Examples";
+    private final String optionForPersonalTableButtonText = "Show My Exports";
+    private final String exampleTableLabelText = " Example Export Table ";
+    private final String personalTableLabelText = "  Personal Export Table ";
     private JCheckBox todayInterval;
     private JCheckBox monthInterval;
     private JCheckBox yearlyInterval;
     private JCheckBox anyInterval;
     private JTextPane variableTextPanel;
-    private Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-    private RemoteFileSelection remoteFileSelection;
+    private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+    private static RemoteFileSelection remoteFileSelection;
     private final int paneWidth = 800;
 
-    private final LogService logService = N5ImageHandler.getLogger();
+    private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
-    public N5ExportTable(N5ImageHandler n5ImageHandler){
+    public N5ExportTable(){
         remoteFileSelection = new RemoteFileSelection();
     }
 
@@ -63,7 +62,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         ExportDataRepresentation jsonData = null;
         n5ExportTableModel.resetData();
         try {
-            jsonData = getJsonData();
+            jsonData = switchMainTableContext.getText().equals(optionForPersonalTableButtonText) ? N5ImageHandler.getExampleJSONData() : N5ImageHandler.getJsonData();
             if (jsonData != null){
                 LocalDateTime pastTime = LocalDateTime.now();
                 if (todayInterval.isSelected()){
@@ -89,6 +88,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 }
             }
             n5ExportTableModel.fireTableDataChanged();
+            tableScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, switchMainTableContext.getText().equals(optionForPersonalTableButtonText) ? exampleTableLabelText : personalTableLabelText));
+            tableScrollPane.updateUI();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -149,11 +150,11 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JScrollPane tablePanel(){
         n5ExportTableModel = new N5ExportTableModel();
         exportListTable = new JTable(n5ExportTableModel);
-        JScrollPane jScrollPane = new JScrollPane(exportListTable);
+        tableScrollPane = new JScrollPane(exportListTable);
 
-        jScrollPane.setPreferredSize(new Dimension(500, 400));
-        jScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Export Table "));
-        return jScrollPane;
+        tableScrollPane.setPreferredSize(new Dimension(500, 400));
+        tableScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, switchMainTableContext.getText().equals(optionForExampleTableButtonText) ? personalTableLabelText : exampleTableLabelText));
+        return tableScrollPane;
     }
 
     private JPanel topPanel(){
@@ -163,36 +164,51 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
         openInMemory = new JCheckBox("Open In Memory");
+        switchMainTableContext = new JButton(N5ImageHandler.exportedDataExists() ? optionForExampleTableButtonText : optionForPersonalTableButtonText);
         openInMemory.setSelected(true);
+
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+
+        JPanel topRow = new JPanel(new GridBagLayout());
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        topRow.add(open, gridBagConstraints);
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        topRow.add(refreshButton, gridBagConstraints);
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        topRow.add(copyLink, gridBagConstraints);
+
+        JPanel midRow = new JPanel(new GridBagLayout());
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        midRow.add(useN5Link, gridBagConstraints);
+//        gridBagConstraints.gridx = 1;
+//        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        midRow.add(switchMainTableContext, gridBagConstraints);
+
+        JPanel bottomRow = new JPanel(new GridBagLayout());
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        bottomRow.add(openInMemory, gridBagConstraints);
 
 
         JPanel userButtonsPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gridBagConstraints = new GridBagConstraints();
-        Insets buttonMargin = new Insets(2, 5, 2, 5);
-        gridBagConstraints.insets = buttonMargin;
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        open.setMargin(buttonMargin);
-        userButtonsPanel.add(open, gridBagConstraints);
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        refreshButton.setMargin(buttonMargin);
-        userButtonsPanel.add(refreshButton, gridBagConstraints);
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 0;
-        copyLink.setMargin(buttonMargin);
-        userButtonsPanel.add(copyLink, gridBagConstraints);
-        gridBagConstraints.gridx = 0;
+        userButtonsPanel.add(topRow, gridBagConstraints);
         gridBagConstraints.gridy = 1;
-        useN5Link.setMargin(buttonMargin);
-        userButtonsPanel.add(useN5Link, gridBagConstraints);
-        gridBagConstraints.gridx = 1;
+        userButtonsPanel.add(midRow, gridBagConstraints);
         gridBagConstraints.gridy = 2;
-        questionMark.setMargin(buttonMargin);
+        userButtonsPanel.add(bottomRow, gridBagConstraints);
+
+
+
 //        buttonsPanel.add(questionMark);
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 1;
-        userButtonsPanel.add(openInMemory, gridBagConstraints);
+
 
         todayInterval = new JCheckBox("Past 24 Hours");
         monthInterval = new JCheckBox("Past Month");
@@ -225,50 +241,18 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         copyLink.addActionListener(this);
         questionMark.addActionListener(this);
         useN5Link.addActionListener(this);
-        remoteFileSelection.submitS3Info.addActionListener(this);
+        switchMainTableContext.addActionListener(this);
 
         return topBar;
     }
 
-    public void enableCriticalButtons(boolean enable){
+    public static void enableCriticalButtons(boolean enable){
         useN5Link.setEnabled(enable);
         open.setEnabled(enable);
         refreshButton.setEnabled(enable);
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
-    }
-
-    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        enableCriticalButtons(false);
-        exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        Thread openN5FileDataset = new Thread(() -> {
-            enableCriticalButtons(false);
-            try{
-                for(SimResultsLoader simResultsLoader: filesToOpen){
-                    logService.debug("Creating S3 Client from Table");
-                    simResultsLoader.createS3Client();
-                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    logService.debug("Got ImagePlus in Table");
-                    if(openInMemory){
-                        logService.debug("Loading Image Into Memory");
-                        imagePlus = new Duplicator().run(imagePlus);
-                        logService.debug("Loaded Image Into Memory");
-                    }
-                    imagePlus.show();
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                        enableCriticalButtons(true);
-                    }
-                });
-            }
-        });
-        openN5FileDataset.start();
+        switchMainTableContext.setEnabled(enable);
     }
 
     @Override
@@ -280,7 +264,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
-            openN5FileDataset(filesToOpen, openInMemory.isSelected());
+            SimResultsLoader.openN5FileDataset(filesToOpen, openInMemory.isSelected());
         } else if (e.getSource().equals(copyLink)) {
             ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -291,10 +275,10 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(remoteFileSelection.submitS3Info)) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(remoteFileSelection.getS3URL(), "");
-            openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, openInMemory.isSelected());
-            remoteFileSelection.setVisible(false);
+        } else if (e.getSource().equals(switchMainTableContext)){
+            String currentState = switchMainTableContext.getText();
+            switchMainTableContext.setText(currentState.equals(optionForExampleTableButtonText) ? optionForPersonalTableButtonText : optionForExampleTableButtonText);
+            initalizeTableData();
         }
     }
 
@@ -318,29 +302,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         parameterTable.updateUI();
     }
 
-    public static ExportDataRepresentation.SimulationExportDataRepresentation getLastJSONElement() throws FileNotFoundException {
-        ExportDataRepresentation jsonData = getJsonData();
-        if (jsonData != null && jsonData.formatData.containsKey(N5ImageHandler.formatName)) {
-            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get(N5ImageHandler.formatName);
-            Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
-            String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
 
-            return jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
-        }
-        return null;
-    }
-
-    public static ExportDataRepresentation getJsonData() throws FileNotFoundException {
-        File jsonFile = new File(System.getProperty("user.home") + "/.vcell", "exportMetaData.json");
-        if (jsonFile.exists() && jsonFile.length() != 0){
-            ExportDataRepresentation jsonHashMap;
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class);
-            return jsonHashMap;
-        }
-        return null;
-
-    }
     static class ParameterTableModel extends AbstractTableModel{
 
         private final static String parameterHeader = "Parameter";
