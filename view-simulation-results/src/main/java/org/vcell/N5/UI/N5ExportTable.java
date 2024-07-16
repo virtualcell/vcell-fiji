@@ -11,18 +11,20 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class N5ExportTable implements ActionListener, ListSelectionListener {
     public static JDialog exportTableDialog;
@@ -31,6 +33,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JTable parameterTable;
     private JTable exportListTable;
     private JScrollPane tableScrollPane;
+    private JSplitPane exportDetails;
 
     private static JButton open;
     private static JButton copyLink;
@@ -97,23 +100,20 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
 
     private void initialize(){
-        JPanel exportPanel = new JPanel();
+        JPanel parentPanel = new JPanel();
 
-        exportPanel.setLayout(new BorderLayout());
-        exportPanel.add(topPanel(), BorderLayout.NORTH);
+        parentPanel.setLayout(new BorderLayout());
+        parentPanel.add(topPanel(), BorderLayout.NORTH);
         JSplitPane jSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,tablePanel(), exportDetailsPanel());
         jSplitPane.setContinuousLayout(true);
-        exportPanel.add(jSplitPane, BorderLayout.CENTER);
+        parentPanel.add(jSplitPane, BorderLayout.CENTER);
 
-        exportPanel.setPreferredSize(new Dimension(paneWidth, 650));
-        JOptionPane pane = new JOptionPane(exportPanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[]{"Close"});
+        parentPanel.setPreferredSize(new Dimension(paneWidth, 650));
+        JOptionPane pane = new JOptionPane(parentPanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[]{"Close"});
         exportTableDialog = pane.createDialog("VCell Exports");
         exportTableDialog.setModal(false);
         exportTableDialog.setResizable(true);
         exportTableDialog.setVisible(true);
-
-
-        exportListTable.getSelectionModel().addListSelectionListener(this);
 
         initalizeTableData();
     }
@@ -140,10 +140,12 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         jtextScrollPane.setPreferredSize(new Dimension(paneWidth / 2, 80));
         jtextScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Variables "));
 
-        JSplitPane exportDetails = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jtextScrollPane, parameterTableScrollPane);
+        exportDetails = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jtextScrollPane, parameterTableScrollPane);
         exportDetails.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Export Details "));
         exportDetails.setResizeWeight(0.5);
         exportDetails.setContinuousLayout(true);
+
+        setEnableParentAndChild(exportDetails, false);
         return exportDetails;
     }
 
@@ -152,8 +154,11 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         exportListTable = new JTable(n5ExportTableModel);
         tableScrollPane = new JScrollPane(exportListTable);
 
+
         tableScrollPane.setPreferredSize(new Dimension(500, 400));
         tableScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, switchMainTableContext.getText().equals(optionForExampleTableButtonText) ? personalTableLabelText : exampleTableLabelText));
+        exportListTable.getSelectionModel().addListSelectionListener(this);
+
         return tableScrollPane;
     }
 
@@ -243,6 +248,14 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         useN5Link.addActionListener(this);
         switchMainTableContext.addActionListener(this);
 
+        Enumeration<AbstractButton> b = buttonGroup.getElements();
+        while (b.hasMoreElements()){
+            b.nextElement().addActionListener(this);
+        }
+        
+        open.setEnabled(false);
+        copyLink.setEnabled(false);
+
         return topBar;
     }
 
@@ -253,6 +266,29 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
         switchMainTableContext.setEnabled(enable);
+    }
+
+    public static void setEnableParentAndChild(Container container, boolean enable){
+        container.setEnabled(enable);
+        for (Component component : container.getComponents()){
+            if (component instanceof Container){
+                setEnableParentAndChild((Container) component, enable);
+            }
+            component.setEnabled(enable);
+            if(component instanceof JTable){
+                Enumeration<TableColumn> columns = ((JTable) component).getColumnModel().getColumns();
+                while (columns.hasMoreElements()){
+                    columns.nextElement().setHeaderRenderer(new DefaultTableCellRenderer(){
+                        @Override
+                        public Component getTableCellRendererComponent(JTable table,Object value,boolean isSelected,boolean hasFocus,int row,int column) {
+                            Component c = super.getTableCellRendererComponent(table,value,isSelected,hasFocus,row,column);
+                            c.setForeground(enable ? Color.BLACK : Color.GRAY);
+                            return c;
+                        }
+                    });
+                }
+            }
+        }
     }
 
     @Override
@@ -279,6 +315,9 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             String currentState = switchMainTableContext.getText();
             switchMainTableContext.setText(currentState.equals(optionForExampleTableButtonText) ? optionForPersonalTableButtonText : optionForExampleTableButtonText);
             initalizeTableData();
+        } else if (e.getSource().equals(anyInterval) || e.getSource().equals(todayInterval)
+                || e.getSource().equals(monthInterval) || e.getSource().equals(yearlyInterval)) {
+            initalizeTableData();
         }
     }
 
@@ -286,8 +325,16 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     public void valueChanged(ListSelectionEvent e) {
         int row = exportListTable.getSelectedRow();
         if (row > exportListTable.getRowCount() || row < 0){
+            parameterTableModel.resetTableData();
+            variableTextPanel.setText("");
+            open.setEnabled(false);
+            copyLink.setEnabled(false);
+            setEnableParentAndChild(exportDetails, false);
             return;
         }
+        open.setEnabled(true);
+        copyLink.setEnabled(true);
+        setEnableParentAndChild(exportDetails, true);
 //        AttributeSet attributeSet = styleContext.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.)
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
         variableTextPanel.setText("Variables: " + rowData.variables);
@@ -311,7 +358,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
 
         private List<HashMap<String, String>> tableData = new ArrayList<>();
-        private final ArrayList<String> headers = new ArrayList<String>(){{
+        public final ArrayList<String> headers = new ArrayList<String>(){{
             add(parameterHeader);
             add(defaultValueHeader);
             add(newValueHeader);
@@ -361,9 +408,9 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
     static class N5ExportTableModel extends AbstractTableModel {
         public final ArrayList<String> headers = new ArrayList<String>(){{
-            add("BM Name");
-            add("App Name");
-            add("Sim Name");
+            add("BioModel");
+            add("Application");
+            add("Simulation");
             add("Time Slice");
             add("Date Exported");
             add("N5 File Name");
@@ -392,11 +439,11 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             ExportDataRepresentation.SimulationExportDataRepresentation data = getRowData(rowIndex);
-            if (columnIndex == headers.indexOf("App Name")){
+            if (columnIndex == headers.indexOf("Application")){
                 return data.applicationName;
-            } else if (columnIndex == headers.indexOf("BM Name")) {
+            } else if (columnIndex == headers.indexOf("BioModel")) {
                 return data.biomodelName;
-            } else if (columnIndex == headers.indexOf("Sim Name")) {
+            } else if (columnIndex == headers.indexOf("Simulation")) {
                 return data.simulationName;
             } else if (columnIndex == headers.indexOf("Time Slice")) {
                 return  data.startAndEndTime;
