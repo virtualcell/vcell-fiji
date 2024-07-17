@@ -33,6 +33,7 @@ public class N5ImageHandler implements Command {
     public static LogService logService;
     public static N5ExportTable exportTable;
     public static String exportedMetaDataPath = System.getProperty("user.home") + "/.vcell/exportMetaData.json";
+    private static ExportDataRepresentation.FormatExportDataRepresentation exampleJSONData;
 
     @Override
     public void run() {
@@ -56,19 +57,8 @@ public class N5ImageHandler implements Command {
     public static void main(String[] args) {
         N5ImageHandler n5ImageHandler = new N5ImageHandler();
         initializeLogService();
+        setExampleJSONData();
         n5ImageHandler.run();
-    }
-
-    public static ExportDataRepresentation.SimulationExportDataRepresentation getLastJSONElement() throws FileNotFoundException {
-        ExportDataRepresentation jsonData = getJsonData();
-        if (jsonData != null && jsonData.formatData.containsKey(N5ImageHandler.formatName)) {
-            ExportDataRepresentation.FormatExportDataRepresentation formatExportDataRepresentation = jsonData.formatData.get(N5ImageHandler.formatName);
-            Stack<String> formatJobIDs = formatExportDataRepresentation.formatJobIDs;
-            String jobID = formatJobIDs.isEmpty() ? null : formatJobIDs.peek();
-
-            return jobID == null ? null : formatExportDataRepresentation.simulationDataMap.get(jobID);
-        }
-        return null;
     }
 
     public static boolean exportedDataExists(){
@@ -76,29 +66,29 @@ public class N5ImageHandler implements Command {
         return jsonFile.exists();
     }
 
-    public static ExportDataRepresentation getJsonData() throws FileNotFoundException {
+    public static ExportDataRepresentation.FormatExportDataRepresentation getJsonData() throws FileNotFoundException {
         File jsonFile = new File(exportedMetaDataPath);
         if (jsonFile.exists() && jsonFile.length() != 0){
-            ExportDataRepresentation jsonHashMap;
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            jsonHashMap = gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class);
-            return jsonHashMap;
+            return gson.fromJson(new FileReader(jsonFile.getAbsolutePath()), ExportDataRepresentation.class).formatData.get(N5ImageHandler.formatName);
         }
         return null;
 
     }
 
-//    https://www.npoint.io/docs/b85bb21076bf422a7d93
-    public static ExportDataRepresentation getExampleJSONData() throws FileNotFoundException {
+    private static void setExampleJSONData(){
         try(BufferedInputStream remoteJSONFile = new BufferedInputStream(new URL("https://api.npoint.io/b85bb21076bf422a7d93").openStream())){
             InputStreamReader remoteJSONFileReader = new InputStreamReader(remoteJSONFile);
-            ExportDataRepresentation jsonHashMap;
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            jsonHashMap = gson.fromJson(remoteJSONFileReader, ExportDataRepresentation.class);
-            return jsonHashMap;
+            exampleJSONData = gson.fromJson(remoteJSONFileReader, ExportDataRepresentation.class).formatData.get(N5ImageHandler.formatName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+//    https://www.npoint.io/docs/b85bb21076bf422a7d93
+    public static ExportDataRepresentation.FormatExportDataRepresentation getExampleJSONData() throws FileNotFoundException {
+        return exampleJSONData;
     }
 
 
