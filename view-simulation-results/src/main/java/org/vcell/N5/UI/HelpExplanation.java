@@ -27,14 +27,16 @@ public class HelpExplanation {
             throw new RuntimeException(e);
         }
         textPane.setContentType("text/html");
-        textPane.setSize(width, height);
-        textPane.setPreferredSize(new Dimension(width, height));
+        textPane.setSize(width, 1000);
+        textPane.setPreferredSize(new Dimension(width, 1000));
         textPane.setText(text);
         textPane.setEditable(false);
 
         JScrollPane scrollPane = new JScrollPane(textPane);
         scrollPane.setSize(width, height);
+        scrollPane.setPreferredSize(new Dimension(width, height));
         helperPanel.setSize(width, height);
+        helperPanel.setPreferredSize(new Dimension(width, height));
         helperPanel.add(scrollPane);
 
 

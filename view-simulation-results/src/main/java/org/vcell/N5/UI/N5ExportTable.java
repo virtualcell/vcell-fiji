@@ -220,6 +220,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         copyLink = new JButton("Copy Link");
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
+        questionMark.setPreferredSize(new Dimension(20, 20));
         openInMemory = new JCheckBox("Open In Memory");
         openInMemory.setSelected(false);
         includeExampleExports = new JCheckBox("Show Example Exports");
@@ -236,6 +237,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         topRow.add(copyLink, gridBagConstraints);
         gridBagConstraints.gridx = 2;
         topRow.add(useN5Link, gridBagConstraints);
+        gridBagConstraints.gridx = 3;
+        topRow.add(questionMark, gridBagConstraints);
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
