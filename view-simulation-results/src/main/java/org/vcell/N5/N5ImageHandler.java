@@ -78,7 +78,7 @@ public class N5ImageHandler implements Command {
     }
 
     private static void setExampleJSONData(){
-        try(BufferedInputStream remoteJSONFile = new BufferedInputStream(new URL("https://api.npoint.io/b85bb21076bf422a7d93").openStream())){
+        try(BufferedInputStream remoteJSONFile = new BufferedInputStream(new URL("https://api.npoint.io/6de0febb887fdc4c2fa0").openStream())){
             InputStreamReader remoteJSONFileReader = new InputStreamReader(remoteJSONFile);
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             exampleJSONData = gson.fromJson(remoteJSONFileReader, ExportDataRepresentation.class).formatData.get(N5ImageHandler.formatName);

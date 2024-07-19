@@ -124,7 +124,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                         boolean isUpdated = false;
                         while (!jobStack.isEmpty()){
                             String currentJob = jobStack.pop();
-                            if (mostRecentTableEntry != null && currentJob.equals(mostRecentTableEntry.jobID)){
+                            if (mostRecentTableEntry != null && (currentJob.equals(mostRecentTableEntry.jobID)
+                                    || !formatExportData.simulationDataMap.containsKey(mostRecentTableEntry.jobID))){
                                 break;
                             }
                             isUpdated = n5ExportTableModel.appendRowData(formatExportData.simulationDataMap.get(currentJob), oldestTimeAllowed());
