@@ -19,7 +19,7 @@ public class N5DataSetFile {
     }
 
     public static N5DataSetFile[] alphaTestFiles(){
-        N5DataSetFile frapSimulationResultsMasked = new N5DataSetFile("https://vcellapi-beta.cam.uchc.edu:8088/n5Data/ezequiel23/b5b12db07b6bc1bc15456fb59b530a19.n5?dataSetName=Plugin_Test_Frap_Masked",
+        N5DataSetFile frapSimulationResultsMasked = new N5DataSetFile("https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/b5b12db07b6bc1bc15456fb59b530a19.n5?dataSetName=Plugin_Test_Frap_Masked",
                 new String[]{"Dex"},
                 new HashMap<Integer, String>(){{put(1, "Cyt"); put(0, "Ec");}},
                 new double[][]{{10.0, 9.990392675155721, 9.83580092714469, 9.520539931524715, 9.162150060086567, 8.82335160436397, 8.523689113752786, 8.265381795870683, 8.044751960699015, 7.856809648125466,

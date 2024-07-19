@@ -1,9 +1,11 @@
 package org.vcell.N5;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.http.conn.ssl.SdkTLSSocketFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
@@ -13,6 +15,9 @@ import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.ssl.SSLContexts;
 import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
@@ -22,6 +27,9 @@ import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
 import org.vcell.N5.UI.N5ExportTable;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -29,6 +37,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -86,6 +97,24 @@ public class SimResultsLoader {
         // otherwise assume it is one of our URLs
         // http://vcell:8000/bucket/object/object2
         catch (IllegalArgumentException e){
+            if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
+                SSLContext sslContext = null;
+                try {
+                    sslContext = SSLContexts.custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build();
+                } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                    throw new RuntimeException("Custom ssl context not functional.",ex);
+                }
+                HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String hostname, SSLSession session) {
+                        return true;
+                    }
+                };
+                ConnectionSocketFactory connectionSocketFactory = new SdkTLSSocketFactory(sslContext, hostnameVerifier);
+                ClientConfiguration clientConfiguration = new ClientConfiguration();
+                clientConfiguration.getApacheHttpClientConfig().setSslSocketFactory(connectionSocketFactory);
+                s3ClientBuilder.setClientConfiguration(clientConfiguration);
+            }
             String[] pathSubStrings = uri.getPath().split("/", 3);
             this.s3ObjectKey = pathSubStrings[2];
             this.bucketName = pathSubStrings[1];
