@@ -39,6 +39,7 @@ public class N5ImageHandler implements Command {
     public void run() {
         exportTable = new N5ExportTable();
         initializeLogService();
+        setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         exportTable.displayExportTable();
     }
