@@ -5,6 +5,10 @@ import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.Duplicator;
 import ij.plugin.ImageCalculator;
+import ij.plugin.Thresholder;
+import ij.process.Blitter;
+import ij.process.ByteProcessor;
+import ij.process.ImageProcessor;
 import org.junit.*;
 
 import java.io.File;
@@ -126,7 +130,6 @@ public class N5ImageHandlerTest {
 
     public void alphaStatsTest(ImagePlus imagePlus, N5DataSetFile n5DataSetFile, stats testType){
         double[][] controlData = {{}};
-        imagePlus.setPosition(1, 0, 10);
         switch (testType){
             case HISTMAX:
                 controlData = n5DataSetFile.histMax;
@@ -137,9 +140,9 @@ public class N5ImageHandlerTest {
             case HISTAVERAGE:
                 controlData = n5DataSetFile.histAverage;
         }
-        for(int k = 1; k < controlData.length; k++){
+        for(int k = 0; k < controlData.length; k++){
             for (int i = 0; i < controlData[k].length; i++){
-                imagePlus.setPosition(k, 0, i+1);
+                imagePlus.setPosition(k + 1, 1, i + 1); //frame position seems to start at 1
                 double experimentalData = 0;
                 switch (testType){
                     case HISTMAX:
@@ -153,15 +156,27 @@ public class N5ImageHandlerTest {
                         setImageMask(imagePlus);
                         experimentalData = imagePlus.getStatistics().mean;
                 }
-                Assert.assertEquals(0.0, experimentalData - controlData[k][i], 0.000001);
+                Assert.assertEquals("Channel: " + k + " Time: " + i + " Stat: " + testType +
+                                "\n Experiment Value: " + experimentalData + " Control Value: " + controlData[k][i]
+                        ,0.0, experimentalData - controlData[k][i], 0.000001);
             }
         }
     }
 
     private void setImageMask(ImagePlus imagePlus){
-        ImagePlus maskImagePlus = imagePlus.createImagePlus();
-        maskImagePlus.setPosition(0, 0, 0);
-        imagePlus.getProcessor().setMask(maskImagePlus.createRoiMask());
+        ImagePlus maskImagePlus = imagePlus.duplicate();
+        maskImagePlus.setPosition(maskImagePlus.getNChannels(), 1, 1);
+        ImageProcessor maskProcessor = maskImagePlus.getChannelProcessor();
+        int height = maskImagePlus.getHeight();
+        int width = maskImagePlus.getWidth();
+        for (int i = 0; i < height; i++){
+            for (int k = 0; k < width; k++){
+                int maskValue = maskProcessor.get(k, i);
+                if (maskValue == 0){
+                    imagePlus.getProcessor().setf(k, i, Float.NaN);
+                }
+            }
+        }
     }
 
 
