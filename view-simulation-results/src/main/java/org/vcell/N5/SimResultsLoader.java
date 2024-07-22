@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
+import ij.measure.Calibration;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -18,6 +19,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.ssl.SSLContexts;
+import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
@@ -174,6 +176,7 @@ public class SimResultsLoader {
         ImagePlus imagePlus = ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
         long end = System.currentTimeMillis();
         logger.debug("Read N5 File " + userSetFileName + " Into ImageJ taking: " + ((end - start) / 1000) + "s");
+        setUnits(n5AmazonS3Reader, imagePlus);
         return imagePlus;
     }
 
@@ -186,6 +189,20 @@ public class SimResultsLoader {
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private void setUnits(N5Reader n5Reader, ImagePlus imagePlus){
+        try{
+            double pixelWidth = n5Reader.getAttribute(dataSetChosen, "pixelWidth", double.class);
+            double pixelHeight = n5Reader.getAttribute(dataSetChosen, "pixelHeight", double.class);
+            String unit = n5Reader.getAttribute(dataSetChosen, "unit", String.class);
+            imagePlus.getCalibration().setUnit(unit);
+            imagePlus.getCalibration().pixelHeight = pixelHeight;
+            imagePlus.getCalibration().pixelWidth = pixelWidth;
+        }
+        catch (N5Exception n5Exception){
+            logger.error("Can't read units.");
         }
     }
 

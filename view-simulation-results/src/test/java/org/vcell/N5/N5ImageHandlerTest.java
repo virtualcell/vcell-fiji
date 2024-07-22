@@ -1,13 +1,9 @@
 package org.vcell.N5;
 
-import com.amazonaws.regions.Regions;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.Duplicator;
 import ij.plugin.ImageCalculator;
-import ij.plugin.Thresholder;
-import ij.process.Blitter;
-import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import org.junit.*;
 
@@ -16,7 +12,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 
 /*
@@ -125,6 +120,50 @@ public class N5ImageHandlerTest {
             alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTMAX);
             alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTMIN);
             alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTAVERAGE);
+        }
+    }
+
+    interface PixelCalculations {
+        int grabEdge(int w, int h, int w1, int h1);
+    }
+
+    @Test
+    public void testUnits() throws IOException {
+        N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
+        for (N5DataSetFile n5DataSetFile: n5DataSetFiles){
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
+            simResultsLoader.createS3Client();
+            ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+            double areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1);
+            double totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight();
+            Assert.assertEquals(n5DataSetFile.totalArea, totalArea, 0.0000001);
+
+            totalArea = 0;
+            imagePlus.setPosition(imagePlus.getNChannels(), 1, 1);
+            ImageProcessor imageProcessor = imagePlus.getProcessor();
+
+            PixelCalculations pixelCalculations = ((w, h, w1, h1) -> {
+                int inBounds = (0 <= w1) && (w1 < imagePlus.getWidth()) && (0 <= h1) && (h1 < imagePlus.getHeight()) ? 2 : 1;
+                if (inBounds == 2 && imageProcessor.getf(w1, h1) != imageProcessor.getf(w, h)){
+                    return inBounds;
+                }
+                return 1;
+            });
+            for (int h = 0; h < imagePlus.getHeight(); h++){
+                for (int w = 0; w < imagePlus.getWidth(); w++){
+                    double sum = pixelCalculations.grabEdge(w, h, w, h -1) *
+                                pixelCalculations.grabEdge(w, h, w, h + 1) *
+                                pixelCalculations.grabEdge(w, h,w + 1, h) *
+                                pixelCalculations.grabEdge(w, h,w -1, h);
+                    if (imageProcessor.getf(w, h) != 1 && sum > 1){
+                        totalArea += (areaOfPixel / sum);
+                    }
+                    if (imageProcessor.getf(w, h) == 1){
+                        totalArea += areaOfPixel;
+                    }
+                }
+            }
+            Assert.assertEquals(n5DataSetFile.testDomainArea, totalArea, n5DataSetFile.testDomainArea * 0.013);
         }
     }
 

@@ -3,19 +3,23 @@ package org.vcell.N5;
 import java.util.HashMap;
 
 public class N5DataSetFile {
-    public String uri;
-    public String[] variables;
-    public HashMap<Integer, String> mask;
-    public double[][] histMax; //channel(variable), frame for [][]
-    public double[][] histMin;
-    public double[][] histAverage;
-    public N5DataSetFile(String uri, String[] variables, HashMap<Integer, String> mask, double[][] histMax, double[][] histMin, double[][] histAverage){
+    public final String uri;
+    public final String[] variables;
+    public final HashMap<Integer, String> mask;
+    public final double[][] histMax; //channel(variable), frame for [][]
+    public final double[][] histMin;
+    public final double[][] histAverage;
+    public final double totalArea;
+    public final double testDomainArea;
+    public N5DataSetFile(String uri, String[] variables, HashMap<Integer, String> mask, double[][] histMax, double[][] histMin, double[][] histAverage, double totalArea, double testDomainArea){
         this.uri = uri;
         this.histMax = histMax;
         this.histMin = histMin;
         this.histAverage = histAverage;
         this.variables = variables;
         this.mask = mask;
+        this.totalArea = totalArea;
+        this.testDomainArea = testDomainArea;
     }
 
     public static N5DataSetFile[] alphaTestFiles(){
@@ -29,7 +33,9 @@ public class N5DataSetFile {
                         4.441933641025697, 4.752525652114409, 5.021489447662615, 5.25417298783172, 5.4553370523518065, 5.62917275251317, 5.7793451286004585, 5.909046810912881, 6.0210510711120975}},
                 new double[][]{{
                         6.728509585652239, 6.7285095856523345, 6.728509585652324, 6.72850958565233, 6.728509585652335, 6.728509585652381, 6.728509585652381, 6.728509585652362, 6.728509585652365,
-                        6.728509585652356, 6.7285095856523185, 6.728509585652278, 6.7285095856522865, 6.728509585652241, 6.728509585652113, 6.728509585652124, 6.7285095856521355, 6.728509585652127, 6.728509585652108}});
+                        6.728509585652356, 6.7285095856523185, 6.728509585652278, 6.7285095856522865, 6.728509585652241, 6.728509585652113, 6.728509585652124, 6.7285095856521355, 6.728509585652127, 6.728509585652108}},
+                484,
+                314.64);
 
         return new N5DataSetFile[]{frapSimulationResultsMasked};
     }
