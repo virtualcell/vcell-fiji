@@ -171,20 +171,32 @@ public class N5ImageHandlerTest {
         }
     }
 
-    private void setImageMask(ImagePlus imagePlus){
+    private ImagePlus setImageMask(ImagePlus imagePlus){
         ImagePlus maskImagePlus = imagePlus.duplicate();
-        maskImagePlus.setPosition(maskImagePlus.getNChannels(), 1, 1);
-        ImageProcessor maskProcessor = maskImagePlus.getChannelProcessor();
+        LinkedTreeMap<String, LinkedTreeMap<String, Object>> channelInfo = (LinkedTreeMap<String, LinkedTreeMap<String, Object>>) imagePlus.getProperty("channelInfo");
+        String domainName = (String) channelInfo.get(String.valueOf(imagePlus.getChannel() - 1)).get("Domain");
+        LinkedTreeMap<String, String> maskInfo = (LinkedTreeMap<String, String>) imagePlus.getProperty("maskInfo");
+        int domainMaskValue = 0;
+        for (Map.Entry<String, String> entry : maskInfo.entrySet()) {
+            if (entry.getValue().equals(domainName)) {
+                domainMaskValue = Integer.parseInt(entry.getKey());
+                break;
+            }
+        }
+
+        maskImagePlus.setPosition(maskImagePlus.getNChannels(), imagePlus.getSlice(), imagePlus.getFrame());
+        ImageProcessor maskProcessor = maskImagePlus.getProcessor();
         int height = maskImagePlus.getHeight();
         int width = maskImagePlus.getWidth();
-        for (int i = 0; i < height; i++){
-            for (int k = 0; k < width; k++){
-                int maskValue = maskProcessor.get(k, i);
-                if (maskValue == 0){
-                    imagePlus.getProcessor().setf(k, i, Float.NaN);
+        for (int h = 0; h < height; h++){
+            for (int w = 0; w < width; w++){
+                float maskValue = maskProcessor.getPixelValue(w, h);
+                if (maskValue != domainMaskValue){
+                    imagePlus.getProcessor().setf(w, h, Float.NaN);
                 }
             }
         }
+        return imagePlus;
     }
 
 
