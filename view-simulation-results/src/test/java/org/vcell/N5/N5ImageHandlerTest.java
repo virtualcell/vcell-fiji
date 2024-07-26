@@ -64,37 +64,6 @@ public class N5ImageHandlerTest {
         fiveDStackTests(imagePlus);
     }
 
-//    @Test
-//    // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
-//    public void testS3Client() throws IOException {
-//        HashMap<String, String> s3Endpoint = new HashMap<>();
-//        HashMap<String, String> credentials = new HashMap<>();
-//
-//        s3Endpoint.put("Endpoint", "http://127.0.0.1:4000");
-//        s3Endpoint.put("Region", Regions.US_EAST_1.getName());
-//
-//        credentials.put("AccessKey", "jj");
-//        credentials.put("SecretKey", "jj");
-//
-//        final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName + "?datasetName=" + datasetName;
-//
-//        SimResultsLoader simResultsLoader = new SimResultsLoader(s3ProxyURI, "");
-//
-//        // Environment variables are set in github actions VM
-//
-//        simResultsLoader.createS3Client(null, null);
-//        this.remoteN5ImgPlusTests(simResultsLoader);
-//
-//        simResultsLoader.createS3Client(null, s3Endpoint);
-//        this.remoteN5ImgPlusTests(simResultsLoader);
-//
-////        simResultsLoader.createS3Client(credentials, null);
-////        this.remoteN5ImgPlusTests(simResultsLoader);
-////
-////        simResultsLoader.createS3Client(credentials, s3Endpoint);
-////        this.remoteN5ImgPlusTests(simResultsLoader);
-//    }
-
     @Test
     public void testS3AlphaInstance() throws IOException{
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
