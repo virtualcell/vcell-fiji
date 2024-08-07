@@ -21,9 +21,10 @@ public class N5DataSetFile {
         this.totalArea = totalArea;
         this.testDomainArea = testDomainArea;
     }
+//  https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/c607b779af9481f.n5?dataSetName=4130889219
 
     public static N5DataSetFile[] alphaTestFiles(){
-        N5DataSetFile frapSimulationResultsMasked = new N5DataSetFile("https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/c607b779af9481f.n5?dataSetName=4457702594",
+        N5DataSetFile frapSimulationResultsMasked = new N5DataSetFile("https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/c607b779af9481f.n5?dataSetName=4130889219",
                 new String[]{"Dex"},
                 new HashMap<Integer, String>(){{put(1, "Cyt"); put(0, "Ec");}},
                 new double[][]{{10.0, 9.990392675155721, 9.83580092714469, 9.520539931524715, 9.162150060086567, 8.82335160436397, 8.523689113752786, 8.265381795870683, 8.044751960699015, 7.856809648125466,
@@ -35,9 +36,9 @@ public class N5DataSetFile {
                         6.728509585652239, 6.7285095856523345, 6.728509585652324, 6.72850958565233, 6.728509585652335, 6.728509585652381, 6.728509585652381, 6.728509585652362, 6.728509585652365,
                         6.728509585652356, 6.7285095856523185, 6.728509585652278, 6.7285095856522865, 6.728509585652241, 6.728509585652113, 6.728509585652124, 6.7285095856521355, 6.728509585652127, 6.728509585652108}},
                 484,
-                new double[]{0,314.64});
+                new double[]{170.94880000000251,313.05120000000511});
 
-        N5DataSetFile anns5DTIRFSimulation = new N5DataSetFile("https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/a530ce83268de2a.n5?dataSetName=3340371272",
+        N5DataSetFile anns5DTIRFSimulation = new N5DataSetFile("https://vcell-dev.cam.uchc.edu/n5Data/ezequiel23/a530ce83268de2a.n5?dataSetName=5371385960",
                 new String[]{"Dark", "Flour"},
                 new HashMap<Integer, String>(){{put(0, "ec"); put(1, "cytosol"); put(2, "Nucleus");}},
                 new double[][]{
@@ -54,8 +55,8 @@ public class N5DataSetFile {
                         {9.999999999999494, 9.999999999999494, 9.999999999999494, 9.992719717489994, 9.986002627975711,
                                 9.98600262797569, 9.986002627975722}
                 },
-                143300,
-                new double[]{0, 14891, 3697}
+                143301,
+                new double[]{124412.82212538144, 15317.6945829, 3570.5008917656078}
         );
 
         return new N5DataSetFile[]{frapSimulationResultsMasked, anns5DTIRFSimulation};

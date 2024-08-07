@@ -116,40 +116,41 @@ public class N5ImageHandlerTest {
 
             boolean threeD = imagePlus.getNSlices() > 1;
             if (threeD){
-                areaOfPixel *= imagePlus.getCalibration().getZ(1);
-                totalArea *= imagePlus.getDimensions()[3];
+                areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1) * imagePlus.getCalibration().getZ(1);
+                totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight() * imagePlus.getNSlices();
             }
-            Assert.assertEquals(n5DataSetFile.totalArea, totalArea, 0.0000001);
+            Assert.assertEquals(n5DataSetFile.totalArea, totalArea, n5DataSetFile.totalArea * 0.0001);
 
             imagePlus.setPosition(imagePlus.getNChannels(), 1, 1);
             ImageProcessor imageProcessor = imagePlus.getProcessor();
-            PixelCalculations pixelCalculations = ((w, h, w1, h1) -> {
-                int inBounds = (0 <= w1) && (w1 < imagePlus.getWidth()) && (0 <= h1) && (h1 < imagePlus.getHeight()) ? 2 : 1;
-                boolean edgeOfDomain = (inBounds == 2) &&
-                        (imageProcessor.getf(w1, h1) != imageProcessor.getf(w, h));
-                if (edgeOfDomain){
-                    return inBounds;
-                }
-                return 1;
-            });
 
             for(int domain: n5DataSetFile.mask.keySet()){
                 totalArea = 0;
-                for (int h = 0; h < imagePlus.getHeight(); h++){
-                    for (int w = 0; w < imagePlus.getWidth(); w++){
-                        double sum = pixelCalculations.grabEdge(w, h, w, h -1) *
-                                pixelCalculations.grabEdge(w, h, w, h + 1) *
-                                pixelCalculations.grabEdge(w, h,w + 1, h) *
-                                pixelCalculations.grabEdge(w, h,w -1, h);
-                        if (imageProcessor.getf(w,h) != domain && sum > 1 && domain != 0){
-                            totalArea += (areaOfPixel / sum);
-                        }
-                        if (imageProcessor.getf(w, h) == domain && domain != 0){
-                            totalArea += areaOfPixel;
+
+                if(!threeD) {
+                    for (int h = 0; h < imagePlus.getHeight(); h++) {
+                        for (int w = 0; w < imagePlus.getWidth(); w++) {
+                            if (imageProcessor.getf(w, h) == domain) {
+                                totalArea += areaOfPixel;
+                            }
                         }
                     }
                 }
-                Assert.assertEquals(n5DataSetFile.testDomainArea[domain], totalArea, n5DataSetFile.testDomainArea[domain] * 0.013);
+                else{
+                    for (int k = 0; k < imagePlus.getNSlices(); k++){
+                        imagePlus.setPosition(imagePlus.getNChannels(), k + 1, 1);
+                        imageProcessor = imagePlus.getProcessor();
+                        for (int h = 0; h < imagePlus.getHeight(); h++) {
+                            for (int w = 0; w < imagePlus.getWidth(); w++) {
+                                if (imageProcessor.getf(w, h) == domain) {
+                                    totalArea += areaOfPixel;
+                                }
+                            }
+                        }
+                    }
+                }
+                Assert.assertEquals("Domain: " + domain + ", Total Area: " + totalArea,
+                        n5DataSetFile.testDomainArea[domain], totalArea, 0.000001);
             }
         }
     }

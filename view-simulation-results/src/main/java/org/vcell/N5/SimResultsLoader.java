@@ -200,10 +200,12 @@ public class SimResultsLoader {
         try{
             double pixelWidth = n5Reader.getAttribute(dataSetChosen, "pixelWidth", double.class);
             double pixelHeight = n5Reader.getAttribute(dataSetChosen, "pixelHeight", double.class);
+            double pixelDepth = n5Reader.getAttribute(dataSetChosen, "pixelDepth", double.class);
             String unit = n5Reader.getAttribute(dataSetChosen, "unit", String.class);
             imagePlus.getCalibration().setUnit(unit);
             imagePlus.getCalibration().pixelHeight = pixelHeight;
             imagePlus.getCalibration().pixelWidth = pixelWidth;
+            imagePlus.getCalibration().pixelDepth = pixelDepth;
         }
         catch (N5Exception n5Exception){
             logger.error("Can't read units.");
