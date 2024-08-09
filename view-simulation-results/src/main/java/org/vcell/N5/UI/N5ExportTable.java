@@ -128,14 +128,14 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                                     || !formatExportData.simulationDataMap.containsKey(mostRecentTableEntry.jobID))){
                                 break;
                             }
-                            isUpdated = n5ExportTableModel.appendRowData(formatExportData.simulationDataMap.get(currentJob), oldestTimeAllowed());
+                            isUpdated = n5ExportTableModel.prependRowData(formatExportData.simulationDataMap.get(currentJob), oldestTimeAllowed());
                         }
                         if(isUpdated){
                             n5ExportTableModel.fireTableDataChanged();
                             tableScrollPane.updateUI();
                         }
                     }
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(2));
                 }
             } catch (FileNotFoundException e) {
                 throw new RuntimeException("Problem Loading Export JSON",e);
@@ -521,6 +521,17 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             tableData.add(rowData);
             return true;
         }
+
+        public boolean prependRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed){
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime exportDate = LocalDateTime.parse(rowData.exportDate, dateFormat);
+            if (exportDate.isBefore(oldestExportAllowed)){
+                return false;
+            }
+            tableData.addFirst(rowData);
+            return true;
+        }
+
         public ExportDataRepresentation.SimulationExportDataRepresentation getLastRowData(){
             return tableData.get(0);
         }

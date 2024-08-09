@@ -97,7 +97,7 @@ public class SimResultsLoader {
     }
 
     public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
-        logger.debug("Creating S3 Client");
+        logger.debug("Creating S3 Client with url: " + url);
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
         URI uri = URI.create(url);
 
