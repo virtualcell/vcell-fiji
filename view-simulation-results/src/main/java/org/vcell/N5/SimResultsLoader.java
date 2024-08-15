@@ -11,7 +11,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
-import ij.measure.Calibration;
 import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -186,7 +185,12 @@ public class SimResultsLoader {
         if (userSetFileName == null || userSetFileName.isEmpty()){
             userSetFileName = n5AmazonS3Reader.getAttribute(dataSetChosen, "name", String.class);
         }
-        ImagePlus imagePlus = ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5AmazonS3Reader, dataSetChosen), userSetFileName);
+
+
+        SimCacheLoader<DoubleType, ?> simCacheLoader = SimCacheLoader.factoryDefault(n5AmazonS3Reader, dataSetChosen);
+        CachedCellImg<DoubleType, ?> cachedCellImg = simCacheLoader.createCachedCellImage();
+        ImagePlus imagePlus = ImageJFunctions.wrap(cachedCellImg, userSetFileName);
+        simCacheLoader.setImagesResponsibleFor(imagePlus);
         long end = System.currentTimeMillis();
         logger.debug("Read N5 File " + userSetFileName + " Into ImageJ taking: " + ((end - start) / 1000) + "s");
 
