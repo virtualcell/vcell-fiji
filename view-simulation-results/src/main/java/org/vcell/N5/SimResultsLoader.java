@@ -192,7 +192,7 @@ public class SimResultsLoader {
         ImagePlus imagePlus = ImageJFunctions.wrap(cachedCellImg, userSetFileName);
         simCacheLoader.setImagesResponsibleFor(imagePlus);
         long end = System.currentTimeMillis();
-        logger.debug("Read N5 File " + userSetFileName + " Into ImageJ taking: " + ((end - start) / 1000) + "s");
+        logger.debug("Read N5 File " + userSetFileName + " Into ImageJ taking: " + ((end - start) / 1000.0) + "s");
 
         setUnits(n5AmazonS3Reader, imagePlus);
         imagePlus.setProperty("channelInfo", n5AmazonS3Reader.getAttribute(dataSetChosen, "channelInfo", HashMap.class));

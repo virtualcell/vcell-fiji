@@ -119,7 +119,7 @@ public class N5ImageHandlerTest {
                 areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1) * imagePlus.getCalibration().getZ(1);
                 totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight() * imagePlus.getNSlices();
             }
-            Assert.assertEquals(n5DataSetFile.totalArea, totalArea, n5DataSetFile.totalArea * 0.0001);
+            Assert.assertEquals(n5DataSetFile.totalArea, totalArea,  0.0001);
 
             imagePlus.setPosition(imagePlus.getNChannels(), 1, 1);
             ImageProcessor imageProcessor = imagePlus.getProcessor();
