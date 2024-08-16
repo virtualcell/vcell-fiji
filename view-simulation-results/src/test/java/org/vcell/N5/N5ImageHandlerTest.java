@@ -1,18 +1,21 @@
 package org.vcell.N5;
 
-import com.amazonaws.regions.Regions;
+import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.Duplicator;
 import ij.plugin.ImageCalculator;
-import org.junit.*;
+import ij.process.ImageProcessor;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 
 
 /*
@@ -65,37 +68,6 @@ public class N5ImageHandlerTest {
         fiveDStackTests(imagePlus);
     }
 
-//    @Test
-//    // Create client without creds, with cred no endpoint, endpoint no creds, endpoint and creds, then test whether they can handle images as expected
-//    public void testS3Client() throws IOException {
-//        HashMap<String, String> s3Endpoint = new HashMap<>();
-//        HashMap<String, String> credentials = new HashMap<>();
-//
-//        s3Endpoint.put("Endpoint", "http://127.0.0.1:4000");
-//        s3Endpoint.put("Region", Regions.US_EAST_1.getName());
-//
-//        credentials.put("AccessKey", "jj");
-//        credentials.put("SecretKey", "jj");
-//
-//        final String s3ProxyURI = "http://localhost:4000/" + this.n5FileName + "?datasetName=" + datasetName;
-//
-//        SimResultsLoader simResultsLoader = new SimResultsLoader(s3ProxyURI, "");
-//
-//        // Environment variables are set in github actions VM
-//
-//        simResultsLoader.createS3Client(null, null);
-//        this.remoteN5ImgPlusTests(simResultsLoader);
-//
-//        simResultsLoader.createS3Client(null, s3Endpoint);
-//        this.remoteN5ImgPlusTests(simResultsLoader);
-//
-////        simResultsLoader.createS3Client(credentials, null);
-////        this.remoteN5ImgPlusTests(simResultsLoader);
-////
-////        simResultsLoader.createS3Client(credentials, s3Endpoint);
-////        this.remoteN5ImgPlusTests(simResultsLoader);
-//    }
-
     @Test
     public void testS3AlphaInstance() throws IOException{
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
@@ -118,15 +90,128 @@ public class N5ImageHandlerTest {
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
             simResultsLoader.createS3Client();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-            alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTMAX);
-            alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTMIN);
-            alphaStatsTest(new Duplicator().run(imagePlus), n5DataSetFile, stats.HISTAVERAGE);
+            ImagePlus inMemory = new Duplicator().run(imagePlus);
+            for (Object property : imagePlus.getProperties().keySet()){
+                inMemory.setProperty((String) property, imagePlus.getProperty((String) property));
+            }
+            alphaStatsTest(inMemory, n5DataSetFile, stats.HISTMAX);
+            alphaStatsTest(inMemory, n5DataSetFile, stats.HISTMIN);
+            alphaStatsTest(inMemory, n5DataSetFile, stats.HISTAVERAGE);
         }
+    }
+
+    interface PixelCalculations {
+        int grabEdge(int w, int h, int w1, int h1);
+    }
+
+    @Test
+    public void testUnits() throws IOException {
+        N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
+        for (N5DataSetFile n5DataSetFile: n5DataSetFiles){
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
+            simResultsLoader.createS3Client();
+            ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+            double areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1);
+            double totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight();
+
+            boolean threeD = imagePlus.getNSlices() > 1;
+            if (threeD){
+                areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1) * imagePlus.getCalibration().getZ(1);
+                totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight() * imagePlus.getNSlices();
+            }
+            Assert.assertEquals(n5DataSetFile.totalArea, totalArea,  0.0001);
+
+            imagePlus.setPosition(imagePlus.getNChannels(), 1, 1);
+            ImageProcessor imageProcessor = imagePlus.getProcessor();
+
+            for(int domain: n5DataSetFile.mask.keySet()){
+                totalArea = 0;
+
+                if(!threeD) {
+                    for (int h = 0; h < imagePlus.getHeight(); h++) {
+                        for (int w = 0; w < imagePlus.getWidth(); w++) {
+                            if (imageProcessor.getf(w, h) == domain) {
+                                totalArea += areaOfPixel;
+                            }
+                        }
+                    }
+                }
+                else{
+                    for (int k = 0; k < imagePlus.getNSlices(); k++){
+                        imagePlus.setPosition(imagePlus.getNChannels(), k + 1, 1);
+                        imageProcessor = imagePlus.getProcessor();
+                        for (int h = 0; h < imagePlus.getHeight(); h++) {
+                            for (int w = 0; w < imagePlus.getWidth(); w++) {
+                                if (imageProcessor.getf(w, h) == domain) {
+                                    totalArea += areaOfPixel;
+                                }
+                            }
+                        }
+                    }
+                }
+                Assert.assertEquals("Domain: " + domain + ", Total Area: " + totalArea,
+                        n5DataSetFile.testDomainArea[domain], totalArea, 0.000001);
+            }
+        }
+    }
+
+    private double alphaStatsThreeD(ImagePlus imagePlus, stats testType, int channel, int frame){
+        double experimentValue = Double.NaN;
+        for (int z = 1; z <= imagePlus.getNSlices(); z++){
+            imagePlus.setPosition(channel, z, frame);
+            double currentValue;
+            switch (testType){
+                case HISTMAX:
+                    setImageMask(imagePlus);
+                    currentValue = imagePlus.getStatistics().max;
+                    if (currentValue ==  -Double.MAX_VALUE){
+                        currentValue = 0;
+                    }
+                    if (Double.isNaN(experimentValue) || experimentValue < currentValue){
+                        experimentValue = currentValue;
+                    }
+                    break;
+                case HISTMIN:
+                    setImageMask(imagePlus);
+                    currentValue = imagePlus.getStatistics().min;
+                    if (Double.isNaN(experimentValue) || experimentValue > currentValue){
+                        experimentValue = currentValue;
+                    }
+                    break;
+                case HISTAVERAGE:
+                    experimentValue = average3D(imagePlus);
+            }
+            if (testType.equals(stats.HISTAVERAGE)){
+                break;
+            }
+        }
+        return experimentValue;
+    }
+
+    private double average3D(ImagePlus imagePlus){
+        double total = 0;
+        double voxelVolume = imagePlus.getCalibration().pixelHeight * imagePlus.getCalibration().pixelWidth * imagePlus.getCalibration().pixelDepth;
+        double totalVolume = 0;
+        for (int z = 1; z < imagePlus.getNSlices(); z++){
+            imagePlus.setPosition(imagePlus.getChannel(), z, imagePlus.getFrame());
+            setImageMask(imagePlus);
+            ImageProcessor imageProcessor = imagePlus.getProcessor();
+            for (int x = 0; x < imagePlus.getWidth(); x++){
+                for (int y = 0; y < imagePlus.getHeight(); y++){
+                    double pixelValue = imageProcessor.getValue(x, y);
+                    if (!Double.isNaN(pixelValue)){
+                        total += (pixelValue * voxelVolume);
+                        totalVolume += voxelVolume;
+                    }
+                }
+            }
+
+        }
+        return (total / totalVolume );
     }
 
     public void alphaStatsTest(ImagePlus imagePlus, N5DataSetFile n5DataSetFile, stats testType){
         double[][] controlData = {{}};
-        imagePlus.setPosition(1, 0, 10);
         switch (testType){
             case HISTMAX:
                 controlData = n5DataSetFile.histMax;
@@ -137,31 +222,59 @@ public class N5ImageHandlerTest {
             case HISTAVERAGE:
                 controlData = n5DataSetFile.histAverage;
         }
-        for(int k = 1; k < controlData.length; k++){
-            for (int i = 0; i < controlData[k].length; i++){
-                imagePlus.setPosition(k, 0, i+1);
+        boolean threeD = imagePlus.getNSlices() > 1;
+        for(int channel = 1; channel <= controlData.length; channel++){
+            for (int frame = 1; frame <= controlData[channel - 1].length; frame++){
+                imagePlus.setPosition(channel, 1, frame); //frame position seems to start at 1
                 double experimentalData = 0;
                 switch (testType){
                     case HISTMAX:
-                        experimentalData = imagePlus.getStatistics().histMax;
+                        experimentalData = threeD ? alphaStatsThreeD(imagePlus, testType, channel, frame) :
+                                imagePlus.getStatistics().max;
                         break;
                     case HISTMIN:
                         setImageMask(imagePlus);
-                        experimentalData = imagePlus.getStatistics().min;
+                        experimentalData = threeD ? alphaStatsThreeD(imagePlus, testType, channel, frame) :
+                                imagePlus.getStatistics().min;
                         break;
                     case HISTAVERAGE:
                         setImageMask(imagePlus);
-                        experimentalData = imagePlus.getStatistics().mean;
+                        experimentalData = threeD ? alphaStatsThreeD(imagePlus, testType, channel, frame) :
+                                imagePlus.getStatistics().mean;
                 }
-                Assert.assertEquals(0.0, experimentalData - controlData[k][i], 0.000001);
+                Assert.assertEquals("Channel: " + channel + " Time: " + frame + " Stat: " + testType +
+                                "\n Experiment Value: " + experimentalData + " Control Value: " + controlData[channel - 1][frame - 1]
+                        ,0.0, experimentalData - controlData[channel - 1][frame - 1], 0.0001);
             }
         }
     }
 
-    private void setImageMask(ImagePlus imagePlus){
-        ImagePlus maskImagePlus = imagePlus.createImagePlus();
-        maskImagePlus.setPosition(0, 0, 0);
-        imagePlus.getProcessor().setMask(maskImagePlus.createRoiMask());
+    private ImagePlus setImageMask(ImagePlus imagePlus){
+        ImagePlus maskImagePlus = imagePlus.duplicate();
+        LinkedTreeMap<String, LinkedTreeMap<String, Object>> channelInfo = (LinkedTreeMap<String, LinkedTreeMap<String, Object>>) imagePlus.getProperty("channelInfo");
+        String domainName = (String) channelInfo.get(String.valueOf(imagePlus.getChannel() - 1)).get("Domain");
+        LinkedTreeMap<String, String> maskInfo = (LinkedTreeMap<String, String>) imagePlus.getProperty("maskInfo");
+        int domainMaskValue = 0;
+        for (Map.Entry<String, String> entry : maskInfo.entrySet()) {
+            if (entry.getValue().equals(domainName)) {
+                domainMaskValue = Integer.parseInt(entry.getKey());
+                break;
+            }
+        }
+
+        maskImagePlus.setPosition(maskImagePlus.getNChannels(), imagePlus.getSlice(), imagePlus.getFrame());
+        ImageProcessor maskProcessor = maskImagePlus.getProcessor();
+        int height = maskImagePlus.getHeight();
+        int width = maskImagePlus.getWidth();
+        for (int h = 0; h < height; h++){
+            for (int w = 0; w < width; w++){
+                float maskValue = maskProcessor.getPixelValue(w, h);
+                if (maskValue != domainMaskValue){
+                    imagePlus.getProcessor().setf(w, h, Float.NaN);
+                }
+            }
+        }
+        return imagePlus;
     }
 
 
