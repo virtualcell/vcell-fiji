@@ -217,7 +217,7 @@ public class SimResultsLoader {
     }
 
     public static void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
-        N5ExportTable.enableCriticalButtons(false);
+        N5ExportTable.enableCriticalButtons(true);
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setAcceptAllFileFilterUsed(false);
