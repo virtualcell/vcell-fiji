@@ -216,6 +216,38 @@ public class SimResultsLoader {
         }
     }
 
+    public static void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
+        N5ExportTable.enableCriticalButtons(false);
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        int result = fileChooser.showOpenDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION){
+            File file = fileChooser.getCurrentDirectory();
+            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            Thread openN5FileDataset = new Thread(() -> {
+                try{
+                    for(SimResultsLoader simResultsLoader: filesToOpen){
+                        simResultsLoader.setSelectedLocalFile(file);
+                        ImagePlus imagePlus = simResultsLoader.getImgPlusFromLocalN5File();
+                        imagePlus.show();
+                    }
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                } finally {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                            N5ExportTable.enableCriticalButtons(true);
+                        }
+                    });
+                }
+            });
+            openN5FileDataset.start();
+        }
+    }
+
 
     public static void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
         N5ExportTable.enableCriticalButtons(false);
