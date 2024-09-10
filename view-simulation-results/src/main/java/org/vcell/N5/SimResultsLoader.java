@@ -223,7 +223,7 @@ public class SimResultsLoader {
         fileChooser.setAcceptAllFileFilterUsed(false);
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
-            File file = fileChooser.getCurrentDirectory();
+            File file = fileChooser.getSelectedFile();
             N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
             Thread openN5FileDataset = new Thread(() -> {
                 try{
