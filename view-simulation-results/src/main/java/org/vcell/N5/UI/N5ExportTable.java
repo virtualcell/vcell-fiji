@@ -42,7 +42,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JSplitPane exportDetails;
 
     private static JButton open;
-    private static JButton openLocal = new JButton("Open N5 Local");
+    private static final JButton openLocal = new JButton("Open N5 Local");
     private static JButton copyLink;
     private static JButton refreshButton;
     private static JButton useN5Link;
@@ -289,7 +289,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         JPanel topBar = new JPanel();
         topBar.setPreferredSize(new Dimension(paneWidth, 100));
         topBar.setLayout(new BorderLayout());
-        topBar.add(openLocal);
         topBar.add(userButtonsPanel, BorderLayout.EAST);
         topBar.add(timeFilter, BorderLayout.WEST);
         topBar.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
@@ -297,7 +296,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
         refreshButton.addActionListener(this);
         open.addActionListener(this);
-        openLocal.addActionListener(this);
         copyLink.addActionListener(this);
         questionMark.addActionListener(this);
         useN5Link.addActionListener(this);
@@ -365,7 +363,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(openLocal)){
+        } else if (e.getSource().equals(openLocal)){ // This button is not displayed to the end user
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
@@ -373,19 +371,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 filesToOpen.add(simResultsLoader);
             }
             SimResultsLoader.openLocalN5FS(filesToOpen);
-//            JFileChooser fileChooser = new JFileChooser();
-//            int r = fileChooser.showDialog(null, "Open");
-//            if (r == JFileChooser.APPROVE_OPTION){
-//                File file = fileChooser.getSelectedFile();
-//                N5FSReader n5FSReader = new N5FSReader(file.getPath());
-//                n5FSReader.list("/");
-//
-//
-//                SimCacheLoader<DoubleType, ?> simCacheLoader = SimCacheLoader.factoryDefault(n5FSReader, dataSetChosen);
-//                CachedCellImg<DoubleType, ?> cachedCellImg = simCacheLoader.createCachedCellImage();
-//                ImagePlus imagePlus = ImageJFunctions.wrap(cachedCellImg, dataSetChosen);
-//                imagePlus.show();
-//            }
         }
         else if (e.getSource().equals(includeExampleExports)){
             if(includeExampleExports.isSelected()){
