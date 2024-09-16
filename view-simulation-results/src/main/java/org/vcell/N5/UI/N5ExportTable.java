@@ -1,8 +1,14 @@
 package org.vcell.N5.UI;
 
+import ij.ImagePlus;
+import net.imglib2.cache.img.CachedCellImg;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.real.DoubleType;
+import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.SimCacheLoader;
 import org.vcell.N5.SimResultsLoader;
 
 import javax.swing.*;
@@ -18,6 +24,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +42,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private JSplitPane exportDetails;
 
     private static JButton open;
+    private static final JButton openLocal = new JButton("Open N5 Local");
     private static JButton copyLink;
     private static JButton refreshButton;
     private static JButton useN5Link;
@@ -256,8 +264,6 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         gridBagConstraints.gridy = 1;
         userButtonsPanel.add(bottomRow, gridBagConstraints);
 
-
-
 //        buttonsPanel.add(questionMark);
 
 
@@ -286,6 +292,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         topBar.add(userButtonsPanel, BorderLayout.EAST);
         topBar.add(timeFilter, BorderLayout.WEST);
         topBar.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
+
 
         refreshButton.addActionListener(this);
         open.addActionListener(this);
@@ -356,7 +363,16 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(includeExampleExports)){
+        } else if (e.getSource().equals(openLocal)){ // This button is not displayed to the end user
+            ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
+            for(int row: exportListTable.getSelectedRows()){
+                String uri = n5ExportTableModel.getRowData(row).uri;
+                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
+                filesToOpen.add(simResultsLoader);
+            }
+            SimResultsLoader.openLocalN5FS(filesToOpen);
+        }
+        else if (e.getSource().equals(includeExampleExports)){
             if(includeExampleExports.isSelected()){
                 updateExampleExportsToTable();
                 return;
