@@ -289,7 +289,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         JPanel topBar = new JPanel();
         topBar.setPreferredSize(new Dimension(paneWidth, 100));
         topBar.setLayout(new BorderLayout());
-        topBar.add(openLocal);
+//        topBar.add(openLocal);
         topBar.add(userButtonsPanel, BorderLayout.EAST);
         topBar.add(timeFilter, BorderLayout.WEST);
         topBar.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
