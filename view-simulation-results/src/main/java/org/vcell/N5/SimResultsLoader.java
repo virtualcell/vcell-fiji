@@ -74,7 +74,7 @@ public class SimResultsLoader {
         logger.debug("Creating S3 Client with url: " + uri);
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
 
-        if (uri.getHost().equals("n5.minikube.remote") || uri.getHost().equals("n5.minikube.island")){
+        if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
             SSLContext sslContext = null;
             try {
                 sslContext = SSLContexts.custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build();
