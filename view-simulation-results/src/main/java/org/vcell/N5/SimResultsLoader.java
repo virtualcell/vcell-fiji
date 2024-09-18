@@ -49,10 +49,12 @@ public class SimResultsLoader {
     private String s3ObjectKey;
     private URI uri;
     private String dataSetChosen;
-    private String userSetFileName = null;
+    public String userSetFileName = null;
     private static final String defaultS3Region = "site2-low";
+    private N5Reader n5AmazonS3Reader;
 
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
+    public static AmazonS3ClientBuilder s3ClientBuilder;
 
     public SimResultsLoader(){
 
