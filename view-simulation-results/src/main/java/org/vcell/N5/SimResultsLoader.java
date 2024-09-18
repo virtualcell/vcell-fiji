@@ -180,6 +180,7 @@ public class SimResultsLoader {
                 }
             } catch (Exception ex) {
                 N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                N5ExportTable.enableCriticalButtons(true);
                 throw new RuntimeException(ex);
             } finally {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -187,8 +188,8 @@ public class SimResultsLoader {
                     public void run() {
                         if (!openInMemory) {
                             N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                            N5ExportTable.enableCriticalButtons(true);
                         }
-                        N5ExportTable.enableCriticalButtons(true);
                     }
                 });
             }

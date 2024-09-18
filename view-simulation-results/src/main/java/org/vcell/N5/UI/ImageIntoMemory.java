@@ -112,7 +112,6 @@ public class ImageIntoMemory extends EventListenerList implements ActionListener
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(okayButton)){
             frame.dispose();
-//            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             startC = Integer.parseInt(channelStartTextField.getText()) - 1;
             endC = Integer.parseInt(channelEndTextField.getText()) - 1;
@@ -121,23 +120,30 @@ public class ImageIntoMemory extends EventListenerList implements ActionListener
             startZ = Integer.parseInt(zStartTextField.getText()) - 1;
             endZ = Integer.parseInt(zEndTextField.getText()) - 1;
 
-            try {
-                ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                long start = System.currentTimeMillis();
-                logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
-                imagePlus = new Duplicator().run(imagePlus, startC, endC, startZ,
-                        endZ, startT, endT);
-                long end = System.currentTimeMillis();
-                logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
-                imagePlus.show();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
+            Thread openInMemory = new Thread(() -> {
+                try {
+                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+                    long start = System.currentTimeMillis();
+                    logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
+                    imagePlus = new Duplicator().run(imagePlus, startC, endC, startZ,
+                            endZ, startT, endT);
+                    long end = System.currentTimeMillis();
+                    logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
+                    imagePlus.show();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                } finally {
+                    N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    N5ExportTable.enableCriticalButtons(true);
+                }
+            });
+            openInMemory.setName("Open N5 Image in Memory");
+            openInMemory.start();
+        }
 
-        } else if (e.getSource().equals(cancelButton)) {
+        else if (e.getSource().equals(cancelButton)) {
             N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            N5ExportTable.enableCriticalButtons(true);
             frame.dispose();
         }
     }
