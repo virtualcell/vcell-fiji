@@ -3,12 +3,10 @@ package org.vcell.N5;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.http.conn.ssl.SdkTLSSocketFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.Duplicator;
@@ -23,7 +21,6 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5KeyValueReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
-import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
 import org.vcell.N5.UI.N5ExportTable;
@@ -53,35 +50,13 @@ public class SimResultsLoader {
     private URI uri;
     private String dataSetChosen;
     private String userSetFileName = null;
+    private static final String defaultS3Region = "site2-low";
 
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
 
     public SimResultsLoader(){
 
     }
-    public void createS3Client(){
-        createS3Client(uri.toString(), null, null);
-    }
-    public void setDataSetChosen(String dataSetChosen) {
-        this.dataSetChosen = dataSetChosen;
-    }
-
-    public void setSelectedLocalFile(File selectedLocalFile){
-        this.selectedLocalFile = selectedLocalFile;
-    }
-    public void createS3Client(HashMap<String, String> credentials, HashMap<String, String> endpoint){createS3Client(uri.toString(), credentials, endpoint);}
-    public ArrayList<String> getS3N5DatasetList() throws IOException {
-
-        // used as a flag to tell that remote access is occurring, and that there is no local files
-        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
-            return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(this.s3ObjectKey)));
-        }
-    }
-    public ImagePlus getImgPlusFromLocalN5File() throws IOException {
-        N5Reader n5Reader = new N5FSReader(selectedLocalFile.getPath());
-        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, dataSetChosen), userSetFileName);
-    }
-
     public SimResultsLoader(String stringURI, String userSetFileName){
         uri = URI.create(stringURI);
         this.userSetFileName = userSetFileName;
@@ -95,88 +70,50 @@ public class SimResultsLoader {
         }
     }
 
-    public void createS3Client(String url, HashMap<String, String> credentials, HashMap<String, String> endpoint){
-        logger.debug("Creating S3 Client with url: " + url);
+    void createS3Client(){
+        logger.debug("Creating S3 Client with url: " + uri);
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
-        URI uri = URI.create(url);
 
-        if(credentials != null){s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.get("AccessKey"), credentials.get("SecretKey"))));}
-
-        // believe that it's a s3 URL
-        try{
-            AmazonS3URI s3URI = new AmazonS3URI(uri);
-            this.s3ObjectKey = s3URI.getKey();
-            this.bucketName = s3URI.getBucket();
-            if(s3URI.isPathStyle()){
-                s3ClientBuilder.withPathStyleAccessEnabled(true);
+        if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
+            SSLContext sslContext = null;
+            try {
+                sslContext = SSLContexts.custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                throw new RuntimeException("Custom ssl context not functional.",ex);
             }
-            if(endpoint != null){
-                s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint.get("Endpoint"), endpoint.get("Region")));
-                this.s3Client = s3ClientBuilder.build();
-                return;
-            }
-            // if nothing is given, default user and return so that code after if statement does not execute
-            if(endpoint == null && credentials == null){
-                this.s3Client = AmazonS3ClientBuilder.standard().withRegion(s3URI.getRegion()).withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials())).build();
-                return;
-            }
-            //creds not null, but region is
-            this.s3Client = s3ClientBuilder.withRegion(s3URI.getRegion()).build();
-            logger.debug("Created S3 Client With Modern URL");
-        }
-        // otherwise assume it is one of our URLs
-        // http://vcell:8000/bucket/object/object2
-        catch (IllegalArgumentException e){
-            if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
-                SSLContext sslContext = null;
-                try {
-                    sslContext = SSLContexts.custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build();
-                } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
-                    throw new RuntimeException("Custom ssl context not functional.",ex);
+            HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
                 }
-                HostnameVerifier hostnameVerifier = new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String hostname, SSLSession session) {
-                        return true;
-                    }
-                };
-                ConnectionSocketFactory connectionSocketFactory = new SdkTLSSocketFactory(sslContext, hostnameVerifier);
-                ClientConfiguration clientConfiguration = new ClientConfiguration();
-                clientConfiguration.getApacheHttpClientConfig().setSslSocketFactory(connectionSocketFactory);
-                s3ClientBuilder.setClientConfiguration(clientConfiguration);
-            }
-            String[] pathSubStrings = uri.getPath().split("/", 3);
-            this.s3ObjectKey = pathSubStrings[2];
-            this.bucketName = pathSubStrings[1];
-            s3ClientBuilder.withPathStyleAccessEnabled(true);
-            s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
-            s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), "site2-low"));
-            this.s3Client = s3ClientBuilder.build();
-            logger.debug("Created S3 Client With Legacy URL");
+            };
+            ConnectionSocketFactory connectionSocketFactory = new SdkTLSSocketFactory(sslContext, hostnameVerifier);
+            ClientConfiguration clientConfiguration = new ClientConfiguration();
+            clientConfiguration.getApacheHttpClientConfig().setSslSocketFactory(connectionSocketFactory);
+            s3ClientBuilder.setClientConfiguration(clientConfiguration);
         }
+
+        // assume it is one of our URLs
+        // http://vcell:8000/bucket/object/object2
+        String[] pathSubStrings = uri.getPath().split("/", 3);
+        this.s3ObjectKey = pathSubStrings[2];
+        this.bucketName = pathSubStrings[1];
+        s3ClientBuilder.withPathStyleAccessEnabled(true);
+        logger.debug("Creating S3 Client with Path Based Buckets");
+
+        s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
+        s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), defaultS3Region));
+        this.s3Client = s3ClientBuilder.build();
     }
 
-
-    public ArrayList<String> getN5DatasetList() throws IOException {
-        // auto closes reader
-        logger.debug("Getting List of N5 Datasets");
-        try (N5FSReader n5Reader = new N5FSReader(selectedLocalFile.getPath())) {
-            String[] metaList = n5Reader.deepList("/");
-            ArrayList<String> fList = new ArrayList<>();
-            for (String s : metaList) {
-                if (n5Reader.datasetExists(s)) {
-                    fList.add(s);
-                };
-            }
-            logger.debug("Got List of N5 Datasets");
-            return fList;
-        }
-    }
-
-
-
-    public ImagePlus getImgPlusFromN5File() throws IOException {
-        AmazonS3KeyValueAccess amazonS3KeyValueAccess = new AmazonS3KeyValueAccess(s3Client, bucketName, false);
+    /**
+        By default N5 library assumes that S3 URL's are formated in the standard amazon format. That being
+        https://BUCKETNAME.s3.REGION.amazonaws.com {@link org.janelia.saalfeldlab.n5.s3.AmazonS3Utils}. Because our objects
+        don't originate from amazon this is not a format we can possibly mimic, so we have to use path based buckets because
+        it's the fallback style chosen by the N5 libraries if standard format is unavailable.
+     */
+     ImagePlus getImgPlusFromN5File() throws IOException {
+        S3KeyValueAccess amazonS3KeyValueAccess = new S3KeyValueAccess(s3Client, bucketName, false);
         N5KeyValueReader n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), false);
 
 //        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
@@ -205,15 +142,72 @@ public class SimResultsLoader {
             double pixelWidth = n5Reader.getAttribute(dataSetChosen, "pixelWidth", double.class);
             double pixelHeight = n5Reader.getAttribute(dataSetChosen, "pixelHeight", double.class);
             double pixelDepth = n5Reader.getAttribute(dataSetChosen, "pixelDepth", double.class);
+            double frameInterval = n5Reader.getAttribute(dataSetChosen, "frameInterval", double.class);
             String unit = n5Reader.getAttribute(dataSetChosen, "unit", String.class);
             imagePlus.getCalibration().setUnit(unit);
             imagePlus.getCalibration().pixelHeight = pixelHeight;
             imagePlus.getCalibration().pixelWidth = pixelWidth;
             imagePlus.getCalibration().pixelDepth = pixelDepth;
+            imagePlus.getCalibration().frameInterval = frameInterval;
         }
         catch (N5Exception n5Exception){
             logger.error("Can't read units.");
         }
+    }
+
+//    private static ImagePlus getSetOfImage(ImagePlus imagePlus){
+//        int startZ = 0, startTime = 0, startChannel = 0;
+//        int endZ = 5, endTime = 2, endChannel = 1;
+//        ImagePlus newImage = IJ.createHyperStack(imagePlus.getTitle() + " In Memory", imagePlus.getWidth(),
+//                imagePlus.getHeight(), endChannel, endZ, endTime, imagePlus.getBitDepth());
+//        for (startChannel = startChannel; startChannel < endChannel; startChannel++){
+//            for (startZ = startZ; startZ < endZ; startZ++){
+//                for (startTime = startTime; startTime < endTime; startTime++){
+//                    int index = imagePlus.getStackIndex(startChannel, startZ, startTime);
+//                    newImage.getImageStack().addSlice("" + startTime + "" + startChannel + "" + startZ,
+//                            imagePlus.getStack().getProcessor(index), index);
+//                }
+//            }
+//        }
+//        newImage.setDimensions(endChannel, endZ, endTime);
+//        return newImage;
+//    }
+
+    public static void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
+        N5ExportTable.enableCriticalButtons(false);
+        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        Thread openN5FileDataset = new Thread(() -> {
+            try{
+                for(SimResultsLoader simResultsLoader: filesToOpen){
+                    simResultsLoader.createS3Client();
+                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
+                    if(openInMemory){
+                        long start = System.currentTimeMillis();
+                        logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
+
+                        imagePlus = new Duplicator().run(imagePlus);
+//                        imagePlus = SimResultsLoader.getSetOfImage(imagePlus);
+                        long end = System.currentTimeMillis();
+                        imagePlus.show();
+                        logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
+                    } else{
+                        imagePlus.show();
+                    }
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            } finally {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        N5ExportTable.enableCriticalButtons(true);
+                    }
+                });
+            }
+        });
+        openN5FileDataset.setName("Open N5 File");
+        openN5FileDataset.start();
     }
 
     public static void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
@@ -248,36 +242,38 @@ public class SimResultsLoader {
         }
     }
 
+    void setDataSetChosen(String dataSetChosen) {
+        this.dataSetChosen = dataSetChosen;
+    }
 
-    public static void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        N5ExportTable.enableCriticalButtons(false);
-        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        Thread openN5FileDataset = new Thread(() -> {
-            try{
-                for(SimResultsLoader simResultsLoader: filesToOpen){
-                    simResultsLoader.createS3Client();
-                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    if(openInMemory){
-                        long start = System.currentTimeMillis();
-                        logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
-                        imagePlus = new Duplicator().run(imagePlus);
-                        long end = System.currentTimeMillis();
-                        logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
-                    }
-                    imagePlus.show();
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                        N5ExportTable.enableCriticalButtons(true);
-                    }
-                });
+    void setSelectedLocalFile(File selectedLocalFile){
+        this.selectedLocalFile = selectedLocalFile;
+    }
+    ArrayList<String> getS3N5DatasetList() throws IOException {
+
+        // used as a flag to tell that remote access is occurring, and that there is no local files
+        try(N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(this.s3Client, this.bucketName)) {
+            return new ArrayList<>(Arrays.asList(n5AmazonS3Reader.deepListDatasets(this.s3ObjectKey)));
+        }
+    }
+    ImagePlus getImgPlusFromLocalN5File() throws IOException {
+        N5Reader n5Reader = new N5FSReader(selectedLocalFile.getPath());
+        return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, dataSetChosen), userSetFileName);
+    }
+
+    ArrayList<String> getN5DatasetList() throws IOException {
+        // auto closes reader
+        logger.debug("Getting List of N5 Datasets");
+        try (N5FSReader n5Reader = new N5FSReader(selectedLocalFile.getPath())) {
+            String[] metaList = n5Reader.deepList("/");
+            ArrayList<String> fList = new ArrayList<>();
+            for (String s : metaList) {
+                if (n5Reader.datasetExists(s)) {
+                    fList.add(s);
+                };
             }
-        });
-        openN5FileDataset.start();
+            logger.debug("Got List of N5 Datasets");
+            return fList;
+        }
     }
 }
