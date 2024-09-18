@@ -73,7 +73,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
 
             //stats that have been preemptively calculated within VCell
@@ -88,7 +88,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
             ImagePlus inMemory = new Duplicator().run(imagePlus);
             for (Object property : imagePlus.getProperties().keySet()){
@@ -109,7 +109,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for (N5DataSetFile n5DataSetFile: n5DataSetFiles){
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
             double areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1);
             double totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight();

@@ -9,7 +9,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
-import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -24,6 +23,7 @@ import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
 import org.vcell.N5.UI.N5ExportTable;
+import org.vcell.N5.UI.ImageIntoMemory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -70,10 +70,8 @@ public class SimResultsLoader {
         }
     }
 
-    void createS3Client(){
+    void createS3ClientAndReader(){
         logger.debug("Creating S3 Client with url: " + uri);
-        AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard();
-
         if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
             SSLContext sslContext = null;
             try {
@@ -104,6 +102,8 @@ public class SimResultsLoader {
         s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
         s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), defaultS3Region));
         this.s3Client = s3ClientBuilder.build();
+        S3KeyValueAccess amazonS3KeyValueAccess = new S3KeyValueAccess(s3Client, bucketName, false);
+        n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), false);
     }
 
     /**
@@ -112,9 +112,7 @@ public class SimResultsLoader {
         don't originate from amazon this is not a format we can possibly mimic, so we have to use path based buckets because
         it's the fallback style chosen by the N5 libraries if standard format is unavailable.
      */
-     ImagePlus getImgPlusFromN5File() throws IOException {
-        S3KeyValueAccess amazonS3KeyValueAccess = new S3KeyValueAccess(s3Client, bucketName, false);
-        N5KeyValueReader n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), false);
+     public ImagePlus getImgPlusFromN5File() throws IOException {
 
 //        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
         long start = System.currentTimeMillis();
@@ -155,23 +153,10 @@ public class SimResultsLoader {
         }
     }
 
-//    private static ImagePlus getSetOfImage(ImagePlus imagePlus){
-//        int startZ = 0, startTime = 0, startChannel = 0;
-//        int endZ = 5, endTime = 2, endChannel = 1;
-//        ImagePlus newImage = IJ.createHyperStack(imagePlus.getTitle() + " In Memory", imagePlus.getWidth(),
-//                imagePlus.getHeight(), endChannel, endZ, endTime, imagePlus.getBitDepth());
-//        for (startChannel = startChannel; startChannel < endChannel; startChannel++){
-//            for (startZ = startZ; startZ < endZ; startZ++){
-//                for (startTime = startTime; startTime < endTime; startTime++){
-//                    int index = imagePlus.getStackIndex(startChannel, startZ, startTime);
-//                    newImage.getImageStack().addSlice("" + startTime + "" + startChannel + "" + startZ,
-//                            imagePlus.getStack().getProcessor(index), index);
-//                }
-//            }
-//        }
-//        newImage.setDimensions(endChannel, endZ, endTime);
-//        return newImage;
-//    }
+    public ArrayList getN5Dimensions(){
+        return n5AmazonS3Reader.getAttribute(dataSetChosen, "dimensions", ArrayList.class);
+    }
+
 
     public static void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
         N5ExportTable.enableCriticalButtons(false);
@@ -179,28 +164,28 @@ public class SimResultsLoader {
         Thread openN5FileDataset = new Thread(() -> {
             try{
                 for(SimResultsLoader simResultsLoader: filesToOpen){
-                    simResultsLoader.createS3Client();
-                    ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    if(openInMemory){
-                        long start = System.currentTimeMillis();
-                        logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
-
-                        imagePlus = new Duplicator().run(imagePlus);
-//                        imagePlus = SimResultsLoader.getSetOfImage(imagePlus);
-                        long end = System.currentTimeMillis();
-                        imagePlus.show();
-                        logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
+                    simResultsLoader.createS3ClientAndReader();
+                    ImageIntoMemory imageIntoMemory;
+                    if (openInMemory){
+                        ArrayList<Double> dimensions = simResultsLoader.getN5Dimensions();
+                        imageIntoMemory = new ImageIntoMemory(dimensions.get(2), dimensions.get(3), dimensions.get(4), simResultsLoader);
+                        imageIntoMemory.displayRangeMenu();
                     } else{
+                        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
                         imagePlus.show();
                     }
+
                 }
-            } catch (IOException ex) {
+            } catch (Exception ex) {
+                N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 throw new RuntimeException(ex);
             } finally {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        if (!openInMemory) {
+                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        }
                         N5ExportTable.enableCriticalButtons(true);
                     }
                 });
