@@ -1,5 +1,6 @@
 package org.vcell.N5;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.io.Opener;
@@ -8,6 +9,7 @@ import ij.plugin.ImageCalculator;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -42,6 +44,12 @@ public class N5ImageHandlerTest {
         catch (URISyntaxException e){
             throw new RuntimeException(e);
         }
+    }
+
+    @BeforeClass
+    public static void init(){
+        N5ImageHandler.initializeLogService();
+        SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
     }
 
     @Before
