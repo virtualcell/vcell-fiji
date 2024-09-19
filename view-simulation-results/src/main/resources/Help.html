@@ -7,33 +7,37 @@
             stored remotely on VCell servers, allowing applications such as ImageJ
             to directly access the results of these simulations and perform analyses.
         </p>
-    <h3>VCell Spatial Simulation</h3>
+    <h3>Export Visualization</h3>
         <p>
-            Simulation solvers generating 2- or 3-dimensional spatial
-            domains can be visualized in ImageJ using this plugin.
-            Spatial dimensions and time directly correspond to fields within an ImageJ
-            image. The image's channels depict different variables within a simulation.
+            Virtual Cell has special techniques for spatial simulation results so that they are visually compelling while accurate to their
+            source data. Those automatic techniques are not implemented within this plugin, so if an export is visually different
+            from VCell's please go to Image -> Adjust -> Brightness/Contrast, and adjust it to a point where it is similar.
         </p>
-    <h3>N5 and Datasets</h3>
-        <p>
-            Each N5 store is a direct mapping to a VCell simulation, and contains one or more
-            datasets. Each dataset holds numerical data and metadata corresponding to an Image in ImageJ.
-            Each N5 store is fully identified through its N5 URL which can be shared and opened by other applications
-            which support the N5 format.
-        </p>
+    <h3>Dimension Properties</h3>
+        <ul>
+            <li>
+                <p><u>XYZ:</u> The XYZ dimensions directly correspond to the simulations XYZ.</p>
+                <br>
+            </li>
+            <li>
+                <p><u>Channel:</u> The different channels represent the variables exported,
+                and the last channel <b>always</b> represents the geometric domains for your spatial export.
+                </p>
+                <br>
+            </li>
+            <li>
+                <p><u>Time:</u> Time directly corresponds to the simulations time.</p>
+            </li>
+        </ul>
     <h3>Accessing Simulation Results</h3>
         <p>For VCell exports generated from your local VCell installation:</p>
         <ul>
             <li>
-                <p>Either, Click the recent export button.</p>
-            </li>
-            <li>
-                <p>Or, Open the export table and view all past exports with their affiliated metadata.</p>
+                <p>Select the appropriate export and click the "Open" button.</p>
             </li>
         </ul>
         <p>From N5 URL (VCell Install Not Required):</p>
         <ul>
-            <li>Click the 'Remote Files' button, paste the N5 URL,
-                then select dataset from list.</li>
+            <li>Click the 'Remote Files' button, paste the N5 URL, and click open.</li>
         </ul>
 </html>
