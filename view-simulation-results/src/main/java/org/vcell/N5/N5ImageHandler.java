@@ -1,6 +1,7 @@
 package org.vcell.N5;
 
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.scijava.command.Command;
@@ -42,6 +43,13 @@ public class N5ImageHandler implements Command {
         setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         exportTable.displayExportTable();
+        Thread thread = new Thread(() -> {
+            // For some reason getting a standard client takes three seconds.
+            // So create one upon initialization, while the user is focused on the GUI
+            // and by the time they open an Image it's already loaded.
+            SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
+        });
+        thread.start();
     }
 
     public static Logger getLogger(Class classToLog){

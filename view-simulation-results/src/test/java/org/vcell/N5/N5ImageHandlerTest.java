@@ -1,5 +1,6 @@
 package org.vcell.N5;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.io.Opener;
@@ -8,6 +9,7 @@ import ij.plugin.ImageCalculator;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -44,6 +46,12 @@ public class N5ImageHandlerTest {
         }
     }
 
+    @BeforeClass
+    public static void init(){
+        N5ImageHandler.initializeLogService();
+        SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
+    }
+
     @Before
     public void run(){
         N5ImageHandler.initializeLogService();
@@ -73,7 +81,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
 
             //stats that have been preemptively calculated within VCell
@@ -88,7 +96,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
             ImagePlus inMemory = new Duplicator().run(imagePlus);
             for (Object property : imagePlus.getProperties().keySet()){
@@ -109,7 +117,7 @@ public class N5ImageHandlerTest {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for (N5DataSetFile n5DataSetFile: n5DataSetFiles){
             SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
-            simResultsLoader.createS3Client();
+            simResultsLoader.createS3ClientAndReader();
             ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
             double areaOfPixel = imagePlus.getCalibration().getX(1) * imagePlus.getCalibration().getY(1);
             double totalArea = areaOfPixel * imagePlus.getWidth() * imagePlus.getHeight();
