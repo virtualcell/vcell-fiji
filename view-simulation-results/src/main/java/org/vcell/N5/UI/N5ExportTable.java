@@ -47,7 +47,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
     private static JButton refreshButton;
     private static JButton useN5Link;
     private static JButton questionMark;
-    public static JCheckBox openInMemory;
+    public static JButton openInMemory;
     public static JCheckBox includeExampleExports;
     private JCheckBox todayInterval;
     private JCheckBox monthInterval;
@@ -230,31 +230,31 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));
-        openInMemory = new JCheckBox("Open In Memory");
+        openInMemory = new JButton("Open In Memory");
         openInMemory.setSelected(false);
         includeExampleExports = new JCheckBox("Show Example Exports");
         includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
-
+        
         JPanel topRow = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         topRow.add(open, gridBagConstraints);
+        gridBagConstraints.gridwidth = 1;
+
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        topRow.add(copyLink, gridBagConstraints);
+        topRow.add(openInMemory, gridBagConstraints);
         gridBagConstraints.gridx = 2;
-        topRow.add(useN5Link, gridBagConstraints);
-        gridBagConstraints.gridx = 3;
-        topRow.add(questionMark, gridBagConstraints);
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        bottomRow.add(includeExampleExports, gridBagConstraints);
+        bottomRow.add(copyLink, gridBagConstraints);
         gridBagConstraints.gridx = 1;
-        bottomRow.add(openInMemory, gridBagConstraints);
+        bottomRow.add(useN5Link, gridBagConstraints);
+        bottomRow.add(questionMark);
 
 
         JPanel userButtonsPanel = new JPanel(new GridBagLayout());
@@ -278,12 +278,17 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         buttonGroup.add(yearlyInterval);
         buttonGroup.add(anyInterval);
 
-        timeFilter = new JPanel();
+        JPanel filters = new JPanel();
+        filters.setLayout(new BorderLayout());
+        timeFilter = new JPanel(new GridBagLayout());
         timeFilter.add(todayInterval);
         timeFilter.add(monthInterval);
         timeFilter.add(yearlyInterval);
         timeFilter.add(anyInterval);
-        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time Filter "));
+//        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time "));
+        filters.add(timeFilter, BorderLayout.NORTH);
+        filters.add(includeExampleExports, BorderLayout.SOUTH);
+        filters.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Filters "));
 
 
         JPanel topBar = new JPanel();
@@ -291,7 +296,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         topBar.setLayout(new BorderLayout());
 //        topBar.add(openLocal);
         topBar.add(userButtonsPanel, BorderLayout.EAST);
-        topBar.add(timeFilter, BorderLayout.WEST);
+        topBar.add(filters, BorderLayout.WEST);
         topBar.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
 
 
@@ -302,6 +307,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         useN5Link.addActionListener(this);
         includeExampleExports.addActionListener(this);
         openLocal.addActionListener(this);
+        openInMemory.addActionListener(this);
 
         Enumeration<AbstractButton> b = buttonGroup.getElements();
         while (b.hasMoreElements()){
@@ -310,6 +316,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         
         open.setEnabled(false);
         copyLink.setEnabled(false);
+        openInMemory.setEnabled(false);
 
         return topBar;
     }
@@ -320,6 +327,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         refreshButton.setEnabled(enable);
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
+        openInMemory.setEnabled(enable);
     }
 
     public static void setEnableParentAndChild(Container container, boolean enable){
@@ -347,14 +355,14 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(open)){
+        if(e.getSource().equals(open) || e.getSource().equals(openInMemory)){
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
-            SimResultsLoader.openN5FileDataset(filesToOpen, openInMemory.isSelected());
+            SimResultsLoader.openN5FileDataset(filesToOpen, e.getSource().equals(openInMemory));
         } else if (e.getSource().equals(copyLink)) {
             ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -398,11 +406,13 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             variableTextPanel.setText("");
             open.setEnabled(false);
             copyLink.setEnabled(false);
+            openInMemory.setEnabled(false);
             setEnableParentAndChild(exportDetails, false);
             return;
         }
         open.setEnabled(true);
         copyLink.setEnabled(true);
+        openInMemory.setEnabled(true);
         setEnableParentAndChild(exportDetails, true);
 //        AttributeSet attributeSet = styleContext.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.)
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
