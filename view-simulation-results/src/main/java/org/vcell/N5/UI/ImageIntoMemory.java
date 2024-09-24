@@ -37,16 +37,16 @@ public class ImageIntoMemory extends EventListenerList implements ActionListener
 
     private static final Logger logger = N5ImageHandler.getLogger(ImageIntoMemory.class);
 
-    public ImageIntoMemory(double cDim, double tDim, double zDim, SimResultsLoader simResultsLoader){
+    public ImageIntoMemory(double cDim, double zDim, double tDim, SimResultsLoader simResultsLoader){
         this.simResultsLoader = simResultsLoader;
         channelStartTextField = new HintTextField("1");
         channelEndTextField = new HintTextField("" + (int) cDim);
 
-        timeStartTextField = new HintTextField("1");
-        timeEndTextField = new HintTextField("" + (int) tDim);
-
         zStartTextField = new HintTextField("1");
         zEndTextField = new HintTextField("" + (int) zDim);
+
+        timeStartTextField = new HintTextField("1");
+        timeEndTextField = new HintTextField("" + (int) tDim);
 
         // Create the frame
         frame = new JFrame("Select " + simResultsLoader.userSetFileName + " Dimensions");
@@ -113,8 +113,8 @@ public class ImageIntoMemory extends EventListenerList implements ActionListener
         if (e.getSource().equals(okayButton)){
             frame.dispose();
 
-            startC = Integer.parseInt(channelStartTextField.getText()) - 1;
-            endC = Integer.parseInt(channelEndTextField.getText()) - 1;
+            startC = Integer.parseInt(channelStartTextField.getText());
+            endC = Integer.parseInt(channelEndTextField.getText());
             startT = Integer.parseInt(timeStartTextField.getText()) - 1;
             endT = Integer.parseInt(timeEndTextField.getText()) - 1;
             startZ = Integer.parseInt(zStartTextField.getText()) - 1;
