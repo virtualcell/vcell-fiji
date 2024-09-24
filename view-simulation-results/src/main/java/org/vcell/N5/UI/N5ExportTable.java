@@ -236,7 +236,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
-        
+
         JPanel topRow = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -271,6 +271,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         monthInterval = new JCheckBox("Past Month");
         yearlyInterval = new JCheckBox("Past Year");
         anyInterval = new JCheckBox("Any Time");
+        anyInterval.setSelected(true);
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(todayInterval);
@@ -281,10 +282,10 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
         JPanel filters = new JPanel();
         filters.setLayout(new BorderLayout());
         timeFilter = new JPanel(new GridBagLayout());
+        timeFilter.add(anyInterval);
         timeFilter.add(todayInterval);
         timeFilter.add(monthInterval);
         timeFilter.add(yearlyInterval);
-        timeFilter.add(anyInterval);
 //        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time "));
         filters.add(timeFilter, BorderLayout.NORTH);
         filters.add(includeExampleExports, BorderLayout.SOUTH);
