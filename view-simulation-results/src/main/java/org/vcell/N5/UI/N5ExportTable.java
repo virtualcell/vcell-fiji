@@ -491,7 +491,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
             add("BioModel");
             add("Application");
             add("Simulation");
-            add("Time Slice");
+            add("Channel,Z,Time");
             add("Date Exported");
             add("N5 File Name");
         }};
@@ -525,8 +525,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 return data.biomodelName;
             } else if (columnIndex == headers.indexOf("Simulation")) {
                 return data.simulationName;
-            } else if (columnIndex == headers.indexOf("Time Slice")) {
-                return  data.startAndEndTime;
+            } else if (columnIndex == headers.indexOf("Channel,Z,Time")) {
+                return String.format("%s,%s,%s", data.numVariables, data.zSlices, data.tSlices);
             } else if (columnIndex == headers.indexOf("Date Exported")) {
                 return data.exportDate;
             } else if (columnIndex == headers.indexOf("N5 File Name")) {
