@@ -37,6 +37,10 @@ public class ExportDataRepresentation {
         public ArrayList<String> differentParameterValues;
         public String savedFileName;
 
+        public int zSlices;
+        public int tSlices;
+        public int numVariables;
+
         public SimulationExportDataRepresentation(String exportDate, String uri, String jobID, String dataID, String simulationName,
                                                   String applicationName, String biomodelName, String variables, String startAndEndTime,
                                                   ArrayList<String> differentParameterValues, String savedFileName){

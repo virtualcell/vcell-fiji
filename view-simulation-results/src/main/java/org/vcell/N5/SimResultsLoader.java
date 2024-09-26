@@ -9,6 +9,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
+import ij.plugin.ContrastEnhancer;
+import ij.plugin.frame.ContrastAdjuster;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -134,6 +136,9 @@ public class SimResultsLoader {
         setUnits(n5AmazonS3Reader, imagePlus);
         imagePlus.setProperty("channelInfo", n5AmazonS3Reader.getAttribute(dataSetChosen, "channelInfo", HashMap.class));
         imagePlus.setProperty("maskInfo", n5AmazonS3Reader.getAttribute(dataSetChosen, "maskMapping", HashMap.class));
+        imagePlus.setZ(Math.floorDiv(imagePlus.getNSlices(), 2));
+
+        new ContrastEnhancer().stretchHistogram(imagePlus, 1);
         return imagePlus;
     }
 
