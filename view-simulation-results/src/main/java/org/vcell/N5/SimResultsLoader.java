@@ -137,6 +137,7 @@ public class SimResultsLoader {
         imagePlus.setProperty("channelInfo", n5AmazonS3Reader.getAttribute(dataSetChosen, "channelInfo", HashMap.class));
         imagePlus.setProperty("maskInfo", n5AmazonS3Reader.getAttribute(dataSetChosen, "maskMapping", HashMap.class));
         imagePlus.setZ(Math.floorDiv(imagePlus.getNSlices(), 2));
+        imagePlus.setT(Math.floorDiv(imagePlus.getNFrames(), 2));
 
         new ContrastEnhancer().stretchHistogram(imagePlus, 1);
         return imagePlus;
