@@ -10,7 +10,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
 import ij.plugin.ContrastEnhancer;
-import ij.plugin.frame.ContrastAdjuster;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -24,14 +23,10 @@ import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
-import org.vcell.N5.UI.N5ExportTable;
-import org.vcell.N5.UI.ImageIntoMemory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,9 +52,14 @@ public class SimResultsLoader {
 
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
     public static AmazonS3ClientBuilder s3ClientBuilder;
+    public int rowNumber;
 
     public SimResultsLoader(){
 
+    }
+    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber){
+        this(stringURI, userSetFileName);
+        this.rowNumber = rowNumber;
     }
     public SimResultsLoader(String stringURI, String userSetFileName){
         uri = URI.create(stringURI);
@@ -163,77 +163,6 @@ public class SimResultsLoader {
 
     public ArrayList getN5Dimensions(){
         return n5AmazonS3Reader.getAttribute(dataSetChosen, "dimensions", ArrayList.class);
-    }
-
-
-    public static void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        N5ExportTable.enableCriticalButtons(false);
-        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        Thread openN5FileDataset = new Thread(() -> {
-            try{
-                for(SimResultsLoader simResultsLoader: filesToOpen){
-                    simResultsLoader.createS3ClientAndReader();
-                    ImageIntoMemory imageIntoMemory;
-                    if (openInMemory){
-                        ArrayList<Double> dimensions = simResultsLoader.getN5Dimensions();
-                        imageIntoMemory = new ImageIntoMemory(dimensions.get(2), dimensions.get(3), dimensions.get(4), simResultsLoader);
-                        imageIntoMemory.displayRangeMenu();
-                    } else{
-                        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                        imagePlus.show();
-                    }
-
-                }
-            } catch (Exception ex) {
-                N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                N5ExportTable.enableCriticalButtons(true);
-                throw new RuntimeException(ex);
-            } finally {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!openInMemory) {
-                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            N5ExportTable.enableCriticalButtons(true);
-                        }
-                    }
-                });
-            }
-        });
-        openN5FileDataset.setName("Open N5 File");
-        openN5FileDataset.start();
-    }
-
-    public static void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
-        N5ExportTable.enableCriticalButtons(true);
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setAcceptAllFileFilterUsed(false);
-        int result = fileChooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION){
-            File file = fileChooser.getSelectedFile();
-            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
-            Thread openN5FileDataset = new Thread(() -> {
-                try{
-                    for(SimResultsLoader simResultsLoader: filesToOpen){
-                        simResultsLoader.setSelectedLocalFile(file);
-                        ImagePlus imagePlus = simResultsLoader.getImgPlusFromLocalN5File();
-                        imagePlus.show();
-                    }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                } finally {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            N5ExportTable.enableCriticalButtons(true);
-                        }
-                    });
-                }
-            });
-            openN5FileDataset.start();
-        }
     }
 
     void setDataSetChosen(String dataSetChosen) {
