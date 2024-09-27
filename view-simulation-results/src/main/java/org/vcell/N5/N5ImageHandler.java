@@ -86,12 +86,12 @@ public class N5ImageHandler implements Command {
     }
 
     private static void setExampleJSONData(){
-        try(BufferedInputStream remoteJSONFile = new BufferedInputStream(new URL("https://api.npoint.io/6de0febb887fdc4c2fa0").openStream())){
+        try(BufferedInputStream remoteJSONFile = new BufferedInputStream(new URL("https://vcell.org/export/n5examples.json").openStream())){
             InputStreamReader remoteJSONFileReader = new InputStreamReader(remoteJSONFile);
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             exampleJSONData = gson.fromJson(remoteJSONFileReader, ExportDataRepresentation.class).formatData.get(N5ImageHandler.formatName);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.print("Can't open example exports: " + e.getLocalizedMessage());
         }
     }
 
