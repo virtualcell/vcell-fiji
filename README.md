@@ -17,7 +17,9 @@ the N5 format, and open them within Fiji.
 ### Installation
 In Fiji:
 
-Help -> Update… (Not Update ImageJ…) -> Manage Update Sites -> Search For 'VCell' -> Click the Checkbox for 'VCell Simulation Results Viewer' -> Apply and Close -> Apply Changes -> Restart. You may need to close and open Fiji.
+1. Click on ***Help -> Update*** to get plugin management GUI
+2. In the management GUI click ***Manage Update Sites***, search *"VCell"*, and check it to install
+3. After clicking ***Apply and Close*** restart Fiji, then *'VCell View Simulation Results'* should be in your plugins menu.
 
 ![installation image](https://github.com/virtualcell/vcell-fiji/blob/main/install%20instructions.png)
 
