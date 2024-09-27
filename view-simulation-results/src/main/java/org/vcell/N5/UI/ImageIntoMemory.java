@@ -15,7 +15,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
 
-public class ImageIntoMemory extends EventListenerList implements ActionListener {
+public class ImageIntoMemory implements ActionListener {
     public int startC;
     public int endC;
     public int startT;

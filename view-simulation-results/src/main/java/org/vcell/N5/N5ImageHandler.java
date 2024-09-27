@@ -35,6 +35,7 @@ public class N5ImageHandler implements Command {
     public static N5ExportTable exportTable;
     public static String exportedMetaDataPath = System.getProperty("user.home") + "/.vcell/exportMetaData.json";
     private static ExportDataRepresentation.FormatExportDataRepresentation exampleJSONData;
+    public final static LoadingFactory loadingFactory = new LoadingFactory();
 
     @Override
     public void run() {

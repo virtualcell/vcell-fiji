@@ -1,14 +1,8 @@
 package org.vcell.N5.UI;
 
-import ij.ImagePlus;
-import net.imglib2.cache.img.CachedCellImg;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.numeric.real.DoubleType;
-import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
-import org.vcell.N5.SimCacheLoader;
 import org.vcell.N5.SimResultsLoader;
 
 import javax.swing.*;
@@ -24,7 +18,6 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +25,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class N5ExportTable implements ActionListener, ListSelectionListener {
+public class N5ExportTable implements ActionListener, ListSelectionListener, SimLoadingListener {
     public static JDialog exportTableDialog;
     private N5ExportTableModel n5ExportTableModel;
     private ParameterTableModel parameterTableModel;
@@ -363,7 +356,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
-            SimResultsLoader.openN5FileDataset(filesToOpen, e.getSource().equals(openInMemory));
+            N5ImageHandler.loadingFactory.openN5FileDataset(filesToOpen, e.getSource().equals(openInMemory));
         } else if (e.getSource().equals(copyLink)) {
             ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -381,7 +374,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
                 SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
                 filesToOpen.add(simResultsLoader);
             }
-            SimResultsLoader.openLocalN5FS(filesToOpen);
+            N5ImageHandler.loadingFactory.openLocalN5FS(filesToOpen);
         }
         else if (e.getSource().equals(includeExampleExports)){
             if(includeExampleExports.isSelected()){
@@ -427,6 +420,16 @@ public class N5ExportTable implements ActionListener, ListSelectionListener {
 
         variableTextPanel.updateUI();
         parameterTable.updateUI();
+    }
+
+    @Override
+    public void simIsLoading(int itemRow) {
+
+    }
+
+    @Override
+    public void simFinishedLoading(int itemRow) {
+
     }
 
 
