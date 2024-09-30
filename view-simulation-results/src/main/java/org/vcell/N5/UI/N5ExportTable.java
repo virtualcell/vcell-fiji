@@ -12,6 +12,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -52,10 +53,12 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
     private final Border exampleBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Example Exports");
     private static RemoteFileSelection remoteFileSelection;
     private final int paneWidth = 800;
+    private final Set<Integer> loadingRows = new HashSet<>();
 
     private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
     public N5ExportTable(){
+        N5ImageHandler.loadingFactory.addSimLoadingListener(this);
         remoteFileSelection = new RemoteFileSelection();
     }
 
@@ -208,6 +211,23 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
         exportListTable = new JTable(n5ExportTableModel);
         tableScrollPane = new JScrollPane(exportListTable);
 
+        DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer(){
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (loadingRows.contains(row)) {
+                    cell.setForeground(Color.decode("#228B22"));
+                } else {
+                    cell.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+                }
+                return cell;
+            }
+        };
+
+        int columns = n5ExportTableModel.getColumnCount();
+        for (int i = 0; i < columns; i++){
+            exportListTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
+        }
 
         tableScrollPane.setPreferredSize(new Dimension(500, 400));
         tableScrollPane.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Export Table"));
@@ -353,7 +373,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
-                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName);
+                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName, row);
                 filesToOpen.add(simResultsLoader);
             }
             N5ImageHandler.loadingFactory.openN5FileDataset(filesToOpen, e.getSource().equals(openInMemory));
@@ -424,12 +444,14 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
 
     @Override
     public void simIsLoading(int itemRow) {
-
+        loadingRows.add(itemRow);
+        exportListTable.repaint();
     }
 
     @Override
     public void simFinishedLoading(int itemRow) {
-
+        loadingRows.remove(itemRow);
+        exportListTable.repaint();
     }
 
 

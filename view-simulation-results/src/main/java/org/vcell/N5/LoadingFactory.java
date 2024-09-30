@@ -21,8 +21,12 @@ public class LoadingFactory implements SimLoadingEventCreator{
         N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
         Thread openN5FileDataset = new Thread(() -> {
             try{
+                // Create clients and show loading status
                 for(SimResultsLoader simResultsLoader: filesToOpen){
                     simResultsLoader.createS3ClientAndReader();
+                    notifySimIsLoading(simResultsLoader);
+                }
+                for (SimResultsLoader simResultsLoader: filesToOpen){
                     ImageIntoMemory imageIntoMemory;
                     if (openInMemory){
                         ArrayList<Double> dimensions = simResultsLoader.getN5Dimensions();
@@ -31,8 +35,8 @@ public class LoadingFactory implements SimLoadingEventCreator{
                     } else{
                         ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
                         imagePlus.show();
+                        notifySimIsDoneLoading(simResultsLoader);
                     }
-
                 }
             } catch (Exception ex) {
                 N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
