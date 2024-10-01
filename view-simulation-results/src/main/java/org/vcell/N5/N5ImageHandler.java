@@ -11,13 +11,11 @@ import org.scijava.log.slf4j.SLF4JLogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.vcell.N5.UI.N5ExportTable;
+import org.vcell.N5.retrieving.LoadingFactory;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Stack;
 
 
 /*

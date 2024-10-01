@@ -1,12 +1,9 @@
-package org.vcell.N5;
+package org.vcell.N5.library.extensions;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
-import org.janelia.saalfeldlab.n5.s3.AmazonS3Utils;
-
-import java.net.URI;
 
 public class S3KeyValueAccess extends AmazonS3KeyValueAccess {
     private final String bucketName;

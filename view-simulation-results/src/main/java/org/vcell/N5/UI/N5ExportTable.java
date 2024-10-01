@@ -3,7 +3,8 @@ package org.vcell.N5.UI;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
-import org.vcell.N5.SimResultsLoader;
+import org.vcell.N5.retrieving.SimLoadingListener;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -12,7 +13,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;

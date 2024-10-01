@@ -1,7 +1,7 @@
 package org.vcell.N5.UI;
 
 import org.vcell.N5.N5ImageHandler;
-import org.vcell.N5.SimResultsLoader;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import java.awt.*;

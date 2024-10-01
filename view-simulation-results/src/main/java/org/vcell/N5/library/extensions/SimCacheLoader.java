@@ -1,4 +1,4 @@
-package org.vcell.N5;
+package org.vcell.N5.library.extensions;
 
 import ij.ImagePlus;
 import ij.gui.ImageWindow;

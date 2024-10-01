@@ -1,8 +1,4 @@
-package org.vcell.N5.UI;
-
-import org.vcell.N5.SimResultsLoader;
-
-import javax.swing.event.EventListenerList;
+package org.vcell.N5.retrieving;
 
 public interface SimLoadingEventCreator {
     public void addSimLoadingListener(SimLoadingListener simLoadingListener);

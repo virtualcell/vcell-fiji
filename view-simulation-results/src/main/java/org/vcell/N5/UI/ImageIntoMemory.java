@@ -4,7 +4,9 @@ import ij.ImagePlus;
 import ij.plugin.Duplicator;
 import org.scijava.log.Logger;
 import org.vcell.N5.N5ImageHandler;
-import org.vcell.N5.SimResultsLoader;
+import org.vcell.N5.retrieving.SimLoadingEventCreator;
+import org.vcell.N5.retrieving.SimLoadingListener;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
