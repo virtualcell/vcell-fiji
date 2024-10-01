@@ -53,7 +53,7 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
     private final Border exampleBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Example Exports");
     private static RemoteFileSelection remoteFileSelection;
     private final int paneWidth = 800;
-    private final Set<Integer> loadingRows = new HashSet<>();
+    private final Map<Integer, String> loadingRows = new HashMap<>();
 
     private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
@@ -215,7 +215,15 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if (loadingRows.contains(row)) {
+                if (loadingRows.containsKey(row)) {
+                    int actualRow = row;
+                    // The table may have changed by refreshing it, so if past idea of affected row no longer align correct it
+                    while (! n5ExportTableModel.getRowData(row).jobID.equals(loadingRows.get(row))){
+                        actualRow += 1; // assuming only more items are being added to the list
+                        loadingRows.put(actualRow, loadingRows.get(row));
+                        loadingRows.remove(row);
+                    }
+                    cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, actualRow, column);
                     cell.setForeground(Color.decode("#228B22"));
                 } else {
                     cell.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
@@ -373,7 +381,8 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
             ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
             for(int row: exportListTable.getSelectedRows()){
                 String uri = n5ExportTableModel.getRowData(row).uri;
-                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, n5ExportTableModel.getRowData(row).savedFileName, row);
+                ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
+                SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID);
                 filesToOpen.add(simResultsLoader);
             }
             N5ImageHandler.loadingFactory.openN5FileDataset(filesToOpen, e.getSource().equals(openInMemory));
@@ -443,13 +452,13 @@ public class N5ExportTable implements ActionListener, ListSelectionListener, Sim
     }
 
     @Override
-    public void simIsLoading(int itemRow) {
-        loadingRows.add(itemRow);
+    public void simIsLoading(int itemRow, String exportID) {
+        loadingRows.put(itemRow, exportID);
         exportListTable.repaint();
     }
 
     @Override
-    public void simFinishedLoading(int itemRow) {
+    public void simFinishedLoading(int itemRow, String exportID) {
         loadingRows.remove(itemRow);
         exportListTable.repaint();
     }

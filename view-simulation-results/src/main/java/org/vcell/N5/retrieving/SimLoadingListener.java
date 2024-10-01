@@ -4,8 +4,8 @@ import java.util.EventListener;
 
 public interface SimLoadingListener extends EventListener {
 
-    public void simIsLoading(int itemRow);
+    public void simIsLoading(int itemRow, String exportID);
 
-    public void simFinishedLoading(int itemRow);
+    public void simFinishedLoading(int itemRow, String exportID);
 
 }

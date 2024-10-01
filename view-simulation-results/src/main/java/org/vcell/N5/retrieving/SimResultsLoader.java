@@ -56,13 +56,15 @@ public class SimResultsLoader {
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
     public static AmazonS3ClientBuilder s3ClientBuilder;
     public int rowNumber;
+    public String exportID;
 
     public SimResultsLoader(){
 
     }
-    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber){
+    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID){
         this(stringURI, userSetFileName);
         this.rowNumber = rowNumber;
+        this.exportID = exportID;
     }
     public SimResultsLoader(String stringURI, String userSetFileName){
         uri = URI.create(stringURI);

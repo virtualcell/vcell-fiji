@@ -99,14 +99,14 @@ public class LoadingFactory implements SimLoadingEventCreator {
     @Override
     public void notifySimIsLoading(SimResultsLoader simResultsLoader) {
         for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
-            simLoadingListener.simIsLoading(simResultsLoader.rowNumber);
+            simLoadingListener.simIsLoading(simResultsLoader.rowNumber, simResultsLoader.exportID);
         }
     }
 
     @Override
     public void notifySimIsDoneLoading(SimResultsLoader simResultsLoader) {
         for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
-            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber);
+            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber, simResultsLoader.exportID);
         }
     }
 }
