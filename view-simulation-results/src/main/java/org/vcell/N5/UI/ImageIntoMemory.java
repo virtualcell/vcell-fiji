@@ -15,7 +15,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
 
-public class ImageIntoMemory implements ActionListener {
+public class ImageIntoMemory implements ActionListener, SimLoadingEventCreator {
     public int startC;
     public int endC;
     public int startT;
@@ -30,12 +30,15 @@ public class ImageIntoMemory implements ActionListener {
     private final JTextField zStartTextField;
     private final JTextField zEndTextField;
 
-    private final JButton okayButton;
-    private final JButton cancelButton;
+    public static final String okayButtonText = "Okay";
+    public static final String cancelButtonText = "Cancel";
+    public final JButton okayButton;
+    public final JButton cancelButton;
     private final JFrame frame;
     private final SimResultsLoader simResultsLoader;
 
     private static final Logger logger = N5ImageHandler.getLogger(ImageIntoMemory.class);
+    private static final EventListenerList eventListenerList = new EventListenerList();
 
     public ImageIntoMemory(double cDim, double zDim, double tDim, SimResultsLoader simResultsLoader){
         this.simResultsLoader = simResultsLoader;
@@ -75,8 +78,8 @@ public class ImageIntoMemory implements ActionListener {
 
         // Create the "Okay" and "Cancel" buttons
         panel.add(new JLabel());
-        okayButton = new JButton("Okay");
-        cancelButton = new JButton("Cancel");
+        okayButton = new JButton(okayButtonText);
+        cancelButton = new JButton(cancelButtonText);
 
         // Add action listeners to the buttons
         okayButton.addActionListener(this);
@@ -89,6 +92,10 @@ public class ImageIntoMemory implements ActionListener {
 
         // Add the panel to the frame
         frame.add(panel);
+    }
+
+    public void dispose(){
+        frame.dispose();
     }
 
     public void displayRangeMenu(){
@@ -133,6 +140,7 @@ public class ImageIntoMemory implements ActionListener {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 } finally {
+                    notifySimIsDoneLoading(simResultsLoader);
                     N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     N5ExportTable.enableCriticalButtons(true);
                 }
@@ -142,9 +150,29 @@ public class ImageIntoMemory implements ActionListener {
         }
 
         else if (e.getSource().equals(cancelButton)) {
+            notifySimIsDoneLoading(simResultsLoader);
             N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             N5ExportTable.enableCriticalButtons(true);
             frame.dispose();
+        }
+    }
+
+    @Override
+    public void addSimLoadingListener(SimLoadingListener simLoadingListener) {
+        eventListenerList.add(SimLoadingListener.class, simLoadingListener);
+    }
+
+    @Override
+    public void notifySimIsLoading(SimResultsLoader simResultsLoader) {
+        for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
+            simLoadingListener.simIsLoading(simResultsLoader.rowNumber);
+        }
+    }
+
+    @Override
+    public void notifySimIsDoneLoading(SimResultsLoader simResultsLoader) {
+        for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
+            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber);
         }
     }
 

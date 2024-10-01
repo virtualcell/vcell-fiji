@@ -1,6 +1,7 @@
 package org.vcell.N5;
 
 import ij.ImagePlus;
+import ij.plugin.Duplicator;
 import org.vcell.N5.UI.ImageIntoMemory;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.UI.SimLoadingEventCreator;
@@ -9,11 +10,16 @@ import org.vcell.N5.UI.SimLoadingListener;
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-public class LoadingFactory implements SimLoadingEventCreator{
+public class LoadingFactory implements SimLoadingEventCreator {
     private static final EventListenerList eventListenerList = new EventListenerList();
 
     public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
@@ -31,6 +37,9 @@ public class LoadingFactory implements SimLoadingEventCreator{
                     if (openInMemory){
                         ArrayList<Double> dimensions = simResultsLoader.getN5Dimensions();
                         imageIntoMemory = new ImageIntoMemory(dimensions.get(2), dimensions.get(3), dimensions.get(4), simResultsLoader);
+                        for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
+                            imageIntoMemory.addSimLoadingListener(simLoadingListener);
+                        }
                         imageIntoMemory.displayRangeMenu();
                     } else{
                         ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
