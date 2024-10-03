@@ -1,8 +1,9 @@
 package org.vcell.N5.retrieving;
 
 import ij.ImagePlus;
+import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.ImageIntoMemory;
-import org.vcell.N5.UI.N5ExportTable;
+import org.vcell.N5.UI.MainPanel;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -14,9 +15,11 @@ import java.util.ArrayList;
 public class LoadingFactory implements SimLoadingEventCreator {
     private static final EventListenerList eventListenerList = new EventListenerList();
 
+    private final ControlButtonsPanel controlButtonsPanel = MainPanel.controlButtonsPanel;
+
     public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        N5ExportTable.enableCriticalButtons(false);
-        N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        controlButtonsPanel.enableCriticalButtons(false);
+        MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));
         Thread openN5FileDataset = new Thread(() -> {
             try{
                 // Create clients and show loading status
@@ -40,16 +43,16 @@ public class LoadingFactory implements SimLoadingEventCreator {
                     }
                 }
             } catch (Exception ex) {
-                N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                N5ExportTable.enableCriticalButtons(true);
+                MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                controlButtonsPanel.enableCriticalButtons(true);
                 throw new RuntimeException(ex);
             } finally {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         if (!openInMemory) {
-                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            N5ExportTable.enableCriticalButtons(true);
+                            MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                            controlButtonsPanel.enableCriticalButtons(true);
                         }
                     }
                 });
@@ -60,14 +63,14 @@ public class LoadingFactory implements SimLoadingEventCreator {
     }
 
     public void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
-        N5ExportTable.enableCriticalButtons(true);
+        controlButtonsPanel.enableCriticalButtons(true);
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setAcceptAllFileFilterUsed(false);
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
             File file = fileChooser.getSelectedFile();
-            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));
             Thread openN5FileDataset = new Thread(() -> {
                 try{
                     for(SimResultsLoader simResultsLoader: filesToOpen){
@@ -81,8 +84,8 @@ public class LoadingFactory implements SimLoadingEventCreator {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            N5ExportTable.enableCriticalButtons(true);
+                            MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                            controlButtonsPanel.enableCriticalButtons(true);
                         }
                     });
                 }

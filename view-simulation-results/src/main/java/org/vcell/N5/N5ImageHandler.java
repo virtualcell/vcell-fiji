@@ -10,6 +10,7 @@ import org.scijava.log.Logger;
 import org.scijava.log.slf4j.SLF4JLogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.retrieving.LoadingFactory;
 import org.vcell.N5.retrieving.SimResultsLoader;
@@ -30,18 +31,17 @@ public class N5ImageHandler implements Command {
     public static final String formatName = "N5";
     @Parameter
     public static LogService logService;
-    public static N5ExportTable exportTable;
+    public static MainPanel exportTable;
     public static String exportedMetaDataPath = System.getProperty("user.home") + "/.vcell/exportMetaData.json";
     private static ExportDataRepresentation.FormatExportDataRepresentation exampleJSONData;
     public final static LoadingFactory loadingFactory = new LoadingFactory();
 
     @Override
     public void run() {
-        exportTable = new N5ExportTable();
+        exportTable = new MainPanel();
         initializeLogService();
         setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
-        exportTable.displayExportTable();
         Thread thread = new Thread(() -> {
             // For some reason getting a standard client takes three seconds.
             // So create one upon initialization, while the user is focused on the GUI

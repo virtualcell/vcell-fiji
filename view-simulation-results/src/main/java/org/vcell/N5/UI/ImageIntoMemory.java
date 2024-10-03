@@ -42,6 +42,8 @@ public class ImageIntoMemory implements ActionListener, SimLoadingEventCreator {
     private static final Logger logger = N5ImageHandler.getLogger(ImageIntoMemory.class);
     private static final EventListenerList eventListenerList = new EventListenerList();
 
+    private final ControlButtonsPanel controlButtonsPanel = MainPanel.controlButtonsPanel;
+
     public ImageIntoMemory(double cDim, double zDim, double tDim, SimResultsLoader simResultsLoader){
         this.simResultsLoader = simResultsLoader;
         channelStartTextField = new HintTextField("1");
@@ -143,8 +145,8 @@ public class ImageIntoMemory implements ActionListener, SimLoadingEventCreator {
                     throw new RuntimeException(ex);
                 } finally {
                     notifySimIsDoneLoading(simResultsLoader);
-                    N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                    N5ExportTable.enableCriticalButtons(true);
+                    MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    controlButtonsPanel.enableCriticalButtons(true);
                 }
             });
             openInMemory.setName("Open N5 Image in Memory");
@@ -153,8 +155,8 @@ public class ImageIntoMemory implements ActionListener, SimLoadingEventCreator {
 
         else if (e.getSource().equals(cancelButton)) {
             notifySimIsDoneLoading(simResultsLoader);
-            N5ExportTable.exportTableDialog.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            N5ExportTable.enableCriticalButtons(true);
+            MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            controlButtonsPanel.enableCriticalButtons(true);
             frame.dispose();
         }
     }
