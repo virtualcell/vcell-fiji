@@ -51,12 +51,8 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                int actualRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row) : -1;
+                int actualRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row, row) : -1;
                 if (actualRow != -1){
-                    if (actualRow != row){
-                        loadingRowsJobID.put(actualRow, loadingRowsJobID.get(row));
-                        loadingRowsJobID.remove(row);
-                    }
                     cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, actualRow, column);
                     cell.setForeground(Color.decode("#228B22"));
                 } else {
@@ -163,6 +159,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
                         if(isUpdated){
                             n5ExportTableModel.fireTableDataChanged();
                             this.updateUI();
+                            exportListTable.repaint();
                         }
                     }
                     Thread.sleep(TimeUnit.SECONDS.toMillis(2));
@@ -194,15 +191,20 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     }
 
     // The table may have changed by refreshing it, so if past idea of affected row no longer align correct it
-    private int findLoadingRow(int row){
-        if (row < 0 || row == n5ExportTableModel.getRowCount()){
+    private int findLoadingRow(int currentRow, int initialRow){
+        String expectedJobID = loadingRowsJobID.get(initialRow);
+        if (currentRow < 0 || currentRow == n5ExportTableModel.getRowCount()){
             return -1;
         }
-        else if (n5ExportTableModel.getRowData(row).jobID.equals(loadingRowsJobID.get(row)) &&
-                row < n5ExportTableModel.getRowCount()){
-            return row;
+        else if (n5ExportTableModel.getRowData(currentRow).jobID.equals(expectedJobID) &&
+                currentRow < n5ExportTableModel.getRowCount()){
+            if (currentRow != initialRow){
+                loadingRowsJobID.put(currentRow, expectedJobID);
+                loadingRowsJobID.remove(initialRow);
+            }
+            return currentRow;
         } else {
-            return findLoadingRow(row + 1);
+            return findLoadingRow(currentRow + 1, initialRow);
         }
     }
 
@@ -219,7 +221,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
         exportDetailsPanel.addExportDetailEntries("Variables: " + rowData.variables, rowData.differentParameterValues);
 
-        int loadingRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row) : -1;
+        int loadingRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row, row) : -1;
         controlPanel.allowCancel(loadingRow != -1);
     }
 
