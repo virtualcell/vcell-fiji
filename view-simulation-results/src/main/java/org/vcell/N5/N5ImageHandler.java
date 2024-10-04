@@ -34,12 +34,13 @@ public class N5ImageHandler implements Command {
     public static MainPanel exportTable;
     public static String exportedMetaDataPath = System.getProperty("user.home") + "/.vcell/exportMetaData.json";
     private static ExportDataRepresentation.FormatExportDataRepresentation exampleJSONData;
-    public final static LoadingFactory loadingFactory = new LoadingFactory();
+    public static LoadingFactory loadingFactory;
 
     @Override
     public void run() {
-        exportTable = new MainPanel();
         initializeLogService();
+        loadingFactory = new LoadingFactory();
+        exportTable = new MainPanel();
         setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         Thread thread = new Thread(() -> {

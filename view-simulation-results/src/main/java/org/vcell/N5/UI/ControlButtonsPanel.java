@@ -13,10 +13,9 @@ import java.util.Enumeration;
 
 public class ControlButtonsPanel extends JPanel implements ActionListener {
 
-    private static JButton open;
+    private static JButton openOrCancel;
 //    private final JButton openLocal = new JButton("Open N5 Local");
     private final JButton copyLink;
-    private final JButton refreshButton;
     private final JButton useN5Link;
     private final JButton questionMark;
     private final JButton openInMemory;
@@ -31,8 +30,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private RemoteFileSelection remoteFileSelection;
 
     public ControlButtonsPanel(){
-        refreshButton = new JButton("Refresh");
-        open = new JButton("Open");
+        openOrCancel = new JButton("Open");
         copyLink = new JButton("Copy Link");
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
@@ -47,7 +45,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         JPanel topRow = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        topRow.add(open, gridBagConstraints);
+        topRow.add(openOrCancel, gridBagConstraints);
         gridBagConstraints.gridwidth = 1;
 
         gridBagConstraints.gridx = 1;
@@ -109,8 +107,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
 
 
-        refreshButton.addActionListener(this);
-        open.addActionListener(this);
+        openOrCancel.addActionListener(this);
         copyLink.addActionListener(this);
         questionMark.addActionListener(this);
         useN5Link.addActionListener(this);
@@ -123,7 +120,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             b.nextElement().addActionListener(this);
         }
 
-        open.setEnabled(false);
+        openOrCancel.setEnabled(false);
         copyLink.setEnabled(false);
         openInMemory.setEnabled(false);
     }
@@ -135,8 +132,12 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(open) || e.getSource().equals(openInMemory)){
-            n5ExportTable.openSelectedRows(e.getSource().equals(openInMemory));
+        if(e.getSource().equals(openOrCancel) || e.getSource().equals(openInMemory)){
+            if (openOrCancel.getText().equals("Cancel")){
+                n5ExportTable.removeFromLoadingRows();
+            } else {
+                n5ExportTable.openSelectedRows(e.getSource().equals(openInMemory));
+            }
         } else if (e.getSource().equals(copyLink)) {
             n5ExportTable.copySelectedRowLink();
         } else if (e.getSource().equals(questionMark)) {
@@ -173,16 +174,28 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         return pastTime;
     }
 
+    public void allowCancel(boolean allow){
+        openOrCancel.setEnabled(true);
+        copyLink.setEnabled(true);
+        openInMemory.setEnabled(!allow);
+        useN5Link.setEnabled(true);
+        remoteFileSelection.submitS3Info.setEnabled(true);
+        if (allow){
+            openOrCancel.setText("Cancel");
+        } else {
+            openOrCancel.setText("Open");
+        }
+    }
+
     public void enableRowContextDependentButtons(boolean enable){
-        open.setEnabled(enable);
+        openOrCancel.setEnabled(enable);
         copyLink.setEnabled(enable);
         openInMemory.setEnabled(enable);
     }
 
     public void enableCriticalButtons(boolean enable){
         useN5Link.setEnabled(enable);
-        open.setEnabled(enable);
-        refreshButton.setEnabled(enable);
+        openOrCancel.setEnabled(enable);
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
         openInMemory.setEnabled(enable);

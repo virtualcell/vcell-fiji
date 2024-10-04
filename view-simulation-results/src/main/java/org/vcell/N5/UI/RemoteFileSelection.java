@@ -95,7 +95,7 @@ public class RemoteFileSelection extends JDialog implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        SimResultsLoader simResultsLoader = new SimResultsLoader(getS3URL(), "");
+        SimResultsLoader simResultsLoader = new SimResultsLoader(getS3URL(), "", -1, "");
         N5ImageHandler.loadingFactory.openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, false);
         this.setVisible(false);
     }
