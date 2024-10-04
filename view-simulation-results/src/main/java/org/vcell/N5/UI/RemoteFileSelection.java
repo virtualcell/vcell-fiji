@@ -1,6 +1,7 @@
 package org.vcell.N5.UI;
 
-import org.vcell.N5.SimResultsLoader;
+import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -94,8 +95,8 @@ public class RemoteFileSelection extends JDialog implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        SimResultsLoader simResultsLoader = new SimResultsLoader(getS3URL(), "");
-        SimResultsLoader.openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, N5ExportTable.openInMemory.isSelected());
+        SimResultsLoader simResultsLoader = new SimResultsLoader(getS3URL(), "", -1, "");
+        N5ImageHandler.loadingFactory.openN5FileDataset(new ArrayList<SimResultsLoader>(){{add(simResultsLoader);}}, false);
         this.setVisible(false);
     }
 }

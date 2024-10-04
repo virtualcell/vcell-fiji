@@ -1,4 +1,4 @@
-package org.vcell.N5;
+package org.vcell.N5.retrieving;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.internal.LinkedTreeMap;
@@ -11,6 +11,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.vcell.N5.N5DataSetFile;
+import org.vcell.N5.N5ImageHandler;
 
 import java.io.File;
 import java.io.IOException;
