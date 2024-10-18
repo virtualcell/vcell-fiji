@@ -3,7 +3,7 @@ package org.vcell.N5.analysis;
 import ij.WindowManager;
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
-import org.vcell.N5.UI.RangeSelector;
+import org.vcell.N5.N5ImageHandler;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,17 +57,28 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
         setVisible(true);
 
         pane = new JOptionPane(this, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-        jDialog = pane.createDialog("Temporal Analysis");
+        jDialog = pane.createDialog("Data Reduction");
     }
 
     public void displayGUI(){
         jDialog.setVisible(true);
         Integer returnValue = (Integer) pane.getValue();
         if (returnValue.equals(JOptionPane.OK_OPTION)){
-            Thread thread = new Thread(() -> {
-                TemporalAnalysis temporalAnalysis = new TemporalAnalysis();
-            });
-            thread.start();
+            JFileChooser saveToFile = new JFileChooser();
+            saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            int response = saveToFile.showDialog(this, "Save Results To File");
+            if (response == JFileChooser.APPROVE_OPTION){
+                Thread thread = new Thread(() -> {
+                    DataReduction dataReduction = new DataReduction(
+                            normalizeROI.isSelected(), normalizeEntireImage.isSelected(), simROIList,
+                            imageROIList, WindowManager.getImage((String) chosenImage.getSelectedItem()),
+                            0, 0, 0,
+                            5, saveToFile.getSelectedFile()
+                    );
+                    N5ImageHandler.loadingFactory.addSimLoadingListener(dataReduction);
+                });
+                thread.start();
+            }
         }
     }
 
