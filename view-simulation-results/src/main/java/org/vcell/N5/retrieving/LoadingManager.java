@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class LoadingFactory implements SimLoadingEventCreator {
+public class LoadingManager implements SimLoadingEventCreator {
     private static final EventListenerList eventListenerList = new EventListenerList();
 
     private final ControlButtonsPanel controlButtonsPanel = MainPanel.controlButtonsPanel;
@@ -35,6 +35,7 @@ public class LoadingFactory implements SimLoadingEventCreator {
         for (int i = 0; i < filesToOpen.size(); i++){
             SimResultsLoader simResultsLoader = filesToOpen.get(i);
             Thread openThread = new Thread(() -> {
+                ImagePlus imagePlus = null;
                 try{
                     simResultsLoader.createS3ClientAndReader();
                     notifySimIsLoading(simResultsLoader);
@@ -44,12 +45,11 @@ public class LoadingFactory implements SimLoadingEventCreator {
                         rangeSelector = new RangeSelector(dimensions.get(2), dimensions.get(3), dimensions.get(4), simResultsLoader.userSetFileName);
                         rangeSelector.displayRangeMenu();
                         if (!rangeSelector.cancel){
-                            openInMemory(simResultsLoader, rangeSelector);
+                            imagePlus = openInMemory(simResultsLoader, rangeSelector);
                         }
                         rangeSelector.dispose();
                     } else{
-                        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-                        imagePlus.show();
+                        imagePlus = simResultsLoader.getImgPlusFromN5File();
                     }
                 }
                 catch (RuntimeException e) {
@@ -65,7 +65,7 @@ public class LoadingFactory implements SimLoadingEventCreator {
                 } finally {
                     MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     controlButtonsPanel.enableCriticalButtons(true);
-                    notifySimIsDoneLoading(simResultsLoader);
+                    notifySimIsDoneLoading(simResultsLoader, imagePlus);
                     synchronized (openSimulationsLock){
                         openingSimulations.remove(simResultsLoader.exportID);
                     }
@@ -79,7 +79,7 @@ public class LoadingFactory implements SimLoadingEventCreator {
         }
     }
 
-    private void openInMemory(SimResultsLoader simResultsLoader, RangeSelector rangeSelector) throws IOException {
+    private ImagePlus openInMemory(SimResultsLoader simResultsLoader, RangeSelector rangeSelector) throws IOException {
         ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
         long start = System.currentTimeMillis();
         logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
@@ -87,7 +87,7 @@ public class LoadingFactory implements SimLoadingEventCreator {
                 rangeSelector.endZ, rangeSelector.startT, rangeSelector.endT);
         long end = System.currentTimeMillis();
         logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
-        imagePlus.show();
+        return imagePlus;
     }
 
     public void stopOpeningSimulation(String exportID){
@@ -145,9 +145,9 @@ public class LoadingFactory implements SimLoadingEventCreator {
     }
 
     @Override
-    public void notifySimIsDoneLoading(SimResultsLoader simResultsLoader) {
+    public void notifySimIsDoneLoading(SimResultsLoader simResultsLoader, ImagePlus imagePlus) {
         for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
-            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber, simResultsLoader.exportID);
+            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber, simResultsLoader.exportID, imagePlus);
         }
     }
 }

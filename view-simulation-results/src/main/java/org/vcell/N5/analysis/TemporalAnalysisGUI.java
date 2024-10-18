@@ -75,7 +75,7 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
                             0, 0, 0,
                             5, saveToFile.getSelectedFile()
                     );
-                    N5ImageHandler.loadingFactory.addSimLoadingListener(dataReduction);
+                    N5ImageHandler.loadingManager.addSimLoadingListener(dataReduction);
                 });
                 thread.start();
             }

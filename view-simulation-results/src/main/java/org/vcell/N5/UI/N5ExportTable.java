@@ -1,5 +1,6 @@
 package org.vcell.N5.UI;
 
+import ij.ImagePlus;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
@@ -41,7 +42,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     public void initialize(ControlButtonsPanel controlButtonsPanel, ExportDetailsPanel exportDetailsPanel){
         this.controlPanel = controlButtonsPanel;
         this.exportDetailsPanel = exportDetailsPanel;
-        N5ImageHandler.loadingFactory.addSimLoadingListener(this);
+        N5ImageHandler.loadingManager.addSimLoadingListener(this);
         n5ExportTableModel = new N5ExportTableModel();
         exportListTable = new JTable(n5ExportTableModel);
         this.setViewportView(exportListTable);
@@ -181,7 +182,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID);
             filesToOpen.add(simResultsLoader);
         }
-        N5ImageHandler.loadingFactory.openN5FileDataset(filesToOpen, inMemory);
+        N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, inMemory);
     }
 
     public void copySelectedRowLink(){
@@ -227,7 +228,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     public void removeFromLoadingRows(){
         int row = exportListTable.getSelectedRow();
-        N5ImageHandler.loadingFactory.stopOpeningSimulation(n5ExportTableModel.tableData.get(row).jobID);
+        N5ImageHandler.loadingManager.stopOpeningSimulation(n5ExportTableModel.tableData.get(row).jobID);
         loadingRowsJobID.remove(row);
         exportListTable.repaint();
     }
@@ -239,10 +240,11 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     }
 
     @Override
-    public void simFinishedLoading(int itemRow, String exportID) {
+    public void simFinishedLoading(int itemRow, String exportID, ImagePlus imagePlus) {
         loadingRowsJobID.remove(itemRow);
         exportListTable.repaint();
         controlPanel.allowCancel(false);
+        imagePlus.show();
     }
 
     static class N5ExportTableModel extends AbstractTableModel {
