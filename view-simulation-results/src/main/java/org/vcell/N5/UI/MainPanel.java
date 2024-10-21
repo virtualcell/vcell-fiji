@@ -1,5 +1,7 @@
 package org.vcell.N5.UI;
 
+import org.vcell.N5.UI.Filters.TimeFilter;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -11,21 +13,26 @@ public class MainPanel {
     private final int paneWidth = 800;
 
     public final static ControlButtonsPanel controlButtonsPanel = new ControlButtonsPanel();
-    public final N5ExportTable n5ExportTable = new N5ExportTable();
+    public final static N5ExportTable n5ExportTable = new N5ExportTable();
     public final ExportDetailsPanel exportDetailsPanel = new ExportDetailsPanel();
     public final RemoteFileSelection remoteFileSelection = new RemoteFileSelection();
+    public final TimeFilter timeFilter = new TimeFilter();
 
 
     public MainPanel(){
         JPanel parentPanel = new JPanel();
 
 
-        n5ExportTable.initialize(controlButtonsPanel, exportDetailsPanel);
+        n5ExportTable.initialize(controlButtonsPanel, exportDetailsPanel, timeFilter);
         controlButtonsPanel.initialize(n5ExportTable, remoteFileSelection);
+
+        JPanel bottomPortion = new JPanel(new BorderLayout());
+        bottomPortion.add(timeFilter, BorderLayout.NORTH);
+        bottomPortion.add(exportDetailsPanel, BorderLayout.SOUTH);
 
         parentPanel.setLayout(new BorderLayout());
         parentPanel.add(controlButtonsPanel, BorderLayout.NORTH);
-        JSplitPane jSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, n5ExportTable, exportDetailsPanel);
+        JSplitPane jSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, n5ExportTable, bottomPortion);
         jSplitPane.setContinuousLayout(true);
         parentPanel.add(jSplitPane, BorderLayout.CENTER);
 

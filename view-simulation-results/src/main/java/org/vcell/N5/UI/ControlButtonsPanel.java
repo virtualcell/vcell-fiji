@@ -19,12 +19,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private final JButton useN5Link;
     private final JButton questionMark;
     private final JButton openInMemory;
-    private final JCheckBox includeExampleExports;
-    private final JCheckBox todayInterval;
-    private final JCheckBox monthInterval;
-    private final JCheckBox yearlyInterval;
-    private final JCheckBox anyInterval;
-    private final JPanel timeFilter;
 
     private N5ExportTable n5ExportTable;
     private RemoteFileSelection remoteFileSelection;
@@ -37,8 +31,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         questionMark.setPreferredSize(new Dimension(20, 20));
         openInMemory = new JButton("Open In Memory");
         openInMemory.setSelected(false);
-        includeExampleExports = new JCheckBox("Show Example Exports");
-        includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
@@ -72,38 +64,15 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 //        buttonsPanel.add(questionMark);
 
 
-        todayInterval = new JCheckBox("Past 24 Hours");
-        monthInterval = new JCheckBox("Past Month");
-        yearlyInterval = new JCheckBox("Past Year");
-        anyInterval = new JCheckBox("Any Time");
-        anyInterval.setSelected(true);
 
-        ButtonGroup buttonGroup = new ButtonGroup();
-        buttonGroup.add(todayInterval);
-        buttonGroup.add(monthInterval);
-        buttonGroup.add(yearlyInterval);
-        buttonGroup.add(anyInterval);
-
-        JPanel filters = new JPanel();
-        filters.setLayout(new BorderLayout());
-        timeFilter = new JPanel(new GridBagLayout());
-        timeFilter.add(anyInterval);
-        timeFilter.add(todayInterval);
-        timeFilter.add(monthInterval);
-        timeFilter.add(yearlyInterval);
-//        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time "));
-        filters.add(timeFilter, BorderLayout.NORTH);
-        filters.add(includeExampleExports, BorderLayout.SOUTH);
-        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-        filters.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Filters "));
 
 
         int paneWidth = 800;
         this.setPreferredSize(new Dimension(paneWidth, 100));
         this.setLayout(new BorderLayout());
 //        topBar.add(openLocal);
+        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
         this.add(userButtonsPanel, BorderLayout.EAST);
-        this.add(filters, BorderLayout.WEST);
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
 
 
@@ -111,14 +80,10 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         copyLink.addActionListener(this);
         questionMark.addActionListener(this);
         useN5Link.addActionListener(this);
-        includeExampleExports.addActionListener(this);
 //        openLocal.addActionListener(this);
         openInMemory.addActionListener(this);
 
-        Enumeration<AbstractButton> b = buttonGroup.getElements();
-        while (b.hasMoreElements()){
-            b.nextElement().addActionListener(this);
-        }
+
 
         openOrCancel.setEnabled(false);
         copyLink.setEnabled(false);
@@ -144,34 +109,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(includeExampleExports)){
-            if(includeExampleExports.isSelected()){
-                n5ExportTable.updateExampleExportsToTable();
-                return;
-            }
-            n5ExportTable.updateTableData();
-        } else if (e.getSource().equals(anyInterval) || e.getSource().equals(todayInterval)
-                || e.getSource().equals(monthInterval) || e.getSource().equals(yearlyInterval)) {
-            if(includeExampleExports.isSelected()){
-                n5ExportTable.updateExampleExportsToTable();
-                return;
-            }
-            n5ExportTable.updateTableData();
         }
-    }
-
-    public LocalDateTime oldestTimeAllowed(){
-        LocalDateTime pastTime = LocalDateTime.now();
-        if (todayInterval.isSelected()){
-            pastTime = pastTime.minusDays(1);
-        } else if (monthInterval.isSelected()) {
-            pastTime = pastTime.minusMonths(1);
-        } else if (yearlyInterval.isSelected()) {
-            pastTime = pastTime.minusYears(1);
-        } else {
-            pastTime = pastTime.minusYears(10); //Max date back is 10 years
-        }
-        return pastTime;
     }
 
     public void allowCancel(boolean allow){

@@ -4,6 +4,7 @@ import ij.ImagePlus;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.Filters.TimeFilter;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -33,15 +34,18 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     private ControlButtonsPanel controlPanel;
     private ExportDetailsPanel exportDetailsPanel;
+    private TimeFilter timeFilter;
 
 
     private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
     public N5ExportTable(){}
 
-    public void initialize(ControlButtonsPanel controlButtonsPanel, ExportDetailsPanel exportDetailsPanel){
+    public void initialize(ControlButtonsPanel controlButtonsPanel, ExportDetailsPanel exportDetailsPanel,
+                           TimeFilter timeFilter){
         this.controlPanel = controlButtonsPanel;
         this.exportDetailsPanel = exportDetailsPanel;
+        this.timeFilter = timeFilter;
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         n5ExportTableModel = new N5ExportTableModel();
         exportListTable = new JTable(n5ExportTableModel);
@@ -81,12 +85,12 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         automaticRefresh();
     }
 
-    void updateTableData(){
+    public void updateTableData(){
         // when initializing it is null
         if (controlPanel == null){
             updateTableData(LocalDateTime.now().minusYears(10));
         } else {
-            updateTableData(controlPanel.oldestTimeAllowed());
+            updateTableData(timeFilter.oldestTimeAllowed());
         }
     }
 
@@ -111,12 +115,12 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         }
     }
 
-    void updateExampleExportsToTable(){
+    public void updateExampleExportsToTable(){
         // when initializing it is null
         if (controlPanel == null){
             updateExampleExportsToTable(LocalDateTime.now().minusYears(10));
         } else {
-            updateExampleExportsToTable(controlPanel.oldestTimeAllowed());
+            updateExampleExportsToTable(timeFilter.oldestTimeAllowed());
         }
     }
 
@@ -155,7 +159,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
                                     || !formatExportData.simulationDataMap.containsKey(mostRecentTableEntry.jobID))){
                                 break;
                             }
-                            isUpdated = n5ExportTableModel.prependRowData(formatExportData.simulationDataMap.get(currentJob), controlPanel.oldestTimeAllowed());
+                            isUpdated = n5ExportTableModel.prependRowData(formatExportData.simulationDataMap.get(currentJob), timeFilter.oldestTimeAllowed());
                         }
                         if(isUpdated){
                             n5ExportTableModel.fireTableDataChanged();
