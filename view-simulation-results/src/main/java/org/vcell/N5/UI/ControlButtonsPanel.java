@@ -18,19 +18,25 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private final JButton copyLink;
     private final JButton useN5Link;
     private final JButton questionMark;
-    private final JButton openInMemory;
+
+    public final JCheckBox includeExampleExports;
+    public final JCheckBox displayAdvancedFeatures;
 
     private N5ExportTable n5ExportTable;
     private RemoteFileSelection remoteFileSelection;
+    private final AdvancedFeatures advancedFeatures = new AdvancedFeatures();
 
     public ControlButtonsPanel(){
+        includeExampleExports = new JCheckBox("Show Example Exports");
+        includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
+
+        displayAdvancedFeatures = new JCheckBox("Advanced Features");
+
         openOrCancel = new JButton("Open");
         copyLink = new JButton("Copy Link");
         useN5Link = new JButton("Use N5 Link");
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));
-        openInMemory = new JButton("Open In Memory");
-        openInMemory.setSelected(false);
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
@@ -38,20 +44,20 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         topRow.add(openOrCancel, gridBagConstraints);
-        gridBagConstraints.gridwidth = 1;
 
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        topRow.add(openInMemory, gridBagConstraints);
+        topRow.add(copyLink, gridBagConstraints);
+
         gridBagConstraints.gridx = 2;
+        topRow.add(useN5Link, gridBagConstraints);
+
+        gridBagConstraints.gridx = 3;
+        topRow.add(questionMark);
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        bottomRow.add(copyLink, gridBagConstraints);
+        bottomRow.add(includeExampleExports);
         gridBagConstraints.gridx = 1;
-        bottomRow.add(useN5Link, gridBagConstraints);
-        bottomRow.add(questionMark);
+        bottomRow.add(displayAdvancedFeatures, gridBagConstraints);
 
 
         JPanel userButtonsPanel = new JPanel(new GridBagLayout());
@@ -68,12 +74,15 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
 
         int paneWidth = 800;
-        this.setPreferredSize(new Dimension(paneWidth, 100));
+        this.setPreferredSize(new Dimension(paneWidth, 80));
         this.setLayout(new BorderLayout());
 //        topBar.add(openLocal);
         Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
         this.add(userButtonsPanel, BorderLayout.EAST);
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " User Options "));
+
+        advancedFeatures.setVisible(false);
+        add(advancedFeatures, BorderLayout.WEST);
 
 
         openOrCancel.addActionListener(this);
@@ -81,13 +90,12 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         questionMark.addActionListener(this);
         useN5Link.addActionListener(this);
 //        openLocal.addActionListener(this);
-        openInMemory.addActionListener(this);
-
+        includeExampleExports.addActionListener(this);
+        displayAdvancedFeatures.addActionListener(this);
 
 
         openOrCancel.setEnabled(false);
         copyLink.setEnabled(false);
-        openInMemory.setEnabled(false);
     }
 
     public void initialize(N5ExportTable n5ExportTable, RemoteFileSelection remoteFileSelection){
@@ -97,11 +105,11 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(openOrCancel) || e.getSource().equals(openInMemory)){
+        if(e.getSource().equals(openOrCancel)){
             if (openOrCancel.getText().equals("Cancel")){
                 n5ExportTable.removeFromLoadingRows();
             } else {
-                n5ExportTable.openSelectedRows(e.getSource().equals(openInMemory));
+                n5ExportTable.openSelectedRows(advancedFeatures.inMemory.isSelected());
             }
         } else if (e.getSource().equals(copyLink)) {
             n5ExportTable.copySelectedRowLink();
@@ -109,13 +117,20 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
+        } else if (e.getSource().equals(includeExampleExports)){
+            if(includeExampleExports.isSelected()){
+                n5ExportTable.updateExampleExportsToTable();
+                return;
+            }
+            n5ExportTable.updateTableData();
+        } else if (e.getSource().equals(displayAdvancedFeatures)) {
+            advancedFeatures.setVisible(displayAdvancedFeatures.isSelected());
         }
     }
 
     public void allowCancel(boolean allow){
         openOrCancel.setEnabled(true);
         copyLink.setEnabled(true);
-        openInMemory.setEnabled(!allow);
         useN5Link.setEnabled(true);
         remoteFileSelection.submitS3Info.setEnabled(true);
         if (allow){
@@ -128,7 +143,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     public void enableRowContextDependentButtons(boolean enable){
         openOrCancel.setEnabled(enable);
         copyLink.setEnabled(enable);
-        openInMemory.setEnabled(enable);
     }
 
     public void enableCriticalButtons(boolean enable){
@@ -136,6 +150,5 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         openOrCancel.setEnabled(enable);
         copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
-        openInMemory.setEnabled(enable);
     }
 }

@@ -20,14 +20,11 @@ public class TimeFilter extends JPanel implements ActionListener {
     private final JCheckBox yearlyInterval;
     private final JCheckBox anyInterval;
     private final JPanel timeFilter;
-    private final JCheckBox includeExampleExports;
 
     private final N5ExportTable n5ExportTable;
 
 
     public TimeFilter(){
-        includeExampleExports = new JCheckBox("Show Example Exports");
-        includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
         n5ExportTable = MainPanel.n5ExportTable;
 
         todayInterval = new JCheckBox("Past 24 Hours");
@@ -50,7 +47,6 @@ public class TimeFilter extends JPanel implements ActionListener {
         timeFilter.add(yearlyInterval);
 //        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time "));
         this.add(timeFilter, BorderLayout.NORTH);
-        this.add(includeExampleExports, BorderLayout.SOUTH);
         Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Filters "));
 
@@ -58,20 +54,13 @@ public class TimeFilter extends JPanel implements ActionListener {
         while (b.hasMoreElements()){
             b.nextElement().addActionListener(this);
         }
-        includeExampleExports.addActionListener(this);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(anyInterval) || e.getSource().equals(todayInterval)
                 || e.getSource().equals(monthInterval) || e.getSource().equals(yearlyInterval)) {
-            if(includeExampleExports.isSelected()){
-                n5ExportTable.updateExampleExportsToTable();
-                return;
-            }
-            n5ExportTable.updateTableData();
-        }  else if (e.getSource().equals(includeExampleExports)){
-            if(includeExampleExports.isSelected()){
+            if(MainPanel.controlButtonsPanel.includeExampleExports.isSelected()){
                 n5ExportTable.updateExampleExportsToTable();
                 return;
             }

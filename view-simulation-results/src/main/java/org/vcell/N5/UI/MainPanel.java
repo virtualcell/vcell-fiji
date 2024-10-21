@@ -16,7 +16,7 @@ public class MainPanel {
     public final static N5ExportTable n5ExportTable = new N5ExportTable();
     public final ExportDetailsPanel exportDetailsPanel = new ExportDetailsPanel();
     public final RemoteFileSelection remoteFileSelection = new RemoteFileSelection();
-    public final TimeFilter timeFilter = new TimeFilter();
+    public final static TimeFilter timeFilter = new TimeFilter();
 
 
     public MainPanel(){
