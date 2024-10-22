@@ -4,6 +4,7 @@ import ij.ImagePlus;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.Filters.SearchBar;
 import org.vcell.N5.UI.Filters.TimeFilter;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
@@ -76,71 +77,45 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Export Table"));
         exportListTable.getSelectionModel().addListSelectionListener(this);
 
-        if(!N5ImageHandler.exportedDataExists()){
-            updateExampleExportsToTable();
-        }
-        else{
-            updateTableData();
-        }
+        updateTableData("");
         automaticRefresh();
     }
 
     public void updateTableData(){
+        updateTableData(SearchBar.searchTextField.getText());
+    }
+
+    public void updateTableData(String strFilter){
         // when initializing it is null
         if (controlPanel == null){
-            updateTableData(LocalDateTime.now().minusYears(10));
+            updateTableData(LocalDateTime.now().minusYears(10), strFilter);
         } else {
-            updateTableData(timeFilter.oldestTimeAllowed());
+            updateTableData(timeFilter.oldestTimeAllowed(), strFilter);
         }
     }
 
-    void updateTableData(LocalDateTime oldestTimeAllowed){
+    void updateTableData(LocalDateTime oldestTimeAllowed, String strFilter){
         n5ExportTableModel.resetData();
-        this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Personal Exports"));
+        if (!controlPanel.includeExampleExports.isSelected()){
+            this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Personal Exports"));
+        } else {
+            this.setBorder(exampleBorder);
+        }
         try {
-            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.getJsonData();
-            if (formatExportData != null){
-                Stack<String> jobStack = formatExportData.formatJobIDs;
-                while (!jobStack.isEmpty()){
-                    String jobID = jobStack.pop();
-                    if (!n5ExportTableModel.appendRowData(formatExportData.simulationDataMap.get(jobID), oldestTimeAllowed)){
-                        break;
-                    }
-                }
+            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.exportedDataExists() && !controlPanel.includeExampleExports.isSelected() ?
+                    N5ImageHandler.getJsonData() : N5ImageHandler.getExampleJSONData();
+
+            Stack<String> jobStack = (Stack<String>) formatExportData.formatJobIDs.clone();
+            while (!jobStack.isEmpty()){
+                String jobID = jobStack.pop();
+                n5ExportTableModel.addToRowData(formatExportData.simulationDataMap.get(jobID), oldestTimeAllowed,
+                        strFilter, true);
             }
+
             n5ExportTableModel.fireTableDataChanged();
             this.updateUI();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public void updateExampleExportsToTable(){
-        // when initializing it is null
-        if (controlPanel == null){
-            updateExampleExportsToTable(LocalDateTime.now().minusYears(10));
-        } else {
-            updateExampleExportsToTable(timeFilter.oldestTimeAllowed());
-        }
-    }
-
-    void updateExampleExportsToTable(LocalDateTime oldestTimeAllowed){
-        n5ExportTableModel.resetData();
-        this.setBorder(exampleBorder);
-        try{
-            ExportDataRepresentation.FormatExportDataRepresentation exampleFormatExportData = N5ImageHandler.getExampleJSONData();
-            Stack<String> exampleJobStack = (Stack<String>) exampleFormatExportData.formatJobIDs.clone();
-            while (!exampleJobStack.isEmpty()){
-                String jobID = exampleJobStack.pop();
-                if (!n5ExportTableModel.appendRowData(exampleFormatExportData.simulationDataMap.get(jobID), oldestTimeAllowed)){
-                    break;
-                }
-            }
-            n5ExportTableModel.fireTableDataChanged();
-            this.updateUI();
-        }
-        catch (FileNotFoundException e){
-            throw new RuntimeException("Can't open example N5 export table.", e);
         }
     }
 
@@ -149,7 +124,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             try {
                 while(true){
                     ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.getJsonData();
-                    if (formatExportData != null && !this.getBorder().equals(exampleBorder)){
+                    if (formatExportData != null && !controlPanel.includeExampleExports.isSelected()){
                         ExportDataRepresentation.SimulationExportDataRepresentation mostRecentTableEntry = !n5ExportTableModel.tableData.isEmpty() ? n5ExportTableModel.tableData.getFirst() : null;
                         Stack<String> jobStack = formatExportData.formatJobIDs;
                         boolean isUpdated = false;
@@ -159,7 +134,9 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
                                     || !formatExportData.simulationDataMap.containsKey(mostRecentTableEntry.jobID))){
                                 break;
                             }
-                            isUpdated = n5ExportTableModel.prependRowData(formatExportData.simulationDataMap.get(currentJob), timeFilter.oldestTimeAllowed());
+                            isUpdated = n5ExportTableModel.addToRowData(formatExportData.simulationDataMap.get(currentJob),
+                                    timeFilter.oldestTimeAllowed(), SearchBar.searchTextField.getText(),
+                                    false);
                         }
                         if(isUpdated){
                             n5ExportTableModel.fireTableDataChanged();
@@ -306,23 +283,21 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         public void resetData(){
             tableData = new LinkedList<>();
         }
-        public boolean appendRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed){
-            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime exportDate = LocalDateTime.parse(rowData.exportDate, dateFormat);
-            if (exportDate.isBefore(oldestExportAllowed)){
-                return false;
-            }
-            tableData.add(rowData);
-            return true;
+        private boolean stringFilter(ExportDataRepresentation.SimulationExportDataRepresentation rowData, String strFilter){
+            return rowData.biomodelName.contains(strFilter) || rowData.applicationName.contains(strFilter) ||
+                    rowData.simulationName.contains(strFilter) || rowData.savedFileName.contains(strFilter);
         }
-
-        public boolean prependRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed){
+        public boolean addToRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed, String strFilter, boolean append){
             DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             LocalDateTime exportDate = LocalDateTime.parse(rowData.exportDate, dateFormat);
-            if (exportDate.isBefore(oldestExportAllowed)){
+            if (exportDate.isBefore(oldestExportAllowed) || !stringFilter(rowData, strFilter)){
                 return false;
             }
-            tableData.addFirst(rowData);
+            if (append){
+                tableData.add(rowData);
+            } else {
+                tableData.addFirst(rowData);
+            }
             return true;
         }
 

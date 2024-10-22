@@ -1,6 +1,5 @@
 package org.vcell.N5.UI.Filters;
 
-import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.UI.N5ExportTable;
 
@@ -47,8 +46,6 @@ public class TimeFilter extends JPanel implements ActionListener {
         timeFilter.add(yearlyInterval);
 //        timeFilter.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Time "));
         this.add(timeFilter, BorderLayout.NORTH);
-        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-        this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Filters "));
 
         Enumeration<AbstractButton> b = buttonGroup.getElements();
         while (b.hasMoreElements()){
@@ -61,7 +58,7 @@ public class TimeFilter extends JPanel implements ActionListener {
         if (e.getSource().equals(anyInterval) || e.getSource().equals(todayInterval)
                 || e.getSource().equals(monthInterval) || e.getSource().equals(yearlyInterval)) {
             if(MainPanel.controlButtonsPanel.includeExampleExports.isSelected()){
-                n5ExportTable.updateExampleExportsToTable();
+                n5ExportTable.updateTableData();
                 return;
             }
             n5ExportTable.updateTableData();

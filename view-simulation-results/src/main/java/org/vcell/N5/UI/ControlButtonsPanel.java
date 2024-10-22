@@ -8,8 +8,6 @@ import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
-import java.util.Enumeration;
 
 public class ControlButtonsPanel extends JPanel implements ActionListener {
 
@@ -118,10 +116,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         } else if (e.getSource().equals(useN5Link)) {
             remoteFileSelection.setVisible(true);
         } else if (e.getSource().equals(includeExampleExports)){
-            if(includeExampleExports.isSelected()){
-                n5ExportTable.updateExampleExportsToTable();
-                return;
-            }
             n5ExportTable.updateTableData();
         } else if (e.getSource().equals(displayAdvancedFeatures)) {
             advancedFeatures.setVisible(displayAdvancedFeatures.isSelected());
