@@ -6,8 +6,8 @@ import javax.swing.border.EtchedBorder;
 
 public class AdvancedFeatures extends JPanel {
     public final JCheckBox inMemory;
-    private JCheckBox dataReduction;
-    private JCheckBox rangeSelection;
+    public final JCheckBox dataReduction;
+    public final JCheckBox rangeSelection;
 
 
     public AdvancedFeatures(){

@@ -9,9 +9,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.GsonBuilder;
 import ij.ImagePlus;
+import ij.VirtualStack;
 import ij.plugin.ContrastEnhancer;
+import ij.plugin.Duplicator;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.img.display.imagej.ImageJVirtualStackFloat;
 import net.imglib2.type.numeric.real.DoubleType;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -24,6 +27,7 @@ import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.scijava.log.Logger;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.RangeSelector;
 import org.vcell.N5.library.extensions.S3KeyValueAccess;
 import org.vcell.N5.library.extensions.SimCacheLoader;
 
@@ -121,7 +125,8 @@ public class SimResultsLoader {
         don't originate from amazon this is not a format we can possibly mimic, so we have to use path based buckets because
         it's the fallback style chosen by the N5 libraries if standard format is unavailable.
      */
-     public ImagePlus getImgPlusFromN5File() throws IOException {
+
+     public ImagePlus getImgPlusFromN5File() {
 
 //        N5AmazonS3Reader n5AmazonS3Reader = new N5AmazonS3Reader(s3Client, bucketName, "/" + s3ObjectKey);
         long start = System.currentTimeMillis();
@@ -145,6 +150,17 @@ public class SimResultsLoader {
         imagePlus.setT(Math.floorDiv(imagePlus.getNFrames(), 2));
 
         new ContrastEnhancer().stretchHistogram(imagePlus, 1);
+        return imagePlus;
+    }
+
+    public ImagePlus openInMemory(RangeSelector rangeSelector){
+        ImagePlus imagePlus = this.getImgPlusFromN5File();
+        long start = System.currentTimeMillis();
+        logger.debug("Loading Virtual N5 File " + userSetFileName + " Into Memory");
+        imagePlus = new Duplicator().run(imagePlus, rangeSelector.startC, rangeSelector.endC, rangeSelector.startZ,
+                rangeSelector.endZ, rangeSelector.startT, rangeSelector.endT);
+        long end = System.currentTimeMillis();
+        logger.debug("Loaded Virtual N5 File " + userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
         return imagePlus;
     }
 

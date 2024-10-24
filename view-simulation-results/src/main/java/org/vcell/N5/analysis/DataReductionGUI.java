@@ -1,5 +1,6 @@
 package org.vcell.N5.analysis;
 
+import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
@@ -12,23 +13,16 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-public class TemporalAnalysisGUI extends JPanel implements ActionListener {
+public class DataReductionGUI extends JPanel implements ActionListener {
     private JComboBox<String> chosenImage;
     private JComboBox<String> chosenMeasurement;
-    private JCheckBox normalizeEntireImage = new JCheckBox("Normalize Entire Image");
-    private JCheckBox normalizeROI = new JCheckBox("Normalize ROI");
+    private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
 
-    private JTextField entireImageFramesFromImageStart;
-    private JTextField entireImageFramesFromImageEnd;
-    private JTextField entireImageFramesFromSimStart;
-    private JTextField entireImageFramesFromSimEnd;
+    private JTextField createNormFromImageStart;
+    private JTextField createNormFromImageEnd;
+    private JTextField createNormFromSimStart;
+    private JTextField createNormFromSimEnd;
     private JPanel entireImageFramesJPanel;
-
-    private JTextField roiFramesFromImageStart;
-    private JTextField roiFramesFromImageEnd;
-    private JTextField roiFramesFromSimStart;
-    private JTextField roiFramesFromSimEnd;
-    private JPanel roiFramesJPanel;
 
     private JButton imageROIFileButton;
     private JButton simROIFileButton;
@@ -43,16 +37,47 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
 
     private final JDialog jDialog;
     private final JOptionPane pane;
+    private File chosenFile;
+
+    private int numSimsToOpen;
+
+    public int mainGUIReturnValue;
+    public int fileChooserReturnValue;
 
 //    private TemporalAnalysis temporalAnalysis = new TemporalAnalysis();
 
-    public TemporalAnalysisGUI(){
+     public class DataReductionSubmission{
+        public final boolean normalizeMeasurementsBool;
+        public final ArrayList<Roi> arrayOfSimRois;
+        public final ArrayList<Roi> arrayOfLabRois;
+        public final ImagePlus labResults;
+        public final int simStartPointNorm;
+        public final int simEndPointNorm;
+        public final int imageStartPointNorm;
+        public final int imageEndPointNorm;
+        public final int numOfSimImages;
+        public final File fileToSaveResultsTo;
+        public DataReductionSubmission(){
+            normalizeMeasurementsBool = normalizeMeasurement.isSelected();
+            arrayOfSimRois = simROIList;
+            arrayOfLabRois = imageROIList;
+            labResults = WindowManager.getImage((String) chosenImage.getSelectedItem());
+            simStartPointNorm = createNormFromSimStart.getText().isEmpty() ? Integer.MIN_VALUE : Integer.parseInt(createNormFromSimStart.getText());
+            simEndPointNorm = createNormFromSimEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromSimEnd.getText());
+            imageStartPointNorm = createNormFromImageStart.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageStart.getText());
+            imageEndPointNorm = createNormFromImageEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageEnd.getText());
+            numOfSimImages = numSimsToOpen;
+            fileToSaveResultsTo = chosenFile;
+        }
+    }
+
+    public DataReductionGUI(int numSimsToOpen){
+         this.numSimsToOpen = numSimsToOpen;
         setLayout(new GridLayout(4, 1));
 
         add(imageAndAnalysisType());
         add(roisSelectedGUI());
-        add(normalizeEntireImageGUI());
-        add(normalizeROIGUI());
+        add(normalizeGUI());
         setSize(400, 400);
         setVisible(true);
 
@@ -62,19 +87,15 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
 
     public void displayGUI(){
         jDialog.setVisible(true);
-        Integer returnValue = (Integer) pane.getValue();
-        if (returnValue.equals(JOptionPane.OK_OPTION)){
+        mainGUIReturnValue = (Integer) pane.getValue();
+        if (mainGUIReturnValue == JOptionPane.OK_OPTION){
             JFileChooser saveToFile = new JFileChooser();
             saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            int response = saveToFile.showDialog(this, "Save Results To File");
-            if (response == JFileChooser.APPROVE_OPTION){
+            fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
+            if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
+                chosenFile = saveToFile.getSelectedFile();
                 Thread thread = new Thread(() -> {
-                    DataReduction dataReduction = new DataReduction(
-                            normalizeROI.isSelected(), normalizeEntireImage.isSelected(), simROIList,
-                            imageROIList, WindowManager.getImage((String) chosenImage.getSelectedItem()),
-                            0, 0, 0,
-                            5, saveToFile.getSelectedFile()
-                    );
+                    DataReduction dataReduction = new DataReduction(new DataReductionSubmission());
                     N5ImageHandler.loadingManager.addSimLoadingListener(dataReduction);
                 });
                 thread.start();
@@ -82,59 +103,33 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
         }
     }
 
-    private JPanel normalizeROIGUI(){
-        JPanel jPanel = new JPanel(new GridLayout());
-        normalizeROI.addActionListener(this);
+    private JPanel normalizeGUI(){
+        JPanel jPanel = new JPanel(new GridLayout(2, 1));
+        normalizeMeasurement.addActionListener(this);
+        JLabel explainInput = new JLabel("Timeline Range to Create Norm");
 
         JPanel fromImage = new JPanel(new GridLayout());
-        roiFramesFromImageStart = new JTextField();
-        roiFramesFromImageEnd = new JTextField();
-        fromImage.add(roiFramesFromImageStart);
+        createNormFromImageStart = new JTextField();
+        createNormFromImageEnd = new JTextField();
+        fromImage.add(new JLabel("Exp. Timeline: "));
+        fromImage.add(createNormFromImageStart);
         fromImage.add(new JLabel("to"));
-        fromImage.add(roiFramesFromImageEnd);
+        fromImage.add(createNormFromImageEnd);
 
         JPanel fromSim = new JPanel(new GridLayout());
-        roiFramesFromSimStart = new JTextField();
-        roiFramesFromSimEnd = new JTextField();
-        fromSim.add(roiFramesFromSimStart);
+        createNormFromSimStart = new JTextField();
+        createNormFromSimEnd = new JTextField();
+        fromSim.add(new JLabel("Sim Timeline: "));
+        fromSim.add(createNormFromSimStart);
         fromSim.add(new JLabel("to"));
-        fromSim.add(roiFramesFromSimEnd);
+        fromSim.add(createNormFromSimEnd);
 
-        roiFramesJPanel = new JPanel(new GridLayout());
-        roiFramesJPanel.add(fromImage);
-        roiFramesJPanel.add(fromSim);
-        roiFramesJPanel.setVisible(false);
-
-        jPanel.add(normalizeROI);
-        jPanel.add(roiFramesJPanel);
-
-        return jPanel;
-    }
-
-    private JPanel normalizeEntireImageGUI(){
-        JPanel jPanel = new JPanel(new GridLayout());
-        normalizeEntireImage.addActionListener(this);
-
-        JPanel fromImage = new JPanel(new GridLayout());
-        entireImageFramesFromImageStart = new JTextField();
-        entireImageFramesFromImageEnd = new JTextField();
-        fromImage.add(entireImageFramesFromImageStart);
-        fromImage.add(new JLabel("to"));
-        fromImage.add(entireImageFramesFromImageEnd);
-
-        JPanel fromSim = new JPanel(new GridLayout());
-        entireImageFramesFromSimStart = new JTextField();
-        entireImageFramesFromSimEnd = new JTextField();
-        fromSim.add(entireImageFramesFromSimStart);
-        fromSim.add(new JLabel("to"));
-        fromSim.add(entireImageFramesFromSimEnd);
-
-        entireImageFramesJPanel = new JPanel(new GridLayout());
+        entireImageFramesJPanel = new JPanel(new GridLayout(2, 1));
         entireImageFramesJPanel.add(fromImage);
         entireImageFramesJPanel.add(fromSim);
         entireImageFramesJPanel.setVisible(false);
 
-        jPanel.add(normalizeEntireImage);
+        jPanel.add(normalizeMeasurement);
         jPanel.add(entireImageFramesJPanel);
         return jPanel;
     }
@@ -172,10 +167,8 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
             imageROIList = fillROIList(imageROIFileChooser);
         } else if (e.getSource().equals(simROIFileButton)) {
             simROIList = fillROIList(simROIFileChooser);
-        } else if (e.getSource().equals(normalizeEntireImage)) {
-            entireImageFramesJPanel.setVisible(normalizeEntireImage.isSelected());
-        } else if (e.getSource().equals(normalizeROI)) {
-            roiFramesJPanel.setVisible(normalizeROI.isSelected());
+        } else if (e.getSource().equals(normalizeMeasurement)) {
+            entireImageFramesJPanel.setVisible(normalizeMeasurement.isSelected());
         }
     }
 
@@ -201,8 +194,8 @@ public class TemporalAnalysisGUI extends JPanel implements ActionListener {
     }
 
     public static void main(String[] args) {
-        TemporalAnalysisGUI temporalAnalysisGUI = new TemporalAnalysisGUI();
-        temporalAnalysisGUI.displayGUI();
+        DataReductionGUI dataReductionGUI = new DataReductionGUI(0);
+        dataReductionGUI.displayGUI();
     }
 }
 

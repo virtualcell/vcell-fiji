@@ -9,6 +9,7 @@ import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.RangeSelector;
 import org.vcell.N5.UI.MainPanel;
+import org.vcell.N5.analysis.DataReductionGUI;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -28,66 +29,64 @@ public class LoadingManager implements SimLoadingEventCreator {
 
     private static final Logger logger = N5ImageHandler.getLogger(RangeSelector.class);
 
-    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory){
-        controlButtonsPanel.allowCancel(true);
-        MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));
-
-        for (int i = 0; i < filesToOpen.size(); i++){
-            SimResultsLoader simResultsLoader = filesToOpen.get(i);
-            Thread openThread = new Thread(() -> {
-                ImagePlus imagePlus = null;
-                try{
-                    simResultsLoader.createS3ClientAndReader();
-                    notifySimIsLoading(simResultsLoader);
-                    RangeSelector rangeSelector;
-                    if (openInMemory){
-                        ArrayList<Double> dimensions = simResultsLoader.getN5Dimensions();
-                        rangeSelector = new RangeSelector(dimensions.get(2), dimensions.get(3), dimensions.get(4), simResultsLoader.userSetFileName);
-                        rangeSelector.displayRangeMenu();
-                        if (!rangeSelector.cancel){
-                            imagePlus = openInMemory(simResultsLoader, rangeSelector);
-                        }
-                        rangeSelector.dispose();
-                    } else{
-                        imagePlus = simResultsLoader.getImgPlusFromN5File();
-                    }
-                }
-                catch (RuntimeException e) {
-                    if (e.getCause().getCause().getCause() instanceof SdkInterruptedException ||
-                            e.getCause().getCause() instanceof AbortedException){
-                        logger.debug("Simulation stopped loading");
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                }
-                catch (Exception e){
-                    throw new RuntimeException(e);
-                } finally {
-                    MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                    controlButtonsPanel.enableCriticalButtons(true);
-                    notifySimIsDoneLoading(simResultsLoader, imagePlus);
-                    synchronized (openSimulationsLock){
-                        openingSimulations.remove(simResultsLoader.exportID);
-                    }
-                }
-            });
-            openThread.setName("Opening sim number: " + i + ". With id: " + simResultsLoader.exportID);
-            synchronized (openSimulationsLock){
-                openingSimulations.put(simResultsLoader.exportID, openThread);
-            }
-            openThread.start();
+    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory,
+                                  boolean selectRange, boolean dataReduction){
+        RangeSelector rangeSelector = new RangeSelector();
+        if (selectRange){
+            SimResultsLoader firstSim = filesToOpen.get(0);
+            firstSim.createS3ClientAndReader();
+            ArrayList<Double> dimensions = firstSim.getN5Dimensions();
+            rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
         }
-    }
-
-    private ImagePlus openInMemory(SimResultsLoader simResultsLoader, RangeSelector rangeSelector) throws IOException {
-        ImagePlus imagePlus = simResultsLoader.getImgPlusFromN5File();
-        long start = System.currentTimeMillis();
-        logger.debug("Loading Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory");
-        imagePlus = new Duplicator().run(imagePlus, rangeSelector.startC, rangeSelector.endC, rangeSelector.startZ,
-                rangeSelector.endZ, rangeSelector.startT, rangeSelector.endT);
-        long end = System.currentTimeMillis();
-        logger.debug("Loaded Virtual N5 File " + simResultsLoader.userSetFileName + " Into Memory taking: " + ((end - start)/ 1000) + "s");
-        return imagePlus;
+        DataReductionGUI dataReductionGUI = new DataReductionGUI(filesToOpen.size());
+        if (dataReduction){
+            dataReductionGUI.displayGUI();
+        }
+        boolean dataReductionOkay = dataReduction && dataReductionGUI.mainGUIReturnValue == JOptionPane.OK_OPTION && dataReductionGUI.fileChooserReturnValue == JFileChooser.APPROVE_OPTION;
+        if (dataReductionOkay || !dataReduction){
+            controlButtonsPanel.allowCancel(true);
+            MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));
+            for (int i = 0; i < filesToOpen.size(); i++){
+                SimResultsLoader simResultsLoader = filesToOpen.get(i);
+                Thread openThread = new Thread(() -> {
+                    ImagePlus imagePlus = null;
+                    try{
+                        simResultsLoader.createS3ClientAndReader();
+                        notifySimIsLoading(simResultsLoader);
+                        if (openInMemory){
+                            if (!rangeSelector.cancel){
+                                imagePlus = simResultsLoader.openInMemory(rangeSelector);
+                            }
+                        } else{
+                            imagePlus = simResultsLoader.getImgPlusFromN5File();
+                        }
+                    }
+                    catch (RuntimeException e) {
+                        if (e.getCause().getCause().getCause() instanceof SdkInterruptedException ||
+                                e.getCause().getCause() instanceof AbortedException){
+                            logger.debug("Simulation stopped loading");
+                        } else {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    catch (Exception e){
+                        throw new RuntimeException(e);
+                    } finally {
+                        MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        controlButtonsPanel.enableCriticalButtons(true);
+                        notifySimIsDoneLoading(simResultsLoader, imagePlus);
+                        synchronized (openSimulationsLock){
+                            openingSimulations.remove(simResultsLoader.exportID);
+                        }
+                    }
+                });
+                openThread.setName("Opening sim number: " + i + ". With id: " + simResultsLoader.exportID);
+                synchronized (openSimulationsLock){
+                    openingSimulations.put(simResultsLoader.exportID, openThread);
+                }
+                openThread.start();
+            }
+        }
     }
 
     public void stopOpeningSimulation(String exportID){

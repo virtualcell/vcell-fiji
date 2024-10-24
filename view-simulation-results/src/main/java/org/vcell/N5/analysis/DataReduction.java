@@ -19,11 +19,10 @@ public class DataReduction implements SimLoadingListener {
 
     private final ArrayList<ArrayList<String>> csvMatrix = new ArrayList<>();
 
-    private final double normalPreChange;
-    private final double normalPostChange;
-    private final int timeWhenChangeOccurs;
+    private int numOfImagesToBeOpened;
+    private final boolean normalize;
 
-    private int numOfSimImages;
+    public final DataReductionGUI.DataReductionSubmission submission;
 
     /*
 Open an image from file (assume 2D for now).
@@ -46,64 +45,67 @@ Would be extra nice to plot the experimental data vs the "best fit" VCell simula
     // Take results and place them within a spreadsheet
     // Create a graph from that spreadsheet
 
-    public DataReduction(boolean normalizePostChange, boolean normalizeWithPreChangeValues,
-                         ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                         ImagePlus labResults, int startPreChange, int endPreChange,
-                         int timeWhenChangeOccurs, int numOfSimImages, File fileToSaveResultsTo){
-        this.arrayOfSimRois = arrayOfSimRois;
-        this.timeWhenChangeOccurs = timeWhenChangeOccurs;
-        this.numOfSimImages = numOfSimImages;
-        this.file = fileToSaveResultsTo;
+    public DataReduction(DataReductionGUI.DataReductionSubmission submission){
+        this.submission = submission;
+        this.arrayOfSimRois = submission.arrayOfSimRois;
+        this.numOfImagesToBeOpened = submission.numOfSimImages + 1; // Plus one for the lab image
+        this.file = submission.fileToSaveResultsTo;
+        this.normalize = submission.normalizeMeasurementsBool;
         ArrayList<String> headers = new ArrayList<String>(){{add("Time Frame");}};
         csvMatrix.add(headers);
 
-        normalPreChange = normalizeWithPreChangeValues ? calculateNormalValue(labResults, startPreChange, endPreChange) : Double.MIN_NORMAL;
-        normalPostChange = normalizePostChange ? calculateNormalValue(labResults, timeWhenChangeOccurs, timeWhenChangeOccurs) : Double.MIN_NORMAL;
+        double normValue = calculateNormalValue(submission.labResults, submission.imageStartPointNorm, submission.imageEndPointNorm);
 
-        HashMap<String, ArrayList<Double>> reducedData = calculateMean(labResults, arrayOfLabRois);
+        HashMap<String, ArrayList<Double>> reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue);
         synchronized (csvMatrixLock){
-            for (int t = 0; t < labResults.getNFrames(); t++){
+            for (int t = 0; t < submission.labResults.getNFrames(); t++){
                 ArrayList<String> rowForTime = new ArrayList<>();
                 rowForTime.add(String.valueOf(t));
                 csvMatrix.add(rowForTime);
             }
 
         }
-        addValuesToCSVMatrix(labResults, reducedData);
+        addValuesToCSVMatrix(submission.labResults, reducedData);
 
     }
 
     private void addValuesToCSVMatrix(ImagePlus imagePlus, HashMap<String, ArrayList<Double>> reducedData){
         synchronized (csvMatrixLock){
             csvMatrix.get(0).add("");
-            csvMatrix.get(0).add(imagePlus.getTitle());
             for (String roiName: reducedData.keySet()){
-                csvMatrix.get(0).add(roiName);
+                csvMatrix.get(0).add(imagePlus.getTitle()+" : " + roiName);
                 for(int t = 0; t < imagePlus.getNFrames(); t++){
                     double mean = reducedData.get(roiName).get(t);
+                    csvMatrix.get(t + 1).add("");
                     csvMatrix.get(t + 1).add(String.valueOf(mean));
                 }
             }
-            numOfSimImages -= 1;
-            if (numOfSimImages == 0){
+            numOfImagesToBeOpened -= 1;
+            if (numOfImagesToBeOpened == 0){
                 writeCSVMatrix();
             }
         }
     }
 
     private double calculateNormalValue(ImagePlus imagePlus, int startT, int endT){
-        double normal = 0;
-        for (int k = startT; k <= endT; k++){
-            imagePlus.setT(k);
-            normal += imagePlus.getProcessor().getStatistics().mean;
+        if (normalize){
+            double normal = 0;
+            for (int k = startT; k <= endT; k++){
+                imagePlus.setT(k);
+                normal += imagePlus.getProcessor().getStatistics().mean;
+            }
+            normal = normal / (endT - startT);
+            return normal;
+        } else {
+            return Double.MIN_NORMAL;
         }
-        normal = normal / (endT - startT);
-        return normal;
+
     }
 
 
 
-    private HashMap<String, ArrayList<Double>> calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList){
+    private HashMap<String, ArrayList<Double>> calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
+                                                             double normalizationValue){
 //        ResultsTable resultsTable = new ResultsTable();
 
         HashMap<String,ArrayList<Double>> roiListOfMeans = new HashMap<>();
@@ -116,11 +118,8 @@ Would be extra nice to plot the experimental data vs the "best fit" VCell simula
 //
 //                double meanValue = resultsTable.getValueAsDouble(resultsTable.getColumnIndex("Mean"), 0);
                 double meanValue = imagePlus.getProcessor().getStatistics().mean;
-                if (normalPreChange != Double.MIN_NORMAL){
-                    meanValue = meanValue / normalPreChange;
-                }
-                if (normalPostChange != Double.MIN_NORMAL && t >= timeWhenChangeOccurs){
-                    meanValue = meanValue / normalPostChange;
+                if (normalizationValue != Double.MIN_NORMAL){
+                    meanValue = meanValue / normalizationValue;
                 }
                 meanValues.add(meanValue);
             }
@@ -135,6 +134,7 @@ Would be extra nice to plot the experimental data vs the "best fit" VCell simula
             for (ArrayList<String> row: csvMatrix){
                 csvWriter.writeNext(row.toArray(new String[0]));
             }
+            csvWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -148,8 +148,8 @@ Would be extra nice to plot the experimental data vs the "best fit" VCell simula
 
     @Override
     public void simFinishedLoading(int itemRow, String exportID, ImagePlus imagePlus) {
-
-        HashMap<String, ArrayList<Double>> calculations = calculateMean(imagePlus, arrayOfSimRois);
+        double normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm, submission.simEndPointNorm);
+        HashMap<String, ArrayList<Double>> calculations = calculateMean(imagePlus, arrayOfSimRois, normValue);
         addValuesToCSVMatrix(imagePlus, calculations);
     }
 }

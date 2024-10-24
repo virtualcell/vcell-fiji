@@ -22,7 +22,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     private N5ExportTable n5ExportTable;
     private RemoteFileSelection remoteFileSelection;
-    private final AdvancedFeatures advancedFeatures = new AdvancedFeatures();
+    public final AdvancedFeatures advancedFeatures = new AdvancedFeatures();
 
     public ControlButtonsPanel(){
         includeExampleExports = new JCheckBox("Show Example Exports");
@@ -107,7 +107,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             if (openOrCancel.getText().equals("Cancel")){
                 n5ExportTable.removeFromLoadingRows();
             } else {
-                n5ExportTable.openSelectedRows(advancedFeatures.inMemory.isSelected());
+                n5ExportTable.openSelectedRows();
             }
         } else if (e.getSource().equals(copyLink)) {
             n5ExportTable.copySelectedRowLink();
