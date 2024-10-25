@@ -29,10 +29,9 @@ public class LoadingManager implements SimLoadingEventCreator {
 
     private static final Logger logger = N5ImageHandler.getLogger(RangeSelector.class);
 
-    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory,
-                                  boolean selectRange, boolean dataReduction){
+    public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory, boolean dataReduction){
         RangeSelector rangeSelector = new RangeSelector();
-        if (selectRange){
+        if (openInMemory){
             SimResultsLoader firstSim = filesToOpen.get(0);
             firstSim.createS3ClientAndReader();
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();

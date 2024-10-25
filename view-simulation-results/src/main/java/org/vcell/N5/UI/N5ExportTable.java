@@ -155,7 +155,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         refreshTableThread.start();
     }
 
-    public void openSelectedRows(){
+    public void openSelectedRows(boolean openInMemory){
         ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
         for(int row: exportListTable.getSelectedRows()){
             String uri = n5ExportTableModel.getRowData(row).uri;
@@ -164,8 +164,8 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             filesToOpen.add(simResultsLoader);
         }
         AdvancedFeatures advancedFeatures = MainPanel.controlButtonsPanel.advancedFeatures;
-        N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, advancedFeatures.inMemory.isSelected(),
-                advancedFeatures.rangeSelection.isSelected(), advancedFeatures.dataReduction.isSelected());
+        N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, openInMemory,
+                advancedFeatures.dataReduction.isSelected());
     }
 
     public void copySelectedRowLink(){

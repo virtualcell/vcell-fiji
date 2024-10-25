@@ -12,9 +12,8 @@ import java.awt.event.ActionListener;
 public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     private static JButton openOrCancel;
+    private JButton openInMemory;
 //    private final JButton openLocal = new JButton("Open N5 Local");
-    private final JButton copyLink;
-    private final JButton useN5Link;
     private final JButton questionMark;
 
     public final JCheckBox includeExampleExports;
@@ -30,9 +29,8 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
         displayAdvancedFeatures = new JCheckBox("Advanced Features");
 
-        openOrCancel = new JButton("Open");
-        copyLink = new JButton("Copy Link");
-        useN5Link = new JButton("Use N5 Link");
+        openOrCancel = new JButton("Open Virtually");
+        openInMemory = new JButton("Open In Memory");
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));
 
@@ -44,12 +42,9 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         topRow.add(openOrCancel, gridBagConstraints);
 
         gridBagConstraints.gridx = 1;
-        topRow.add(copyLink, gridBagConstraints);
+        topRow.add(openInMemory, gridBagConstraints);
 
         gridBagConstraints.gridx = 2;
-        topRow.add(useN5Link, gridBagConstraints);
-
-        gridBagConstraints.gridx = 3;
         topRow.add(questionMark);
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
@@ -72,7 +67,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
 
         int paneWidth = 800;
-        this.setPreferredSize(new Dimension(paneWidth, 80));
+        this.setPreferredSize(new Dimension(paneWidth, 110));
         this.setLayout(new BorderLayout());
 //        topBar.add(openLocal);
         Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
@@ -84,16 +79,18 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
 
         openOrCancel.addActionListener(this);
-        copyLink.addActionListener(this);
+        advancedFeatures.copyLink.addActionListener(this);
         questionMark.addActionListener(this);
-        useN5Link.addActionListener(this);
+        advancedFeatures.useN5Link.addActionListener(this);
 //        openLocal.addActionListener(this);
         includeExampleExports.addActionListener(this);
         displayAdvancedFeatures.addActionListener(this);
+        openInMemory.addActionListener(this);
 
 
         openOrCancel.setEnabled(false);
-        copyLink.setEnabled(false);
+        openInMemory.setEnabled(false);
+        advancedFeatures.copyLink.setEnabled(false);
     }
 
     public void initialize(N5ExportTable n5ExportTable, RemoteFileSelection remoteFileSelection){
@@ -103,17 +100,17 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(openOrCancel)){
+        if(e.getSource().equals(openOrCancel) || e.getSource().equals(openInMemory)){
             if (openOrCancel.getText().equals("Cancel")){
                 n5ExportTable.removeFromLoadingRows();
             } else {
-                n5ExportTable.openSelectedRows();
+                n5ExportTable.openSelectedRows(e.getSource().equals(openInMemory));
             }
-        } else if (e.getSource().equals(copyLink)) {
+        } else if (e.getSource().equals(advancedFeatures.copyLink)) {
             n5ExportTable.copySelectedRowLink();
         } else if (e.getSource().equals(questionMark)) {
             new HelpExplanation().displayHelpMenu();
-        } else if (e.getSource().equals(useN5Link)) {
+        } else if (e.getSource().equals(advancedFeatures.useN5Link)) {
             remoteFileSelection.setVisible(true);
         } else if (e.getSource().equals(includeExampleExports)){
             n5ExportTable.updateTableData();
@@ -124,25 +121,28 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     public void allowCancel(boolean allow){
         openOrCancel.setEnabled(true);
-        copyLink.setEnabled(true);
-        useN5Link.setEnabled(true);
+        advancedFeatures.copyLink.setEnabled(true);
+        advancedFeatures.useN5Link.setEnabled(true);
         remoteFileSelection.submitS3Info.setEnabled(true);
+        openInMemory.setEnabled(!allow);
         if (allow){
             openOrCancel.setText("Cancel");
         } else {
-            openOrCancel.setText("Open");
+            openOrCancel.setText("Open Virtually");
         }
     }
 
     public void enableRowContextDependentButtons(boolean enable){
         openOrCancel.setEnabled(enable);
-        copyLink.setEnabled(enable);
+        advancedFeatures.copyLink.setEnabled(enable);
+        openInMemory.setEnabled(enable);
     }
 
     public void enableCriticalButtons(boolean enable){
-        useN5Link.setEnabled(enable);
+        advancedFeatures.useN5Link.setEnabled(enable);
         openOrCancel.setEnabled(enable);
-        copyLink.setEnabled(enable);
+        advancedFeatures.copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
+        openInMemory.setEnabled(enable);
     }
 }

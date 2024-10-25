@@ -45,7 +45,7 @@ public class MainPanel {
         filters.add(searchBar, BorderLayout.SOUTH);
         parentPanel.add(filters, BorderLayout.SOUTH);
 
-        parentPanel.setPreferredSize(new Dimension(paneWidth, 650));
+        parentPanel.setPreferredSize(new Dimension(paneWidth, 750));
         JOptionPane pane = new JOptionPane(parentPanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[]{"Close"});
         exportTableDialog = pane.createDialog("VCell Exports");
         exportTableDialog.setModal(false);
