@@ -5,6 +5,7 @@ import ij.WindowManager;
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.MainPanel;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -91,6 +92,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
             if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
                 chosenFile = saveToFile.getSelectedFile();
+                MainPanel.controlButtonsPanel.enableCriticalButtons(false);
                 Thread thread = new Thread(() -> {
                     DataReduction dataReduction = new DataReduction(new DataReductionSubmission());
                     N5ImageHandler.loadingManager.addSimLoadingListener(dataReduction);

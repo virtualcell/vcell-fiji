@@ -3,6 +3,8 @@ package org.vcell.N5.analysis;
 import com.opencsv.CSVWriter;
 import ij.ImagePlus;
 import ij.gui.Roi;
+import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.retrieving.SimLoadingListener;
 
 import java.io.File;
@@ -137,6 +139,9 @@ Would be extra nice to plot the experimental data vs the "best fit" VCell simula
             csvWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            N5ImageHandler.loadingManager.removeFromSimLoadingListener(this);
+            MainPanel.controlButtonsPanel.enableCriticalButtons(true);
         }
     }
 

@@ -135,6 +135,10 @@ public class LoadingManager implements SimLoadingEventCreator {
         eventListenerList.add(SimLoadingListener.class, simLoadingListener);
     }
 
+    public void removeFromSimLoadingListener(SimLoadingListener simLoadingListener){
+        eventListenerList.remove(SimLoadingListener.class, simLoadingListener);
+    }
+
     @Override
     public void notifySimIsLoading(SimResultsLoader simResultsLoader) {
         for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){

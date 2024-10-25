@@ -22,6 +22,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private N5ExportTable n5ExportTable;
     private RemoteFileSelection remoteFileSelection;
     public final AdvancedFeatures advancedFeatures = new AdvancedFeatures();
+    private boolean allowButtons = true;
 
     public ControlButtonsPanel(){
         includeExampleExports = new JCheckBox("Show Example Exports");
@@ -120,22 +121,26 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     }
 
     public void allowCancel(boolean allow){
-        openOrCancel.setEnabled(true);
-        advancedFeatures.copyLink.setEnabled(true);
-        advancedFeatures.useN5Link.setEnabled(true);
-        remoteFileSelection.submitS3Info.setEnabled(true);
-        openInMemory.setEnabled(!allow);
-        if (allow){
-            openOrCancel.setText("Cancel");
-        } else {
-            openOrCancel.setText("Open Virtually");
+        if (allowButtons){
+            openOrCancel.setEnabled(true);
+            advancedFeatures.copyLink.setEnabled(true);
+            advancedFeatures.useN5Link.setEnabled(true);
+            remoteFileSelection.submitS3Info.setEnabled(true);
+            openInMemory.setEnabled(!allow);
+            if (allow){
+                openOrCancel.setText("Cancel");
+            } else {
+                openOrCancel.setText("Open Virtually");
+            }
         }
     }
 
     public void enableRowContextDependentButtons(boolean enable){
-        openOrCancel.setEnabled(enable);
-        advancedFeatures.copyLink.setEnabled(enable);
-        openInMemory.setEnabled(enable);
+        if (allowButtons){
+            openOrCancel.setEnabled(enable);
+            advancedFeatures.copyLink.setEnabled(enable);
+            openInMemory.setEnabled(enable);
+        }
     }
 
     public void enableCriticalButtons(boolean enable){
@@ -144,5 +149,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         advancedFeatures.copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
         openInMemory.setEnabled(enable);
+        allowButtons = enable;
     }
 }
