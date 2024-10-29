@@ -45,7 +45,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
 
 //    private TemporalAnalysis temporalAnalysis = new TemporalAnalysis();
 
-     public class DataReductionSubmission{
+     public static class DataReductionSubmission{
         public final boolean normalizeMeasurementsBool;
         public final ArrayList<Roi> arrayOfSimRois;
         public final ArrayList<Roi> arrayOfLabRois;
@@ -56,18 +56,36 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         public final int imageEndPointNorm;
         public final int numOfSimImages;
         public final File fileToSaveResultsTo;
-        public DataReductionSubmission(){
-            normalizeMeasurementsBool = normalizeMeasurement.isSelected();
-            arrayOfSimRois = simROIList;
-            arrayOfLabRois = imageROIList;
-            labResults = WindowManager.getImage((String) chosenImage.getSelectedItem());
-            simStartPointNorm = createNormFromSimStart.getText().isEmpty() ? Integer.MIN_VALUE : Integer.parseInt(createNormFromSimStart.getText());
-            simEndPointNorm = createNormFromSimEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromSimEnd.getText());
-            imageStartPointNorm = createNormFromImageStart.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageStart.getText());
-            imageEndPointNorm = createNormFromImageEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageEnd.getText());
-            numOfSimImages = numSimsToOpen;
-            fileToSaveResultsTo = chosenFile;
+        public DataReductionSubmission(boolean normalizeMeasurementsBool,ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
+                                       ImagePlus labResults, int numOfSimImages, File fileToSaveResultsTo){
+            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults,
+                    0,0,0,0, numOfSimImages, fileToSaveResultsTo);
         }
+
+        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
+                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
+                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo){
+            this.normalizeMeasurementsBool = normalizeMeasurementsBool;
+            this.arrayOfLabRois = arrayOfLabRois;
+            this.arrayOfSimRois = arrayOfSimRois;
+            this.labResults = labResults;
+            this.simStartPointNorm = simStartPointNorm;
+            this.simEndPointNorm = simEndPointNorm;
+            this.imageStartPointNorm = imageStartPointNorm;
+            this.imageEndPointNorm = imageEndPointNorm;
+            this.numOfSimImages = numOfSimImages;
+            this.fileToSaveResultsTo = fileToSaveResultsTo;
+
+        }
+    }
+
+    private DataReductionSubmission createSubmission(){
+         int simStartPointNorm = createNormFromSimStart.getText().isEmpty() ? Integer.MIN_VALUE : Integer.parseInt(createNormFromSimStart.getText());
+         int simEndPointNorm = createNormFromSimEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromSimEnd.getText());
+         int imageStartPointNorm = createNormFromImageStart.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageStart.getText());
+         int imageEndPointNorm = createNormFromImageEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageEnd.getText());
+         return new DataReductionSubmission(normalizeMeasurement.isSelected(), simROIList, imageROIList, WindowManager.getImage((String) chosenImage.getSelectedItem()),
+                 simStartPointNorm, simEndPointNorm, imageStartPointNorm, imageEndPointNorm, numSimsToOpen, chosenFile);
     }
 
     public DataReductionGUI(int numSimsToOpen){
@@ -94,7 +112,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                 chosenFile = saveToFile.getSelectedFile();
                 MainPanel.controlButtonsPanel.enableCriticalButtons(false);
                 Thread thread = new Thread(() -> {
-                    DataReduction dataReduction = new DataReduction(new DataReductionSubmission());
+                    DataReduction dataReduction = new DataReduction(createSubmission());
                     N5ImageHandler.loadingManager.addSimLoadingListener(dataReduction);
                 });
                 thread.start();
@@ -164,18 +182,6 @@ public class DataReductionGUI extends JPanel implements ActionListener {
          if (e.getSource().equals(normalizeMeasurement)) {
             entireImageFramesJPanel.setVisible(normalizeMeasurement.isSelected());
         }
-    }
-
-    private ArrayList<Roi> fillROIList(JFileChooser fileChooser){
-        fileChooser.setMultiSelectionEnabled(true);
-        int choice = fileChooser.showDialog(this, "");
-        ArrayList<Roi> roiList = new ArrayList<>();
-        if (choice == JFileChooser.APPROVE_OPTION){
-            for (File file: fileChooser.getSelectedFiles()){
-                roiList.add(RoiDecoder.open(file.getAbsolutePath()));
-            }
-        }
-        return roiList;
     }
 
     enum AvailableMeasurements{
@@ -255,6 +261,17 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                 }
                 simROITable.updateUI();
             }
+        }
+        private ArrayList<Roi> fillROIList(JFileChooser fileChooser){
+            fileChooser.setMultiSelectionEnabled(true);
+            int choice = fileChooser.showDialog(this, "Open ROI's");
+            ArrayList<Roi> roiList = new ArrayList<>();
+            if (choice == JFileChooser.APPROVE_OPTION){
+                for (File file: fileChooser.getSelectedFiles()){
+                    roiList.add(RoiDecoder.open(file.getAbsolutePath()));
+                }
+            }
+            return roiList;
         }
 
         class ROIDataModel extends AbstractTableModel {

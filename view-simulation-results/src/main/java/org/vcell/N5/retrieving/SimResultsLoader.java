@@ -83,7 +83,7 @@ public class SimResultsLoader {
         }
     }
 
-    void createS3ClientAndReader(){
+    public void createS3ClientAndReader(){
         logger.debug("Creating S3 Client with url: " + uri);
         if (uri.getHost().equals("minikube.remote") || uri.getHost().equals("minikube.island")){
             SSLContext sslContext = null;
