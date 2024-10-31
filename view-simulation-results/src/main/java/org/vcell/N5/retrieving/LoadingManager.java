@@ -3,7 +3,6 @@ package org.vcell.N5.retrieving;
 import com.amazonaws.AbortedException;
 import com.amazonaws.http.timers.client.SdkInterruptedException;
 import ij.ImagePlus;
-import ij.plugin.Duplicator;
 import org.scijava.log.Logger;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
@@ -57,7 +56,8 @@ public class LoadingManager implements SimLoadingEventCreator {
                                 imagePlus = simResultsLoader.openInMemory(rangeSelector);
                             }
                         } else{
-                            imagePlus = simResultsLoader.getImgPlusFromN5File();
+                            simResultsLoader.loadImageFromN5File();
+                            imagePlus = simResultsLoader.getImagePlus();
                         }
                     }
                     catch (RuntimeException e) {
@@ -149,7 +149,7 @@ public class LoadingManager implements SimLoadingEventCreator {
     @Override
     public void notifySimIsDoneLoading(SimResultsLoader simResultsLoader, ImagePlus imagePlus) {
         for (SimLoadingListener simLoadingListener: eventListenerList.getListeners(SimLoadingListener.class)){
-            simLoadingListener.simFinishedLoading(simResultsLoader.rowNumber, simResultsLoader.exportID, imagePlus);
+            simLoadingListener.simFinishedLoading(simResultsLoader);
         }
     }
 }

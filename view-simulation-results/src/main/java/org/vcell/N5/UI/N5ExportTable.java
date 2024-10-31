@@ -223,11 +223,11 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     }
 
     @Override
-    public void simFinishedLoading(int itemRow, String exportID, ImagePlus imagePlus) {
-        loadingRowsJobID.remove(itemRow);
+    public void simFinishedLoading(SimResultsLoader loadedResults) {
+        loadingRowsJobID.remove(loadedResults.rowNumber);
         exportListTable.repaint();
         controlPanel.allowCancel(false);
-        imagePlus.show();
+        loadedResults.getImagePlus().show();
     }
 
     static class N5ExportTableModel extends AbstractTableModel {

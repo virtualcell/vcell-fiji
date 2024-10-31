@@ -8,6 +8,6 @@ public interface SimLoadingListener extends EventListener {
 
     public void simIsLoading(int itemRow, String exportID);
 
-    public void simFinishedLoading(int itemRow, String exportID, ImagePlus imagePlus);
+    public void simFinishedLoading(SimResultsLoader loadedResult);
 
 }
