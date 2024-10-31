@@ -45,6 +45,22 @@ public class DataReductionGUI extends JPanel implements ActionListener {
 
 //    private TemporalAnalysis temporalAnalysis = new TemporalAnalysis();
 
+    public static class RangeOfImage{
+        public final int timeStart;
+        public final int timeEnd;
+        public final int zStart;
+        public final int zEnd;
+        public final int channelStart;
+        public final int channelEnd;
+        public RangeOfImage(int timeStart, int timeEnd, int zStart, int zEnd, int channelStart, int channelEnd){
+            this.timeStart = timeStart;
+            this.timeEnd = timeEnd;
+            this.zStart = zStart;
+            this.zEnd = zEnd;
+            this.channelStart = channelStart;
+            this.channelEnd = channelEnd;
+        }
+    }
      public static class DataReductionSubmission{
         public final boolean normalizeMeasurementsBool;
         public final ArrayList<Roi> arrayOfSimRois;
@@ -56,6 +72,8 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         public final int imageEndPointNorm;
         public final int numOfSimImages;
         public final File fileToSaveResultsTo;
+        public final RangeOfImage experimentImageRange;
+        public final RangeOfImage simImageRange;
         public DataReductionSubmission(boolean normalizeMeasurementsBool,ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
                                        ImagePlus labResults, int numOfSimImages, File fileToSaveResultsTo){
             this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults,
@@ -75,7 +93,9 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             this.imageEndPointNorm = imageEndPointNorm;
             this.numOfSimImages = numOfSimImages;
             this.fileToSaveResultsTo = fileToSaveResultsTo;
-
+            this.experimentImageRange = new RangeOfImage(1, labResults.getNFrames(),
+                    1, labResults.getNSlices(), 1, labResults.getNChannels());
+            this.simImageRange = experimentImageRange;
         }
     }
 

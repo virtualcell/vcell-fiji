@@ -1,15 +1,20 @@
 package org.vcell.N5.analysis;
 
-import com.opencsv.CSVWriter;
+import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.gui.Roi;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.retrieving.SimLoadingListener;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -19,12 +24,30 @@ public class DataReduction implements SimLoadingListener {
     private final Object csvMatrixLock = new Object();
     private File file;
 
-    private final ArrayList<ArrayList<String>> csvMatrix = new ArrayList<>();
-
     private int numOfImagesToBeOpened;
     private final boolean normalize;
 
     public final DataReductionGUI.DataReductionSubmission submission;
+
+    private final Workbook workbook = new HSSFWorkbook();
+    private final Sheet dataSheet = workbook.createSheet("Average");
+    private final Sheet metaDataSheet = workbook.createSheet("Metadata");
+
+    private int colIndex;
+
+    private final DataReductionGUI.RangeOfImage simRange;
+
+    // Per Image
+    static class ReducedData{
+        public final double[][] data;
+        public final ArrayList<String> columnHeaders;
+        public final DataReductionGUI.AvailableMeasurements measurementType;
+        public ReducedData(int rowLen, int colLen, DataReductionGUI.AvailableMeasurements measurementType){
+            data = new double[rowLen][colLen];
+            columnHeaders = new ArrayList<>();
+            this.measurementType = measurementType;
+        }
+    }
 
     //
 
@@ -42,45 +65,57 @@ public class DataReduction implements SimLoadingListener {
         this.numOfImagesToBeOpened = submission.numOfSimImages + 1; // Plus one for the lab image
         this.file = submission.fileToSaveResultsTo;
         this.normalize = submission.normalizeMeasurementsBool;
-        ArrayList<String> headers = new ArrayList<String>(){{add("Time Frame"); add("Z Index"); add("Channel");}};
-        csvMatrix.add(headers);
+        this.simRange = submission.simImageRange;
+
+        ArrayList<String> headers = new ArrayList<String>(){{add("Time Frame");}};
+        boolean is3D = submission.labResults.getNSlices() > 1;
+        if (is3D){
+            headers.add("Z Index");
+        }
+
+        Row headerRow = dataSheet.createRow(0);
+        for (int i = 0; i < headers.size(); i++){
+            headerRow.createCell(i).setCellValue(headers.get(i));
+        }
+        colIndex = headers.size() + 1;
 
         double normValue = calculateNormalValue(submission.labResults, submission.imageStartPointNorm, submission.imageEndPointNorm);
 
-        HashMap<String, ArrayList<Double>> reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue);
+        int nFrames = submission.experimentImageRange.timeEnd - submission.experimentImageRange.timeStart + 1;
+        int nSlices = submission.experimentImageRange.zEnd - submission.experimentImageRange.zStart + 1;
+        int nChannels = submission.experimentImageRange.channelEnd - submission.experimentImageRange.channelStart + 1;
+        ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+        reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue, reducedData, submission.experimentImageRange);
         synchronized (csvMatrixLock){
-            for (int t = 0; t < submission.labResults.getNFrames(); t++){
-                for (int z = 0; z < submission.labResults.getNSlices(); z++){
-                    for (int c = 0; c < submission.labResults.getNChannels(); c++){
-                        ArrayList<String> rowForTime = new ArrayList<>();
-                        rowForTime.add(String.valueOf(t));
-                        rowForTime.add(String.valueOf(z));
-                        rowForTime.add(String.valueOf(c));
-                        csvMatrix.add(rowForTime);
+            int rowI = 1;
+            for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
+                for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
+                    Row pointRow = dataSheet.createRow(rowI);
+                    rowI += 1;
+                    pointRow.createCell(0).setCellValue(t);
+                    if (is3D){
+                        pointRow.createCell(1).setCellValue(z);
                     }
                 }
             }
-
         }
-        addValuesToCSVMatrix(submission.labResults, reducedData);
-
+        addValuesToCSVMatrix(reducedData);
     }
 
-    private void addValuesToCSVMatrix(ImagePlus imagePlus, HashMap<String, ArrayList<Double>> reducedData){
+    private void addValuesToCSVMatrix(ReducedData reducedData){
         synchronized (csvMatrixLock){
-            csvMatrix.get(0).add("");
-            for (String roiName: reducedData.keySet()){
-                csvMatrix.get(0).add(imagePlus.getTitle()+" : " + roiName);
-                int tN = imagePlus.getNFrames();
-                int zN = imagePlus.getNSlices();
-                int cN = imagePlus.getNChannels();
-                for (int i = 0; i < (tN * zN * cN); i++){
-                    double mean = reducedData.get(roiName).get(i);
-                    csvMatrix.get(i + 1).add(""); // every array is a row
-                    csvMatrix.get(i + 1).add(String.valueOf(mean));
+            for (int c = 0; c < reducedData.columnHeaders.size(); c++){
+                dataSheet.getRow(0).createCell(colIndex + c).setCellValue(reducedData.columnHeaders.get(c));
+            }
+            for (int i = 0; i < reducedData.data.length; i++){
+                for (int c = 0; c < reducedData.data[i].length; c++){
+                    Row row = dataSheet.getRow(i + 1);
+                    double mean = reducedData.data[i][c];
+                    row.createCell(colIndex + c).setCellValue(mean);
                 }
             }
             numOfImagesToBeOpened -= 1;
+            colIndex += 1 + reducedData.data[0].length;
             if (numOfImagesToBeOpened == 0){
                 writeCSVMatrix();
             }
@@ -103,39 +138,58 @@ public class DataReduction implements SimLoadingListener {
     }
 
 
+    ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
+                              double normalizationValue, ReducedData reducedData){
+        DataReductionGUI.RangeOfImage entireRange = new DataReductionGUI.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
+                1, imagePlus.getNChannels());
+        return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, entireRange);
+    }
 
-    HashMap<String, ArrayList<Double>> calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                                                             double normalizationValue){
-//        ResultsTable resultsTable = new ResultsTable();
+    ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
+                              double normalizationValue, ReducedData reducedData, DataReductionGUI.RangeOfImage rangeOfImage){
+        return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, rangeOfImage);
+    }
 
-        HashMap<String,ArrayList<Double>> roiListOfMeans = new HashMap<>();
+    ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
+                              double normalizationValue, ReducedData reducedData,
+                              LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo, DataReductionGUI.RangeOfImage rangeOfImage){
+        int roiCounter = 0;
         for (Roi roi: roiList) {
             imagePlus.setRoi(roi);
-            ArrayList<Double> meanValues = new ArrayList<>();
-            for (int t = 0; t < imagePlus.getNFrames(); t++){
-                for (int z = 0; z < imagePlus.getNSlices(); z++){
-                    for (int c = 0; c < imagePlus.getNChannels(); c++){
-                        imagePlus.setPosition(c + 1, z + 1, t + 1);
+            for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
+                String stringC = String.valueOf(c - 1);
+                String channelName = channelInfo != null && channelInfo.containsKey(stringC) ? channelInfo.get(stringC).get("Name") : String.valueOf(c);
+                reducedData.columnHeaders.add(imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
+            }
+            int tzCounter = 0;
+            for (int t = rangeOfImage.timeStart; t <= rangeOfImage.timeEnd; t++){
+                for (int z = rangeOfImage.zStart; z <= rangeOfImage.zEnd; z++){
+                    for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){
+                        int channelSize = rangeOfImage.channelEnd - rangeOfImage.channelStart + 1;
+                        imagePlus.setPosition(c, z, t);
                         double meanValue = imagePlus.getStatistics().mean;
                         if (normalize){
                             meanValue = meanValue / normalizationValue;
                         }
-                        meanValues.add(meanValue);
+                        reducedData.data[tzCounter][c - 1 + (roiCounter * channelSize)] = meanValue;
                     }
+                    tzCounter += 1;
                 }
             }
-            roiListOfMeans.put(roi.getName(), meanValues);
+            roiCounter += 1;
         }
-        return roiListOfMeans;
+        return reducedData;
+    }
+
+    private void addMetaData(){
+
     }
 
     private void writeCSVMatrix(){
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            CSVWriter csvWriter = new CSVWriter(fileWriter);
-            for (ArrayList<String> row: csvMatrix){
-                csvWriter.writeNext(row.toArray(new String[0]));
-            }
-            csvWriter.close();
+
+        try {
+            file = new File(file.getAbsolutePath() + ".xls");
+            workbook.write(Files.newOutputStream(file.toPath()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -151,10 +205,28 @@ public class DataReduction implements SimLoadingListener {
     }
 
     @Override
-    public void simFinishedLoading(int itemRow, String exportID, ImagePlus imagePlus) {
+    public void simFinishedLoading(SimResultsLoader loadedResults) {
+        ImagePlus imagePlus = loadedResults.getImagePlus();
         double normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm, submission.simEndPointNorm);
-        HashMap<String, ArrayList<Double>> calculations = calculateMean(imagePlus, arrayOfSimRois, normValue);
-        addValuesToCSVMatrix(imagePlus, calculations);
+        ReducedData reducedData = new ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
+                imagePlus.getNChannels(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+        reducedData = calculateMean(imagePlus, arrayOfSimRois, normValue, reducedData, loadedResults.getChannelInfo(), simRange);
+        addValuesToCSVMatrix(reducedData);
+    }
+
+    public static void main(String[] args) {
+        File file = new File("/Users/evalencia/Documents/testv2.xlsx");
+
+        try {
+            Workbook workbook = new HSSFWorkbook();
+//            Files.createFile(file.toPath());
+            Sheet sheet = workbook.createSheet("Hello");
+            sheet.createRow(1).createCell(0).setCellValue("2");
+            workbook.write(Files.newOutputStream(file.toPath()));
+            workbook.close();
+        } catch (IOException e){
+            throw new RuntimeException(e);
+        }
     }
 }
 

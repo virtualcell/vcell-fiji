@@ -17,11 +17,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DataReductionTest {
-    private final double[] labMeans2DLabROI = new double[]{6, 0, 6.489, 0, 7.247, 0}; //calculated through IJ measurement tool
-    private final double[] labMeans2DSimROI = new double[]{18, 0, 16.341, 0, 14.469, 0};
+    // First two are SimROI, last two are LabROI
+    private final double[][] labMeans2D = new double[][]{{6, 0, 18, 0}, {6.489, 0, 16.341, 0},
+            {7.247, 0, 14.469, 0}}; //calculated through IJ measurement tool
 
-    private final double[] threeDMeans = new double[]{2884.526,3102.159, 3884.279, 4668.205, 5016.744, 5524.792, 4794.329, 5624.351,
-            4559.778, 5510.099
+    private final double[][] threeDMeans = new double[][]{{2884.526, 3102.159}, {3884.279, 4668.205}, {5016.744, 5524.792}, {4794.329, 5624.351},
+            {4559.778, 5510.099}
     };
 
     private File getTestResourceFiles(String filePath){
@@ -40,14 +41,16 @@ public class DataReductionTest {
         SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
     }
 
-    private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, HashMap<String, double[]> expectedResults){
+    private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults){
         DataReductionGUI.DataReductionSubmission dataReductionSubmission = new DataReductionGUI.DataReductionSubmission(
                 false, roiList, roiList, imagePlus,4, null);
         DataReduction dataReduction = new DataReduction(dataReductionSubmission);
-        HashMap<String, ArrayList<Double>> result = dataReduction.calculateMean(imagePlus, roiList, Double.MIN_VALUE);
-        for (Roi roi : roiList){
-            for (int i = 0; i < expectedResults.get(roi.getName()).length; i++){
-                Assert.assertEquals(expectedResults.get(roi.getName())[i], result.get(roi.getName()).get(i), 0.0009);
+        DataReduction.ReducedData reducedData = new DataReduction.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
+                imagePlus.getNChannels() * roiList.size(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+        DataReduction.ReducedData result = dataReduction.calculateMean(imagePlus, roiList, Double.MIN_VALUE, reducedData);
+        for (int r = 0; r < expectedResults.length; r++){
+            for (int c = 0; c < expectedResults[r].length; c++){
+                Assert.assertEquals(expectedResults[r][c], result.data[r][c], 0.0009);
             }
         }
     }
@@ -56,14 +59,12 @@ public class DataReductionTest {
     public void testMean2DCalculation(){
         // Ensure the mean calculated for each ROI, and each time point is what's to be expected
         SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1");
-        simResultsLoader.createS3ClientAndReader();
-        ImagePlus labResultImage2D = simResultsLoader.getImgPlusFromN5File();
+        ImagePlus labResultImage2D = simResultsLoader.getImagePlus();
 
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
         Roi simROI = RoiDecoder.open(getTestResourceFiles("ROIs/Sim ROI.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(labRoi); add(simROI);}};
-        HashMap<String, double[]> expectedResults = new HashMap<String, double[]>(){{put(labRoi.getName(), labMeans2DLabROI); put(simROI.getName(), labMeans2DSimROI);}};
-        compareExpectedCalculations(labResultImage2D, roiList, expectedResults);
+        compareExpectedCalculations(labResultImage2D, roiList, labMeans2D);
     }
 
     @Test
@@ -71,7 +72,6 @@ public class DataReductionTest {
         ImagePlus mitosis = new ImagePlus(getTestResourceFiles("mitosis.tif").getAbsolutePath());
         Roi mitosisROI = RoiDecoder.open(getTestResourceFiles("ROIs/Mitosis Center.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(mitosisROI);}};
-        HashMap<String, double[]> expectedResults = new HashMap<String, double[]>(){{put(mitosisROI.getName(), threeDMeans);}};
-        compareExpectedCalculations(mitosis, roiList, expectedResults);
+        compareExpectedCalculations(mitosis, roiList, threeDMeans);
     }
 }
