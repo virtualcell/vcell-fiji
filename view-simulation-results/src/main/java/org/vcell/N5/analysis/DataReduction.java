@@ -129,7 +129,7 @@ public class DataReduction implements SimLoadingListener {
                 imagePlus.setT(k);
                 normal += imagePlus.getProcessor().getStatistics().mean;
             }
-            normal = normal / (endT - startT);
+            normal = normal / (endT - startT + 1); // inclusive of final point
             return normal;
         } else {
             return Double.MIN_NORMAL;
