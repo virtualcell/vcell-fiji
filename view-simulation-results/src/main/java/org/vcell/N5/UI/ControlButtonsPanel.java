@@ -12,7 +12,7 @@ import java.awt.event.ActionListener;
 public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     private static JButton openOrCancel;
-    private JButton openInMemory;
+    private final JButton dataReduction;
 //    private final JButton openLocal = new JButton("Open N5 Local");
     private final JButton questionMark;
 
@@ -31,7 +31,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         displayAdvancedFeatures = new JCheckBox("Advanced Features");
 
         openOrCancel = new JButton("Open Virtually");
-        openInMemory = new JButton("Open In Memory");
+        dataReduction = new JButton("Run Measurement Script");
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));
 
@@ -43,16 +43,16 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         topRow.add(openOrCancel, gridBagConstraints);
 
         gridBagConstraints.gridx = 1;
-        topRow.add(openInMemory, gridBagConstraints);
+        topRow.add(dataReduction, gridBagConstraints);
 
-        gridBagConstraints.gridx = 2;
-        topRow.add(questionMark);
+
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
         bottomRow.add(includeExampleExports);
         gridBagConstraints.gridx = 1;
         bottomRow.add(displayAdvancedFeatures, gridBagConstraints);
-
+        gridBagConstraints.gridx = 2;
+        bottomRow.add(questionMark);
 
         JPanel userButtonsPanel = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
@@ -86,11 +86,12 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 //        openLocal.addActionListener(this);
         includeExampleExports.addActionListener(this);
         displayAdvancedFeatures.addActionListener(this);
-        openInMemory.addActionListener(this);
+        dataReduction.addActionListener(this);
+        advancedFeatures.openInMemory.addActionListener(this);
 
 
         openOrCancel.setEnabled(false);
-        openInMemory.setEnabled(false);
+        dataReduction.setEnabled(false);
         advancedFeatures.copyLink.setEnabled(false);
     }
 
@@ -101,11 +102,13 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(openOrCancel) || e.getSource().equals(openInMemory)){
+        boolean inMemory = e.getSource().equals(advancedFeatures.openInMemory);
+        boolean performDataReduction = e.getSource().equals(dataReduction);
+        if(e.getSource().equals(openOrCancel) || inMemory || performDataReduction){
             if (openOrCancel.getText().equals("Cancel")){
                 n5ExportTable.removeFromLoadingRows();
             } else {
-                n5ExportTable.openSelectedRows(e.getSource().equals(openInMemory));
+                n5ExportTable.openSelectedRows(inMemory, performDataReduction);
             }
         } else if (e.getSource().equals(advancedFeatures.copyLink)) {
             n5ExportTable.copySelectedRowLink();
@@ -126,7 +129,8 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             advancedFeatures.copyLink.setEnabled(true);
             advancedFeatures.useN5Link.setEnabled(true);
             remoteFileSelection.submitS3Info.setEnabled(true);
-            openInMemory.setEnabled(!allow);
+            dataReduction.setEnabled(!allow);
+            advancedFeatures.openInMemory.setEnabled(!allow);
             if (allow){
                 openOrCancel.setText("Cancel");
             } else {
@@ -139,7 +143,8 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         if (allowButtons){
             openOrCancel.setEnabled(enable);
             advancedFeatures.copyLink.setEnabled(enable);
-            openInMemory.setEnabled(enable);
+            dataReduction.setEnabled(enable);
+            advancedFeatures.openInMemory.setEnabled(enable);
         }
     }
 
@@ -148,7 +153,8 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         openOrCancel.setEnabled(enable);
         advancedFeatures.copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
-        openInMemory.setEnabled(enable);
+        dataReduction.setEnabled(enable);
+        advancedFeatures.openInMemory.setEnabled(enable);
         allowButtons = enable;
     }
 }

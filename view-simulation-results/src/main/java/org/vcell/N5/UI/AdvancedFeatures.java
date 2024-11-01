@@ -6,8 +6,7 @@ import javax.swing.border.EtchedBorder;
 import java.awt.*;
 
 public class AdvancedFeatures extends JPanel {
-    public final JCheckBox inMemory;
-    public final JCheckBox dataReduction;
+    public final JButton openInMemory;
     public final JButton copyLink;
     public final JButton useN5Link;
 
@@ -16,21 +15,21 @@ public class AdvancedFeatures extends JPanel {
         Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 
 
-        inMemory = new JCheckBox("Open In Memory");
-        dataReduction = new JCheckBox("Run Measurement Script");
+        openInMemory = new JButton("Open In Memory");
         JPanel checkBoxPanel = new JPanel();
-        checkBoxPanel.add(dataReduction);
+//        checkBoxPanel.add(openInMemory);
 
         JPanel buttonPanel = new JPanel();
         copyLink = new JButton("Copy Link");
         useN5Link = new JButton("Use N5 Link");
         buttonPanel.add(copyLink);
         buttonPanel.add(useN5Link);
+        buttonPanel.add(openInMemory);
 
-        setLayout(new BorderLayout());
-        add(buttonPanel, BorderLayout.NORTH);
-        add(checkBoxPanel, BorderLayout.SOUTH);
+//        setLayout(new BorderLayout());
+//        add(buttonPanel, BorderLayout.NORTH);
+//        add(checkBoxPanel, BorderLayout.SOUTH);
+        add(buttonPanel);
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Advanced Features "));
     }
-
 }
