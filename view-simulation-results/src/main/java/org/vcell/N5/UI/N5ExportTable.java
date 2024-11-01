@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class N5ExportTable extends JScrollPane implements ListSelectionListener, SimLoadingListener {
-    private N5ExportTableModel n5ExportTableModel;
+    public N5ExportTableModel n5ExportTableModel;
     private JTable exportListTable;
 
     private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
@@ -230,7 +230,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         loadedResults.getImagePlus().show();
     }
 
-    static class N5ExportTableModel extends AbstractTableModel {
+    public static class N5ExportTableModel extends AbstractTableModel {
         public final ArrayList<String> headers = new ArrayList<String>(){{
             add("BioModel");
             add("Application");

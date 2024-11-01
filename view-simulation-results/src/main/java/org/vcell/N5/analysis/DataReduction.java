@@ -7,8 +7,10 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
+import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -22,6 +24,7 @@ public class DataReduction implements SimLoadingListener {
     private final ArrayList<Roi> arrayOfSimRois;
 
     private final Object csvMatrixLock = new Object();
+    private final Object metaDataLock = new Object();
     private File file;
 
     private int numOfImagesToBeOpened;
@@ -34,6 +37,9 @@ public class DataReduction implements SimLoadingListener {
     private final Sheet metaDataSheet = workbook.createSheet("Metadata");
 
     private int colIndex;
+    private int metaDataRow = 1;
+    private int metaDataParameterCol = 5;
+    private final HashMap<String, Integer> parameterNameToCol = new HashMap<>();
 
     private final DataReductionGUI.RangeOfImage simRange;
 
@@ -100,6 +106,12 @@ public class DataReduction implements SimLoadingListener {
             }
         }
         addValuesToCSVMatrix(reducedData);
+        synchronized (metaDataLock){
+            metaDataSheet.createRow(0).createCell(1).setCellValue("BioModel Name");
+            metaDataSheet.getRow(0).createCell(2).setCellValue("Application Name");
+            metaDataSheet.getRow(0).createCell(3).setCellValue("Simulation Name");
+            metaDataSheet.getRow(0).createCell(4).setCellValue("N5 URL");
+        }
     }
 
     private void addValuesToCSVMatrix(ReducedData reducedData){
@@ -181,8 +193,31 @@ public class DataReduction implements SimLoadingListener {
         return reducedData;
     }
 
-    private void addMetaData(){
-
+    // If parameter is not in list of parameters, add new column. If simulation does not have parameter say "not-present"
+    private void addMetaData(SimResultsLoader loadedResults){
+        synchronized (metaDataLock){
+            N5ExportTable n5ExportTable = MainPanel.n5ExportTable;
+            ExportDataRepresentation.SimulationExportDataRepresentation data = n5ExportTable.n5ExportTableModel.getRowData(loadedResults.rowNumber);
+            metaDataSheet.createRow(metaDataRow).createCell(0).setCellValue(loadedResults.userSetFileName);
+            metaDataSheet.getRow(metaDataRow).createCell(1).setCellValue(data.biomodelName);
+            metaDataSheet.getRow(metaDataRow).createCell(2).setCellValue(data.applicationName);
+            metaDataSheet.getRow(metaDataRow).createCell(3).setCellValue(data.simulationName);
+            metaDataSheet.getRow(metaDataRow).createCell(4).setCellValue(data.uri);
+            ArrayList<String> parameterValues = data.differentParameterValues;
+            for (String s : parameterValues){
+                String[] tokens = s.split(":");
+                String colValue = tokens[1] + ":" + tokens[2];
+                if (parameterNameToCol.containsKey(tokens[0])){
+                    metaDataSheet.getRow(metaDataRow).createCell(parameterNameToCol.get(tokens[0])).setCellValue(colValue);
+                } else{
+                    metaDataSheet.getRow(0).createCell(metaDataParameterCol).setCellValue(tokens[0] + "\n(Default:Set Value)");
+                    metaDataSheet.getRow(metaDataRow).createCell(metaDataParameterCol).setCellValue(colValue);
+                    parameterNameToCol.put(tokens[0], metaDataParameterCol);
+                    metaDataParameterCol += 1;
+                }
+            }
+            metaDataRow += 1;
+        }
     }
 
     private void writeCSVMatrix(){
@@ -211,22 +246,8 @@ public class DataReduction implements SimLoadingListener {
         ReducedData reducedData = new ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
                 imagePlus.getNChannels(), DataReductionGUI.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(imagePlus, arrayOfSimRois, normValue, reducedData, loadedResults.getChannelInfo(), simRange);
+        addMetaData(loadedResults);
         addValuesToCSVMatrix(reducedData);
-    }
-
-    public static void main(String[] args) {
-        File file = new File("/Users/evalencia/Documents/testv2.xlsx");
-
-        try {
-            Workbook workbook = new HSSFWorkbook();
-//            Files.createFile(file.toPath());
-            Sheet sheet = workbook.createSheet("Hello");
-            sheet.createRow(1).createCell(0).setCellValue("2");
-            workbook.write(Files.newOutputStream(file.toPath()));
-            workbook.close();
-        } catch (IOException e){
-            throw new RuntimeException(e);
-        }
     }
 }
 
