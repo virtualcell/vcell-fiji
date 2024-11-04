@@ -7,15 +7,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-class NoramalizeGUI extends JPanel implements ActionListener {
-    private JTextField createNormFromImageStart;
-    private JTextField createNormFromImageEnd;
-    private JTextField createNormFromSimStart;
-    private JTextField createNormFromSimEnd;
-    private JPanel entireImageFramesJPanel;
+class NormalizeGUI extends JPanel implements ActionListener {
+    private final JTextField createNormFromImageStart;
+    private final JTextField createNormFromImageEnd;
+    private final JTextField createNormFromSimStart;
+    private final JTextField createNormFromSimEnd;
+    private final JPanel entireImageFramesJPanel;
     private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
 
-    public NoramalizeGUI(JDialog jDialog){
+    public NormalizeGUI(JDialog jDialog){
         normalizeMeasurement.addActionListener(this);
         JLabel explainInput = new JLabel("Timeline Range to Create Norm");
 

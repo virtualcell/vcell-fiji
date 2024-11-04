@@ -47,8 +47,8 @@ public class DataReduction implements SimLoadingListener {
     static class ReducedData{
         public final double[][] data;
         public final ArrayList<String> columnHeaders;
-        public final DataReductionGUI.AvailableMeasurements measurementType;
-        public ReducedData(int rowLen, int colLen, DataReductionGUI.AvailableMeasurements measurementType){
+        public final SelectMeasurements.AvailableMeasurements measurementType;
+        public ReducedData(int rowLen, int colLen, SelectMeasurements.AvailableMeasurements measurementType){
             data = new double[rowLen][colLen];
             columnHeaders = new ArrayList<>();
             this.measurementType = measurementType;
@@ -90,7 +90,7 @@ public class DataReduction implements SimLoadingListener {
         int nFrames = submission.experimentImageRange.timeEnd - submission.experimentImageRange.timeStart + 1;
         int nSlices = submission.experimentImageRange.zEnd - submission.experimentImageRange.zStart + 1;
         int nChannels = submission.experimentImageRange.channelEnd - submission.experimentImageRange.channelStart + 1;
-        ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+        ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue, reducedData, submission.experimentImageRange);
         synchronized (csvMatrixLock){
             int rowI = 1;
@@ -244,7 +244,7 @@ public class DataReduction implements SimLoadingListener {
         ImagePlus imagePlus = loadedResults.getImagePlus();
         double normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm, submission.simEndPointNorm);
         ReducedData reducedData = new ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
-                simRange.channelEnd - simRange.channelStart + 1, DataReductionGUI.AvailableMeasurements.AVERAGE);
+                simRange.channelEnd - simRange.channelStart + 1, SelectMeasurements.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(imagePlus, arrayOfSimRois, normValue, reducedData, loadedResults.getChannelInfo(), simRange);
         addMetaData(loadedResults);
         addValuesToCSVMatrix(reducedData);

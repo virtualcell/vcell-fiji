@@ -13,7 +13,6 @@ import java.util.ArrayList;
 
 public class DataReductionGUI extends JPanel {
     private JComboBox<String> chosenImage;
-    private JComboBox<String> chosenMeasurement;
 
     private final JDialog jDialog;
     private final JOptionPane pane;
@@ -26,7 +25,7 @@ public class DataReductionGUI extends JPanel {
 
     private final SelectSimRange selectSimRange;
     private final RoiSelection roiSelection;
-    private final NoramalizeGUI normalizeGUI;
+    private final NormalizeGUI normalizeGUI;
 
     public DataReductionGUI(int numSimsToOpen){
          this.numSimsToOpen = numSimsToOpen;
@@ -38,13 +37,16 @@ public class DataReductionGUI extends JPanel {
 
         selectSimRange = new SelectSimRange(jDialog);
         roiSelection = new RoiSelection();
-        normalizeGUI = new NoramalizeGUI(jDialog);
+        normalizeGUI = new NormalizeGUI(jDialog);
 
-        add(imageAndAnalysisType());
+        add(imageSelectionPanel());
+        add(new SelectMeasurements());
         add(roiSelection);
         add(normalizeGUI);
         add(selectSimRange);
         setVisible(true);
+
+        jDialog.pack();
     }
 
     public void displayGUI(){
@@ -76,31 +78,12 @@ public class DataReductionGUI extends JPanel {
                 selectSimRange.getRangeOfSim());
     }
 
-
-    private JPanel imageAndAnalysisType(){
-        JPanel jPanel = new JPanel(new GridLayout(2,4));
-        GridBagConstraints gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        jPanel.add(new JLabel("Select Experimental Image"), gridBagConstraints);
-        gridBagConstraints.gridy = 1;
+    private JPanel imageSelectionPanel(){
+        JPanel jPanel = new JPanel(new GridLayout(1, 2));
+        jPanel.add(new JLabel("Select Experimental Image"));
         chosenImage = new JComboBox<>(WindowManager.getImageTitles());
-        jPanel.add(chosenImage, gridBagConstraints);
-        gridBagConstraints.gridy = 2;
-        jPanel.add(new JLabel("Measurement Type"), gridBagConstraints);
-        gridBagConstraints.gridy = 3;
-        chosenMeasurement = new JComboBox<>(new String[]{AvailableMeasurements.AVERAGE.publicName});
-        jPanel.add(chosenMeasurement, gridBagConstraints);
+        jPanel.add(chosenImage);
         return jPanel;
-    }
-
-    enum AvailableMeasurements{
-        AVERAGE("Average");
-
-        public final String publicName;
-        AvailableMeasurements(String publicName){
-            this.publicName = publicName;
-        }
     }
 
     public static class DataReductionSubmission{

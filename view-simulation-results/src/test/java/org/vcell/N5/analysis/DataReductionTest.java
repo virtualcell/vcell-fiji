@@ -14,7 +14,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class DataReductionTest {
     // First two are SimROI, last two are LabROI
@@ -51,7 +50,7 @@ public class DataReductionTest {
                                              DataReductionGUI.DataReductionSubmission dataReductionSubmission, double normValue){
         DataReduction dataReduction = new DataReduction(dataReductionSubmission);
         DataReduction.ReducedData reducedData = new DataReduction.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
-                imagePlus.getNChannels() * roiList.size(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+                imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
         DataReduction.ReducedData result = dataReduction.calculateMean(imagePlus, roiList, normValue, reducedData);
         for (int r = 0; r < expectedResults.length; r++){
             for (int c = 0; c < expectedResults[r].length; c++){
