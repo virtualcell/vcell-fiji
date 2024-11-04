@@ -41,7 +41,7 @@ public class DataReduction implements SimLoadingListener {
     private int metaDataParameterCol = 5;
     private final HashMap<String, Integer> parameterNameToCol = new HashMap<>();
 
-    private final DataReductionGUI.RangeOfImage simRange;
+    private final SelectSimRange.RangeOfImage simRange;
 
     // Per Image
     static class ReducedData{
@@ -152,19 +152,19 @@ public class DataReduction implements SimLoadingListener {
 
     ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
                               double normalizationValue, ReducedData reducedData){
-        DataReductionGUI.RangeOfImage entireRange = new DataReductionGUI.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
+        SelectSimRange.RangeOfImage entireRange = new SelectSimRange.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
                 1, imagePlus.getNChannels());
         return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, entireRange);
     }
 
     ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                              double normalizationValue, ReducedData reducedData, DataReductionGUI.RangeOfImage rangeOfImage){
+                              double normalizationValue, ReducedData reducedData, SelectSimRange.RangeOfImage rangeOfImage){
         return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, rangeOfImage);
     }
 
     ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
                               double normalizationValue, ReducedData reducedData,
-                              LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo, DataReductionGUI.RangeOfImage rangeOfImage){
+                              LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo, SelectSimRange.RangeOfImage rangeOfImage){
         int roiCounter = 0;
         for (Roi roi: roiList) {
             imagePlus.setRoi(roi);
@@ -244,7 +244,7 @@ public class DataReduction implements SimLoadingListener {
         ImagePlus imagePlus = loadedResults.getImagePlus();
         double normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm, submission.simEndPointNorm);
         ReducedData reducedData = new ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
-                imagePlus.getNChannels(), DataReductionGUI.AvailableMeasurements.AVERAGE);
+                simRange.channelEnd - simRange.channelStart + 1, DataReductionGUI.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(imagePlus, arrayOfSimRois, normValue, reducedData, loadedResults.getChannelInfo(), simRange);
         addMetaData(loadedResults);
         addValuesToCSVMatrix(reducedData);

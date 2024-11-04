@@ -3,122 +3,48 @@ package org.vcell.N5.analysis;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
-import ij.io.RoiDecoder;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-public class DataReductionGUI extends JPanel implements ActionListener {
+public class DataReductionGUI extends JPanel {
     private JComboBox<String> chosenImage;
     private JComboBox<String> chosenMeasurement;
-    private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
-
-    private JTextField createNormFromImageStart;
-    private JTextField createNormFromImageEnd;
-    private JTextField createNormFromSimStart;
-    private JTextField createNormFromSimEnd;
-    private JPanel entireImageFramesJPanel;
-
-    private JButton imageROIFileButton;
-    private JButton simROIFileButton;
-
-    private String notInMemoryWarning;
-
-    private ArrayList<Roi> simROIList;
-    private ArrayList<Roi> imageROIList;
 
     private final JDialog jDialog;
     private final JOptionPane pane;
     private File chosenFile;
 
-    private int numSimsToOpen;
+    private final int numSimsToOpen;
 
     public int mainGUIReturnValue;
     public int fileChooserReturnValue;
 
-//    private TemporalAnalysis temporalAnalysis = new TemporalAnalysis();
-
-    public static class RangeOfImage{
-        public final int timeStart;
-        public final int timeEnd;
-        public final int zStart;
-        public final int zEnd;
-        public final int channelStart;
-        public final int channelEnd;
-        public RangeOfImage(int timeStart, int timeEnd, int zStart, int zEnd, int channelStart, int channelEnd){
-            this.timeStart = timeStart;
-            this.timeEnd = timeEnd;
-            this.zStart = zStart;
-            this.zEnd = zEnd;
-            this.channelStart = channelStart;
-            this.channelEnd = channelEnd;
-        }
-    }
-     public static class DataReductionSubmission{
-        public final boolean normalizeMeasurementsBool;
-        public final ArrayList<Roi> arrayOfSimRois;
-        public final ArrayList<Roi> arrayOfLabRois;
-        public final ImagePlus labResults;
-        public final int simStartPointNorm;
-        public final int simEndPointNorm;
-        public final int imageStartPointNorm;
-        public final int imageEndPointNorm;
-        public final int numOfSimImages;
-        public final File fileToSaveResultsTo;
-        public final RangeOfImage experimentImageRange;
-        public final RangeOfImage simImageRange;
-        public DataReductionSubmission(boolean normalizeMeasurementsBool,ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                                       ImagePlus labResults, int numOfSimImages, File fileToSaveResultsTo){
-            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults,
-                    0,0,0,0, numOfSimImages, fileToSaveResultsTo);
-        }
-
-        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
-                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo){
-            this.normalizeMeasurementsBool = normalizeMeasurementsBool;
-            this.arrayOfLabRois = arrayOfLabRois;
-            this.arrayOfSimRois = arrayOfSimRois;
-            this.labResults = labResults;
-            this.simStartPointNorm = simStartPointNorm;
-            this.simEndPointNorm = simEndPointNorm;
-            this.imageStartPointNorm = imageStartPointNorm;
-            this.imageEndPointNorm = imageEndPointNorm;
-            this.numOfSimImages = numOfSimImages;
-            this.fileToSaveResultsTo = fileToSaveResultsTo;
-            this.experimentImageRange = new RangeOfImage(1, labResults.getNFrames(),
-                    1, labResults.getNSlices(), 1, labResults.getNChannels());
-            this.simImageRange = experimentImageRange;
-        }
-    }
-
-    private DataReductionSubmission createSubmission(){
-         int simStartPointNorm = createNormFromSimStart.getText().isEmpty() ? Integer.MIN_VALUE : Integer.parseInt(createNormFromSimStart.getText());
-         int simEndPointNorm = createNormFromSimEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromSimEnd.getText());
-         int imageStartPointNorm = createNormFromImageStart.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageStart.getText());
-         int imageEndPointNorm = createNormFromImageEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageEnd.getText());
-         return new DataReductionSubmission(normalizeMeasurement.isSelected(), simROIList, imageROIList, WindowManager.getImage((String) chosenImage.getSelectedItem()),
-                 simStartPointNorm, simEndPointNorm, imageStartPointNorm, imageEndPointNorm, numSimsToOpen, chosenFile);
-    }
+    private final SelectSimRange selectSimRange;
+    private final RoiSelection roiSelection;
+    private final NoramalizeGUI normalizeGUI;
 
     public DataReductionGUI(int numSimsToOpen){
          this.numSimsToOpen = numSimsToOpen;
-        setLayout(new BorderLayout());
-
-        add(imageAndAnalysisType(), BorderLayout.NORTH);
-        add(new ROISelection(), BorderLayout.CENTER);
-        add(normalizeGUI(), BorderLayout.SOUTH);
-        setVisible(true);
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         pane = new JOptionPane(this, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
         jDialog = pane.createDialog("Data Reduction");
+        jDialog.setResizable(true);
+
+        selectSimRange = new SelectSimRange(jDialog);
+        roiSelection = new RoiSelection();
+        normalizeGUI = new NoramalizeGUI(jDialog);
+
+        add(imageAndAnalysisType());
+        add(roiSelection);
+        add(normalizeGUI);
+        add(selectSimRange);
+        setVisible(true);
     }
 
     public void displayGUI(){
@@ -140,36 +66,14 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         }
     }
 
-    private JPanel normalizeGUI(){
-        JPanel jPanel = new JPanel(new GridLayout(2, 1));
-        normalizeMeasurement.addActionListener(this);
-        JLabel explainInput = new JLabel("Timeline Range to Create Norm");
-
-        JPanel fromImage = new JPanel(new GridLayout());
-        createNormFromImageStart = new JTextField();
-        createNormFromImageEnd = new JTextField();
-        fromImage.add(new JLabel("Exp. Timeline: "));
-        fromImage.add(createNormFromImageStart);
-        fromImage.add(new JLabel("to"));
-        fromImage.add(createNormFromImageEnd);
-
-        JPanel fromSim = new JPanel(new GridLayout());
-        createNormFromSimStart = new JTextField();
-        createNormFromSimEnd = new JTextField();
-        fromSim.add(new JLabel("Sim Timeline: "));
-        fromSim.add(createNormFromSimStart);
-        fromSim.add(new JLabel("to"));
-        fromSim.add(createNormFromSimEnd);
-
-        entireImageFramesJPanel = new JPanel(new GridLayout(3, 1));
-        entireImageFramesJPanel.add(explainInput);
-        entireImageFramesJPanel.add(fromImage);
-        entireImageFramesJPanel.add(fromSim);
-        entireImageFramesJPanel.setVisible(false);
-
-        jPanel.add(normalizeMeasurement);
-        jPanel.add(entireImageFramesJPanel);
-        return jPanel;
+    private DataReductionSubmission createSubmission(){
+        int[] simRange = normalizeGUI.getSimTimRange();
+        int[] labRange = normalizeGUI.getImageTimeRange();
+        return new DataReductionSubmission(normalizeGUI.performNormalization(),
+                roiSelection.getSimROIList(), roiSelection.getImageROIList(),
+                WindowManager.getImage((String) chosenImage.getSelectedItem()),
+                simRange[0], simRange[1], labRange[0], labRange[1], numSimsToOpen, chosenFile,
+                selectSimRange.getRangeOfSim());
     }
 
 
@@ -187,21 +91,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         gridBagConstraints.gridy = 3;
         chosenMeasurement = new JComboBox<>(new String[]{AvailableMeasurements.AVERAGE.publicName});
         jPanel.add(chosenMeasurement, gridBagConstraints);
-
-        chosenMeasurement.addActionListener(this);
-        chosenImage.addActionListener(this);
-
-
         return jPanel;
-    }
-
-
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-         if (e.getSource().equals(normalizeMeasurement)) {
-            entireImageFramesJPanel.setVisible(normalizeMeasurement.isSelected());
-        }
     }
 
     enum AvailableMeasurements{
@@ -213,118 +103,58 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         }
     }
 
+    public static class DataReductionSubmission{
+        public final boolean normalizeMeasurementsBool;
+        public final ArrayList<Roi> arrayOfSimRois;
+        public final ArrayList<Roi> arrayOfLabRois;
+        public final ImagePlus labResults;
+        public final int simStartPointNorm;
+        public final int simEndPointNorm;
+        public final int imageStartPointNorm;
+        public final int imageEndPointNorm;
+        public final int numOfSimImages;
+        public final File fileToSaveResultsTo;
+        public final SelectSimRange.RangeOfImage experimentImageRange;
+        public final SelectSimRange.RangeOfImage simImageRange;
+
+        public DataReductionSubmission(boolean normalizeMeasurementsBool,ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
+                                       ImagePlus labResults, int numOfSimImages, File fileToSaveResultsTo){
+            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults,
+                    0,0,0,0, numOfSimImages, fileToSaveResultsTo);
+        }
+
+        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
+                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
+                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo){
+            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults, simStartPointNorm, simEndPointNorm, imageStartPointNorm, imageEndPointNorm,
+                    numOfSimImages, fileToSaveResultsTo,
+                    new SelectSimRange.RangeOfImage(1, labResults.getNFrames(),
+                            1, labResults.getNSlices(), 1, labResults.getNChannels()));
+        }
+
+        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
+                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
+                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo,
+                                       SelectSimRange.RangeOfImage simRange){
+            this.normalizeMeasurementsBool = normalizeMeasurementsBool;
+            this.arrayOfLabRois = arrayOfLabRois;
+            this.arrayOfSimRois = arrayOfSimRois;
+            this.labResults = labResults;
+            this.simStartPointNorm = simStartPointNorm;
+            this.simEndPointNorm = simEndPointNorm;
+            this.imageStartPointNorm = imageStartPointNorm;
+            this.imageEndPointNorm = imageEndPointNorm;
+            this.numOfSimImages = numOfSimImages;
+            this.fileToSaveResultsTo = fileToSaveResultsTo;
+            this.experimentImageRange = new SelectSimRange.RangeOfImage(1, labResults.getNFrames(),
+                    1, labResults.getNSlices(), 1, labResults.getNChannels());
+            this.simImageRange = simRange;
+        }
+    }
+
     public static void main(String[] args) {
         DataReductionGUI dataReductionGUI = new DataReductionGUI(0);
         dataReductionGUI.displayGUI();
-    }
-
-    class ROISelection extends JPanel implements ActionListener{
-        private final JFileChooser imageROIFileChooser = new JFileChooser();
-        private final ROIDataModel imageTableModel = new ROIDataModel();
-        private final JTable imageROITable = new JTable(imageTableModel);
-
-        private final JFileChooser simROIFileChooser = new JFileChooser();
-        private final ROIDataModel simTableModel = new ROIDataModel();
-        private final JTable simROITable = new JTable(simTableModel);
-         public ROISelection(){
-             JPanel roisForImage = new JPanel(new GridBagLayout());
-             JPanel roisForSims = new JPanel(new GridBagLayout());
-             Dimension tableDimensions = new Dimension(100, 70);
-             imageROITable.getTableHeader().setBackground(Color.WHITE);
-             imageROITable.setEnabled(false);
-             simROITable.getTableHeader().setBackground(Color.WHITE);
-             simROITable.setEnabled(false);
-
-             imageROIFileButton = new JButton("ROI's For Image");
-             JScrollPane displayImageROIList = new JScrollPane(imageROITable);
-             displayImageROIList.setPreferredSize(tableDimensions);
-             setROIPanelSettings(roisForImage, imageROIFileButton, displayImageROIList);
-
-             simROIFileButton = new JButton("ROI's For Simulation");
-             JScrollPane displaySimROIList = new JScrollPane(simROITable);
-             displaySimROIList.setPreferredSize(tableDimensions);
-             setROIPanelSettings(roisForSims, simROIFileButton, displaySimROIList);
-
-             imageROIFileButton.addActionListener(this);
-             simROIFileButton.addActionListener(this);
-
-             this.setLayout(new BorderLayout());
-             this.add(roisForImage, BorderLayout.WEST);
-             this.add(roisForSims, BorderLayout.EAST);
-         }
-
-        public void setROIPanelSettings(JPanel jPanel, JButton button, JScrollPane jScrollPane){
-            GridBagConstraints gridBagConstraints = new GridBagConstraints();
-            gridBagConstraints.gridy = 0;
-            gridBagConstraints.gridx = 0;
-            gridBagConstraints.fill = GridBagConstraints.BOTH;
-            gridBagConstraints.insets = new Insets(5, 5, 5, 5);
-            jPanel.add(button, gridBagConstraints);
-            gridBagConstraints.gridy = 1;
-            jPanel.add(jScrollPane, gridBagConstraints);
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (e.getSource().equals(imageROIFileButton)){
-                imageROIList = fillROIList(imageROIFileChooser);
-                imageTableModel.clear();
-                for (Roi roi : imageROIList){
-                    imageTableModel.addRow(roi.getName());
-                }
-                imageROITable.updateUI();
-            } else if (e.getSource().equals(simROIFileButton)) {
-                simROIList = fillROIList(simROIFileChooser);
-                simTableModel.clear();
-                for (Roi roi : simROIList){
-                    simTableModel.addRow(roi.getName());
-                }
-                simROITable.updateUI();
-            }
-        }
-        private ArrayList<Roi> fillROIList(JFileChooser fileChooser){
-            fileChooser.setMultiSelectionEnabled(true);
-            int choice = fileChooser.showDialog(this, "Open ROI's");
-            ArrayList<Roi> roiList = new ArrayList<>();
-            if (choice == JFileChooser.APPROVE_OPTION){
-                for (File file: fileChooser.getSelectedFiles()){
-                    roiList.add(RoiDecoder.open(file.getAbsolutePath()));
-                }
-            }
-            return roiList;
-        }
-
-        class ROIDataModel extends AbstractTableModel {
-            private final ArrayList<String> data = new ArrayList<>();
-            private final String[] headers = new String[]{"ROI's Selected"};
-            @Override
-            public int getRowCount() {
-                return data.size();
-            }
-
-            @Override
-            public int getColumnCount() {
-                return headers.length;
-            }
-
-            @Override
-            public String getColumnName(int column) {
-                return headers[column];
-            }
-
-            @Override
-            public Object getValueAt(int rowIndex, int columnIndex) {
-                return data.get(rowIndex);
-            }
-
-            public void addRow(String roiName){
-                data.add(roiName);
-            }
-
-            public void clear(){
-                data.clear();
-            }
-        }
     }
 }
 
