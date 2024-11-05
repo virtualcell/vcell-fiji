@@ -8,11 +8,16 @@ import org.vcell.N5.UI.MainPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-public class DataReductionGUI extends JPanel {
+public class DataReductionGUI extends JPanel implements ActionListener {
     private JComboBox<String> chosenImage;
+    private final JCheckBox selectRangeOfMeasurement = new JCheckBox("Select Measurement Range: ");
+    private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
+
 
     private final JDialog jDialog;
     private final JOptionPane pane;
@@ -27,7 +32,7 @@ public class DataReductionGUI extends JPanel {
     private final RoiSelection roiSelection;
     private final NormalizeGUI normalizeGUI;
 
-    public DataReductionGUI(int numSimsToOpen){
+    public DataReductionGUI(int numSimsToOpen, double simCSize, double simZSize, double simTSize){
          this.numSimsToOpen = numSimsToOpen;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -35,16 +40,20 @@ public class DataReductionGUI extends JPanel {
         jDialog = pane.createDialog("Data Reduction");
         jDialog.setResizable(true);
 
-        selectSimRange = new SelectSimRange(jDialog);
+        selectSimRange = new SelectSimRange(jDialog, simCSize, simZSize, simTSize);
         roiSelection = new RoiSelection();
-        normalizeGUI = new NormalizeGUI(jDialog);
+        normalizeGUI = new NormalizeGUI(jDialog, simTSize);
 
         add(imageSelectionPanel());
         add(new SelectMeasurements());
         add(roiSelection);
+        add(displayOptionsPanel());
         add(normalizeGUI);
         add(selectSimRange);
         setVisible(true);
+
+        normalizeMeasurement.addActionListener(this);
+        selectRangeOfMeasurement.addActionListener(this);
 
         jDialog.pack();
     }
@@ -71,7 +80,7 @@ public class DataReductionGUI extends JPanel {
     private DataReductionSubmission createSubmission(){
         int[] simRange = normalizeGUI.getSimTimRange();
         int[] labRange = normalizeGUI.getImageTimeRange();
-        return new DataReductionSubmission(normalizeGUI.performNormalization(),
+        return new DataReductionSubmission(normalizeMeasurement.isSelected(),
                 roiSelection.getSimROIList(), roiSelection.getImageROIList(),
                 WindowManager.getImage((String) chosenImage.getSelectedItem()),
                 simRange[0], simRange[1], labRange[0], labRange[1], numSimsToOpen, chosenFile,
@@ -84,6 +93,23 @@ public class DataReductionGUI extends JPanel {
         chosenImage = new JComboBox<>(WindowManager.getImageTitles());
         jPanel.add(chosenImage);
         return jPanel;
+    }
+
+    private JPanel displayOptionsPanel(){
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.X_AXIS));
+        jPanel.add(normalizeMeasurement);
+        jPanel.add(selectRangeOfMeasurement);
+        return jPanel;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource().equals(normalizeMeasurement)) {
+            normalizeGUI.setVisible(normalizeMeasurement.isSelected());
+        } else if (e.getSource().equals(selectRangeOfMeasurement)){
+            selectSimRange.setVisible(selectRangeOfMeasurement.isSelected());
+        }
     }
 
     public static class DataReductionSubmission{
@@ -136,7 +162,7 @@ public class DataReductionGUI extends JPanel {
     }
 
     public static void main(String[] args) {
-        DataReductionGUI dataReductionGUI = new DataReductionGUI(0);
+        DataReductionGUI dataReductionGUI = new DataReductionGUI(0, 0, 0, 0);
         dataReductionGUI.displayGUI();
     }
 }

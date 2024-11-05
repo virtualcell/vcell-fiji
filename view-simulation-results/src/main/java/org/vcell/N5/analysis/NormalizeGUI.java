@@ -1,23 +1,24 @@
 package org.vcell.N5.analysis;
 
+import org.vcell.N5.UI.HintTextField;
+
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-class NormalizeGUI extends JPanel implements ActionListener {
+class NormalizeGUI extends JPanel {
     private final JTextField createNormFromImageStart;
     private final JTextField createNormFromImageEnd;
     private final JTextField createNormFromSimStart;
     private final JTextField createNormFromSimEnd;
     private final JPanel entireImageFramesJPanel;
-    private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
 
-    public NormalizeGUI(JDialog jDialog){
-        normalizeMeasurement.addActionListener(this);
-        JLabel explainInput = new JLabel("Timeline Range to Create Norm");
+    public NormalizeGUI(JDialog jDialog, double simTSize){
+        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+        Border normalizeBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Timeline Range to Create Norm");
 
         JPanel fromImage = new JPanel(new GridLayout());
         createNormFromImageStart = new JTextField();
@@ -28,18 +29,17 @@ class NormalizeGUI extends JPanel implements ActionListener {
         fromImage.add(createNormFromImageEnd);
 
         JPanel fromSim = new JPanel(new GridLayout());
-        createNormFromSimStart = new JTextField();
-        createNormFromSimEnd = new JTextField();
+        createNormFromSimStart = new HintTextField("1");
+        createNormFromSimEnd = new HintTextField(String.valueOf((int) simTSize));
         fromSim.add(new JLabel("Sim Timeline: "));
         fromSim.add(createNormFromSimStart);
         fromSim.add(new JLabel("to"));
         fromSim.add(createNormFromSimEnd);
 
         entireImageFramesJPanel = new JPanel(new GridLayout(3, 1));
-        entireImageFramesJPanel.add(explainInput);
         entireImageFramesJPanel.add(fromImage);
         entireImageFramesJPanel.add(fromSim);
-        entireImageFramesJPanel.addComponentListener(new ComponentAdapter() {
+        this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) {
                 jDialog.revalidate();
@@ -53,10 +53,9 @@ class NormalizeGUI extends JPanel implements ActionListener {
                 jDialog.pack();
             }
         });
-        entireImageFramesJPanel.setVisible(false);
-
-        this.add(normalizeMeasurement);
         this.add(entireImageFramesJPanel);
+        this.setBorder(normalizeBorder);
+        this.setVisible(false);
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     }
 
@@ -72,16 +71,5 @@ class NormalizeGUI extends JPanel implements ActionListener {
                 createNormFromImageStart.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageStart.getText()),
                 createNormFromImageEnd.getText().isEmpty() ? Integer.MIN_VALUE: Integer.parseInt(createNormFromImageEnd.getText())
         };
-    }
-
-    public boolean performNormalization(){
-        return normalizeMeasurement.isSelected();
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource().equals(normalizeMeasurement)) {
-            entireImageFramesJPanel.setVisible(normalizeMeasurement.isSelected());
-        }
     }
 }

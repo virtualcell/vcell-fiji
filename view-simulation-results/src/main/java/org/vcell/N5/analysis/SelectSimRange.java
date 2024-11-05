@@ -1,29 +1,30 @@
 package org.vcell.N5.analysis;
 
+import org.vcell.N5.UI.HintTextField;
+
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-class SelectSimRange extends JPanel implements ActionListener {
-    private final JCheckBox selectRangeOfMeasurement = new JCheckBox("Select Measurement Range: ");
+class SelectSimRange extends JPanel {
+    private final JTextField cStart = new HintTextField("1");
+    private final JTextField cEnd;
 
-    private final JTextField cStart = new JTextField();
-    private final JTextField cEnd = new JTextField();
+    private final JTextField zStart = new HintTextField("1");
+    private final JTextField zEnd;
 
-    private final JTextField zStart = new JTextField();
-    private final JTextField zEnd = new JTextField();
+    private final JTextField tStart = new HintTextField("1");
+    private final JTextField tEnd;
 
-    private final JTextField tStart = new JTextField();
-    private final JTextField tEnd = new JTextField();
-
-    private final JPanel rangeSelectionPanel;
-
-    public SelectSimRange(JDialog jDialog){
-        selectRangeOfMeasurement.addActionListener(this);
-        JLabel explainInput = new JLabel("Range of Simulation to Perform Measurement");
+    public SelectSimRange(JDialog jDialog, double simCSize, double simZSize, double simTSize){
+        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+        Border rangeBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Range of Simulation to Perform Measurement");
+        cEnd = new HintTextField(String.valueOf((int) simCSize - 1));
+        zEnd = new HintTextField(String.valueOf((int) simZSize));
+        tEnd = new HintTextField(String.valueOf((int) simTSize));
 
         JPanel cRange = new JPanel(new GridLayout());
         cRange.add(new JLabel("Channel Range: "));
@@ -43,29 +44,32 @@ class SelectSimRange extends JPanel implements ActionListener {
         tRange.add(new JLabel("to"));
         tRange.add(tEnd);
 
-        rangeSelectionPanel = new JPanel(new GridLayout(4, 1));
-        rangeSelectionPanel.add(explainInput);
+        JPanel rangeSelectionPanel = new JPanel(new GridLayout(4, 1));
         rangeSelectionPanel.add(cRange);
         rangeSelectionPanel.add(zRange);
         rangeSelectionPanel.add(tRange);
-        rangeSelectionPanel.addComponentListener(new ComponentAdapter() {
+
+        this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) {
+                SelectSimRange.this.revalidate();
+                SelectSimRange.this.repaint();
                 jDialog.revalidate();
                 jDialog.repaint();
                 jDialog.pack();
             }
             @Override
             public void componentHidden(ComponentEvent e) {
+                SelectSimRange.this.revalidate();
+                SelectSimRange.this.repaint();
                 jDialog.revalidate();
                 jDialog.repaint();
                 jDialog.pack();
             }
         });
-        rangeSelectionPanel.setVisible(false);
-
-        this.add(selectRangeOfMeasurement);
         this.add(rangeSelectionPanel);
+        this.setBorder(rangeBorder);
+        this.setVisible(false);
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     }
 
@@ -76,13 +80,6 @@ class SelectSimRange extends JPanel implements ActionListener {
                 Integer.parseInt(cStart.getText()), Integer.parseInt(cEnd.getText())
         );
         return rangeOfImage;
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource().equals(selectRangeOfMeasurement)){
-            rangeSelectionPanel.setVisible(selectRangeOfMeasurement.isSelected());
-        }
     }
 
     public static class RangeOfImage{

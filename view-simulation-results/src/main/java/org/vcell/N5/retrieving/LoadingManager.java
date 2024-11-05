@@ -30,15 +30,17 @@ public class LoadingManager implements SimLoadingEventCreator {
 
     public void openN5FileDataset(ArrayList<SimResultsLoader> filesToOpen, boolean openInMemory, boolean dataReduction){
         RangeSelector rangeSelector = new RangeSelector();
-        if (openInMemory){
+        DataReductionGUI dataReductionGUI = null;
+        if (dataReduction || openInMemory){
             SimResultsLoader firstSim = filesToOpen.get(0);
             firstSim.createS3ClientAndReader();
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
-            rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
-        }
-        DataReductionGUI dataReductionGUI = new DataReductionGUI(filesToOpen.size());
-        if (dataReduction){
-            dataReductionGUI.displayGUI();
+            if (dataReduction){
+                dataReductionGUI = new DataReductionGUI(filesToOpen.size(), dimensions.get(2), dimensions.get(3), dimensions.get(4));
+                dataReductionGUI.displayGUI();
+            } else {
+                rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
+            }
         }
         boolean dataReductionOkay = dataReduction && dataReductionGUI.mainGUIReturnValue == JOptionPane.OK_OPTION && dataReductionGUI.fileChooserReturnValue == JFileChooser.APPROVE_OPTION;
         if (dataReductionOkay || !dataReduction){

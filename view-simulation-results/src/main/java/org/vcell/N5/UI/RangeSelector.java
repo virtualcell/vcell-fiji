@@ -1,15 +1,10 @@
 package org.vcell.N5.UI;
 
-import org.scijava.log.Logger;
-import org.vcell.N5.N5ImageHandler;
-
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 
 public class RangeSelector extends JDialog implements ActionListener {
     public int startC;
@@ -126,47 +121,6 @@ public class RangeSelector extends JDialog implements ActionListener {
             controlButtonsPanel.enableCriticalButtons(true);
             cancel = true;
             this.setVisible(false);
-        }
-    }
-
-    static class HintTextField extends JTextField {
-
-        Font gainFont = new Font("Tahoma", Font.PLAIN, 11);
-        Font lostFont = new Font("Tahoma", Font.ITALIC, 11);
-
-        public HintTextField(final String hint) {
-
-            setText(hint);
-            setFont(lostFont);
-            setForeground(Color.GRAY);
-
-            this.addFocusListener(new FocusAdapter() {
-
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (getText().equals(hint)) {
-                        setText("");
-                        setFont(gainFont);
-                    } else {
-                        setText(getText());
-                        setFont(gainFont);
-                    }
-                }
-
-                @Override
-                public void focusLost(FocusEvent e) {
-                    if (getText().equals(hint)|| getText().isEmpty()) {
-                        setText(hint);
-                        setFont(lostFont);
-                        setForeground(Color.GRAY);
-                    } else {
-                        setText(getText());
-                        setFont(gainFont);
-                        setForeground(Color.BLACK);
-                    }
-                }
-            });
-
         }
     }
 }
