@@ -70,7 +70,6 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                 MainPanel.controlButtonsPanel.enableCriticalButtons(false);
                 Thread thread = new Thread(() -> {
                     DataReduction dataReduction = new DataReduction(createSubmission());
-                    N5ImageHandler.loadingManager.addSimLoadingListener(dataReduction);
                 });
                 thread.start();
             }

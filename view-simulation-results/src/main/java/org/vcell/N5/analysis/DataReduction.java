@@ -66,6 +66,7 @@ public class DataReduction implements SimLoadingListener {
     // Create a graph from that spreadsheet
 
     public DataReduction(DataReductionGUI.DataReductionSubmission submission){
+        N5ImageHandler.loadingManager.addSimLoadingListener(this);
         this.submission = submission;
         this.arrayOfSimRois = submission.arrayOfSimRois;
         this.numOfImagesToBeOpened = submission.numOfSimImages + 1; // Plus one for the lab image
@@ -85,6 +86,24 @@ public class DataReduction implements SimLoadingListener {
         }
         colIndex = headers.size() + 1;
 
+        metaDataSheet.createRow(0).createCell(1).setCellValue("BioModel Name");
+        metaDataSheet.getRow(0).createCell(2).setCellValue("Application Name");
+        metaDataSheet.getRow(0).createCell(3).setCellValue("Simulation Name");
+        metaDataSheet.getRow(0).createCell(4).setCellValue("N5 URL");
+
+        int rowI = 1;
+        for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
+            for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
+                Row pointRow = dataSheet.createRow(rowI);
+                rowI += 1;
+                pointRow.createCell(0).setCellValue(t);
+                if (is3D){
+                    pointRow.createCell(1).setCellValue(z);
+                }
+            }
+        }
+
+
         double normValue = calculateNormalValue(submission.labResults, submission.imageStartPointNorm, submission.imageEndPointNorm);
 
         int nFrames = submission.experimentImageRange.timeEnd - submission.experimentImageRange.timeStart + 1;
@@ -92,26 +111,7 @@ public class DataReduction implements SimLoadingListener {
         int nChannels = submission.experimentImageRange.channelEnd - submission.experimentImageRange.channelStart + 1;
         ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue, reducedData, submission.experimentImageRange);
-        synchronized (csvMatrixLock){
-            int rowI = 1;
-            for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
-                for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
-                    Row pointRow = dataSheet.createRow(rowI);
-                    rowI += 1;
-                    pointRow.createCell(0).setCellValue(t);
-                    if (is3D){
-                        pointRow.createCell(1).setCellValue(z);
-                    }
-                }
-            }
-        }
         addValuesToCSVMatrix(reducedData);
-        synchronized (metaDataLock){
-            metaDataSheet.createRow(0).createCell(1).setCellValue("BioModel Name");
-            metaDataSheet.getRow(0).createCell(2).setCellValue("Application Name");
-            metaDataSheet.getRow(0).createCell(3).setCellValue("Simulation Name");
-            metaDataSheet.getRow(0).createCell(4).setCellValue("N5 URL");
-        }
     }
 
     private void addValuesToCSVMatrix(ReducedData reducedData){
@@ -171,7 +171,7 @@ public class DataReduction implements SimLoadingListener {
             for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
                 String stringC = String.valueOf(c - 1);
                 String channelName = channelInfo != null && channelInfo.containsKey(stringC) ? channelInfo.get(stringC).get("Name") : String.valueOf(c);
-                reducedData.columnHeaders.add(imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
+                reducedData.columnHeaders.add("Average:" + imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
             }
             int tzCounter = 0;
             for (int t = rangeOfImage.timeStart; t <= rangeOfImage.timeEnd; t++){
@@ -249,6 +249,10 @@ public class DataReduction implements SimLoadingListener {
         addMetaData(loadedResults);
         addValuesToCSVMatrix(reducedData);
     }
+
+
+    // Queue for digesting information, add one's self to the queue and then notify when data has been recieved
+
 }
 
 
