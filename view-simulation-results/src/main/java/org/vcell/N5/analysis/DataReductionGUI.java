@@ -3,10 +3,12 @@ package org.vcell.N5.analysis;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
-import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,7 +25,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private final JOptionPane pane;
     private File chosenFile;
 
-    private final int numSimsToOpen;
+    private final ArrayList<SimResultsLoader> filesToOpen;
 
     public int mainGUIReturnValue;
     public int fileChooserReturnValue;
@@ -32,8 +34,10 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private final RoiSelection roiSelection;
     private final NormalizeGUI normalizeGUI;
 
-    public DataReductionGUI(int numSimsToOpen, double simCSize, double simZSize, double simTSize){
-         this.numSimsToOpen = numSimsToOpen;
+    private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+
+    public DataReductionGUI(ArrayList<SimResultsLoader> filesToOpen, double simCSize, double simZSize, double simTSize){
+         this.filesToOpen = filesToOpen;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         pane = new JOptionPane(this, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
@@ -44,9 +48,15 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         roiSelection = new RoiSelection();
         normalizeGUI = new NormalizeGUI(jDialog, simTSize);
 
-        add(imageSelectionPanel());
-        add(new SelectMeasurements());
+        JPanel imagesToMeasurePanel = new JPanel();
+        imagesToMeasurePanel.setLayout(new BoxLayout(imagesToMeasurePanel, BoxLayout.Y_AXIS));
+        imagesToMeasurePanel.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Images To Measure"));
+        imagesToMeasurePanel.add(imageSelectionPanel());
+        imagesToMeasurePanel.add(selectedImagesToOpenPanel());
+
+        add(imagesToMeasurePanel);
         add(roiSelection);
+        add(new SelectMeasurements());
         add(displayOptionsPanel());
         add(normalizeGUI);
         add(selectSimRange);
@@ -82,15 +92,31 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         return new DataReductionSubmission(normalizeMeasurement.isSelected(),
                 roiSelection.getSimROIList(), roiSelection.getImageROIList(),
                 WindowManager.getImage((String) chosenImage.getSelectedItem()),
-                simRange[0], simRange[1], labRange[0], labRange[1], numSimsToOpen, chosenFile,
+                simRange[0], simRange[1], labRange[0], labRange[1], filesToOpen.size(), chosenFile,
                 selectSimRange.getRangeOfSim());
     }
 
     private JPanel imageSelectionPanel(){
         JPanel jPanel = new JPanel(new GridLayout(1, 2));
-        jPanel.add(new JLabel("Select Experimental Image"));
+        jPanel.add(new JLabel("Experimental"));
         chosenImage = new JComboBox<>(WindowManager.getImageTitles());
         jPanel.add(chosenImage);
+        return jPanel;
+    }
+
+    private JPanel selectedImagesToOpenPanel(){
+        JPanel jPanel = new JPanel();
+        String[] namesOfImagesToOpen = new String[filesToOpen.size()];
+        for (int i = 0; i < filesToOpen.size(); i++){
+            namesOfImagesToOpen[i] = filesToOpen.get(i).userSetFileName;
+        }
+        JList<String> selectedImagesToOpen = new JList<>(namesOfImagesToOpen);
+        selectedImagesToOpen.setEnabled(false);
+        selectedImagesToOpen.setVisibleRowCount(4);
+        JScrollPane jScrollPane = new JScrollPane(selectedImagesToOpen);
+        jPanel.add(new JLabel("Selected Simulations"));
+        jPanel.add(jScrollPane);
+        jPanel.setLayout(new GridLayout(1, 2));
         return jPanel;
     }
 
@@ -161,7 +187,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     }
 
     public static void main(String[] args) {
-        DataReductionGUI dataReductionGUI = new DataReductionGUI(0, 0, 0, 0);
+        DataReductionGUI dataReductionGUI = new DataReductionGUI(new ArrayList<>(), 0, 0, 0);
         dataReductionGUI.displayGUI();
     }
 }

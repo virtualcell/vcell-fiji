@@ -36,7 +36,7 @@ public class LoadingManager implements SimLoadingEventCreator {
             firstSim.createS3ClientAndReader();
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
             if (dataReduction){
-                dataReductionGUI = new DataReductionGUI(filesToOpen.size(), dimensions.get(2), dimensions.get(3), dimensions.get(4));
+                dataReductionGUI = new DataReductionGUI(filesToOpen, dimensions.get(2), dimensions.get(3), dimensions.get(4));
                 dataReductionGUI.displayGUI();
             } else {
                 rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));

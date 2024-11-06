@@ -11,54 +11,67 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-class RoiSelection extends JPanel implements ActionListener {
-    private final JFileChooser imageROIFileChooser = new JFileChooser();
+class RoiSelection extends JPanel {
     private final ROIDataModel imageTableModel = new ROIDataModel();
-    private final JTable imageROITable = new JTable(imageTableModel);
-
-    private final JFileChooser simROIFileChooser = new JFileChooser();
     private final ROIDataModel simTableModel = new ROIDataModel();
-    private final JTable simROITable = new JTable(simTableModel);
-
-    private final JButton imageROIFileButton;
-    private final JButton simROIFileButton;
-
-    private ArrayList<Roi> imageROIList;
-    private ArrayList<Roi> simROIList;
 
     public RoiSelection(){
-        JPanel roisForImage = new JPanel(new GridBagLayout());
-        JPanel roisForSims = new JPanel(new GridBagLayout());
-        Dimension tableDimensions = new Dimension(100, 70);
-        imageROITable.getTableHeader().setBackground(Color.WHITE);
-        imageROITable.setEnabled(false);
-        simROITable.getTableHeader().setBackground(Color.WHITE);
-        simROITable.setEnabled(false);
+        this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
-        imageROIFileButton = new JButton("ROI's For Image");
-        JScrollPane displayImageROIList = new JScrollPane(imageROITable);
-        displayImageROIList.setPreferredSize(tableDimensions);
-        setROIPanelSettings(roisForImage, imageROIFileButton, displayImageROIList);
+        JList<String> imageROITable = new JList<>(imageTableModel);
+        JFileChooser imageROIFileChooser = new JFileChooser();
+        this.add(createROIInput(imageROITable, imageTableModel, imageROIFileChooser, "Experimental"));
 
-        simROIFileButton = new JButton("ROI's For Simulation");
-        JScrollPane displaySimROIList = new JScrollPane(simROITable);
-        displaySimROIList.setPreferredSize(tableDimensions);
-        setROIPanelSettings(roisForSims, simROIFileButton, displaySimROIList);
+        JList<String> simROITable = new JList<>(simTableModel);
+        JFileChooser simROIFileChooser = new JFileChooser();
+        this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
+        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "ROI Files"));
+    }
 
-        imageROIFileButton.addActionListener(this);
-        simROIFileButton.addActionListener(this);
+    private JPanel createROIInput(JList<String> jList, ROIDataModel roiDataModel,
+                                  JFileChooser fileChooser, String label){
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+        jList.setVisibleRowCount(4);
+        JScrollPane jScrollPane = new JScrollPane(jList);
+        jPanel.add(jScrollPane);
 
-        this.setLayout(new BorderLayout());
-        this.add(roisForImage, BorderLayout.WEST);
-        this.add(roisForSims, BorderLayout.EAST);
+        JButton addButton = new JButton("+");
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ArrayList<Roi> roiList = fillROIList(fileChooser);
+                for (Roi roi : roiList){
+                    roiDataModel.addRow(roi);
+                }
+                jList.updateUI();
+            }
+        });
+        JButton minusButton = new JButton("-");
+        minusButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (int roiIndex: jList.getSelectedIndices()){
+                    roiDataModel.removeRow(roiIndex);
+                }
+                jList.updateUI();
+            }
+        });
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
+        buttonPanel.add(addButton);
+        buttonPanel.add(minusButton);
+        jPanel.add(buttonPanel);
+        jPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), label));
+
+        return jPanel;
     }
 
     public ArrayList<Roi> getImageROIList(){
-        return imageROIList;
+        return imageTableModel.data;
     }
 
     public ArrayList<Roi> getSimROIList(){
-        return simROIList;
+        return simTableModel.data;
     }
 
     private void setROIPanelSettings(JPanel jPanel, JButton button, JScrollPane jScrollPane){
@@ -72,24 +85,6 @@ class RoiSelection extends JPanel implements ActionListener {
         jPanel.add(jScrollPane, gridBagConstraints);
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource().equals(imageROIFileButton)){
-            imageROIList = fillROIList(imageROIFileChooser);
-            imageTableModel.clear();
-            for (Roi roi : imageROIList){
-                imageTableModel.addRow(roi.getName());
-            }
-            imageROITable.updateUI();
-        } else if (e.getSource().equals(simROIFileButton)) {
-            simROIList = fillROIList(simROIFileChooser);
-            simTableModel.clear();
-            for (Roi roi : simROIList){
-                simTableModel.addRow(roi.getName());
-            }
-            simROITable.updateUI();
-        }
-    }
     private ArrayList<Roi> fillROIList(JFileChooser fileChooser){
         fileChooser.setMultiSelectionEnabled(true);
         int choice = fileChooser.showDialog(this, "Open ROI's");
@@ -102,35 +97,21 @@ class RoiSelection extends JPanel implements ActionListener {
         return roiList;
     }
 
-    class ROIDataModel extends AbstractTableModel {
-        private final ArrayList<String> data = new ArrayList<>();
-        private final String[] headers = new String[]{"ROI's Selected"};
+    static class ROIDataModel extends AbstractListModel<String> {
+        private final ArrayList<Roi> data = new ArrayList<>();
+        public void addRow(Roi roi){
+            data.add(roi);
+        }
+        public void removeRow(int index){data.remove(index);}
+
         @Override
-        public int getRowCount() {
+        public int getSize() {
             return data.size();
         }
 
         @Override
-        public int getColumnCount() {
-            return headers.length;
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            return headers[column];
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            return data.get(rowIndex);
-        }
-
-        public void addRow(String roiName){
-            data.add(roiName);
-        }
-
-        public void clear(){
-            data.clear();
+        public String getElementAt(int index) {
+            return data.get(index).getName();
         }
     }
 }
