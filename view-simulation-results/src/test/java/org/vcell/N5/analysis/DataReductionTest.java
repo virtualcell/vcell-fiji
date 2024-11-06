@@ -8,12 +8,14 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DataReductionTest {
     // First two are SimROI, last two are LabROI
@@ -38,20 +40,24 @@ public class DataReductionTest {
     public static void init(){
         N5ImageHandler.initializeLogService();
         SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
+        N5ImageHandler.loadingManager = new LoadingManager();
     }
 
     private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults){
         DataReductionGUI.DataReductionSubmission dataReductionSubmission = new DataReductionGUI.DataReductionSubmission(
                 false, roiList, roiList, imagePlus,4, null);
-        compareExpectedCalculations(imagePlus, roiList, expectedResults, dataReductionSubmission, Double.MIN_VALUE);
+        compareExpectedCalculations(imagePlus, roiList, expectedResults, dataReductionSubmission);
     }
 
     private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults,
-                                             DataReductionGUI.DataReductionSubmission dataReductionSubmission, double normValue){
+                                             DataReductionGUI.DataReductionSubmission dataReductionSubmission){
         DataReduction dataReduction = new DataReduction(dataReductionSubmission);
         DataReduction.ReducedData reducedData = new DataReduction.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
                 imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
-        DataReduction.ReducedData result = dataReduction.calculateMean(imagePlus, roiList, normValue, reducedData);
+        SelectSimRange.RangeOfImage entireRange = new SelectSimRange.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
+                1, imagePlus.getNChannels());
+        HashMap<String, Double> norms = dataReduction.calculateNormalValue(imagePlus, 1, 1, roiList, entireRange);
+        DataReduction.ReducedData result = dataReduction.calculateMean(imagePlus, roiList, norms, reducedData, null, entireRange);
         for (int r = 0; r < expectedResults.length; r++){
             for (int c = 0; c < expectedResults[r].length; c++){
                 Assert.assertEquals(expectedResults[r][c], result.data[r][c], 0.0009);
@@ -83,19 +89,31 @@ public class DataReductionTest {
     public void testMeanAndNormalization2DCalculation(){
         SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1");
         ImagePlus labResultImage2D = simResultsLoader.getImagePlus();
-        double mean = labResultImage2D.getStatistics().mean; // the normal for a single frame normalization
-        double[][] normalizedValues = new double[labMeans2D.length][labMeans2D[0].length];
-        for (int r = 0; r < labMeans2D.length; r++){
-            for (int c =0; c < labMeans2D[0].length; c++){
-                normalizedValues[r][c] = labMeans2D[r][c] / mean;
-            }
-        }
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
         Roi simROI = RoiDecoder.open(getTestResourceFiles("ROIs/Sim ROI.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(labRoi); add(simROI);}};
+        HashMap<String, Double> normValues = new HashMap<>();
+
+        for (Roi roi: roiList){
+            labResultImage2D.setRoi(roi);
+            for (int c = 1; c <= labResultImage2D.getNChannels(); c++){
+                labResultImage2D.setC(c);
+                normValues.put(roi.getName() + c, labResultImage2D.getStatistics().mean);
+            }
+        }
+        double[][] normalizedValues = new double[labMeans2D.length][labMeans2D[0].length];
+
+        for (int r = 0; r < labMeans2D.length; r++){
+            for (int c =0; c < labMeans2D[0].length; c++){
+                String roiName = c < 2 ? labRoi.getName() : simROI.getName();
+                double normValue = c % 2 == 0 ? normValues.get(roiName + 1) : normValues.get(roiName + 2);
+                normalizedValues[r][c] = labMeans2D[r][c] / normValue;
+            }
+        }
+
         DataReductionGUI.DataReductionSubmission dataReductionSubmission = new DataReductionGUI.DataReductionSubmission(
                 true, roiList, roiList, labResultImage2D, 1, 1, 1, 1,4, null);
 
-        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, dataReductionSubmission, mean);
+        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, dataReductionSubmission);
     }
 }

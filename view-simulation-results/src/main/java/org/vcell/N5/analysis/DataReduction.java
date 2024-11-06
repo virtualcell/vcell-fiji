@@ -91,26 +91,29 @@ public class DataReduction implements SimLoadingListener {
         metaDataSheet.getRow(0).createCell(3).setCellValue("Simulation Name");
         metaDataSheet.getRow(0).createCell(4).setCellValue("N5 URL");
 
-        int rowI = 1;
-        for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
-            for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
-                Row pointRow = dataSheet.createRow(rowI);
-                rowI += 1;
-                pointRow.createCell(0).setCellValue(t);
-                if (is3D){
-                    pointRow.createCell(1).setCellValue(z);
+        synchronized (csvMatrixLock){
+            int rowI = 1;
+            for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
+                for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
+                    Row pointRow = dataSheet.createRow(rowI);
+                    rowI += 1;
+                    pointRow.createCell(0).setCellValue(t);
+                    if (is3D){
+                        pointRow.createCell(1).setCellValue(z);
+                    }
                 }
             }
         }
 
 
-        double normValue = calculateNormalValue(submission.labResults, submission.imageStartPointNorm, submission.imageEndPointNorm);
+        HashMap<String, Double> normValue = calculateNormalValue(submission.labResults, submission.imageStartPointNorm,
+                submission.imageEndPointNorm, submission.arrayOfLabRois, submission.experimentImageRange);
 
         int nFrames = submission.experimentImageRange.timeEnd - submission.experimentImageRange.timeStart + 1;
         int nSlices = submission.experimentImageRange.zEnd - submission.experimentImageRange.zStart + 1;
         int nChannels = submission.experimentImageRange.channelEnd - submission.experimentImageRange.channelStart + 1;
         ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
-        reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue, reducedData, submission.experimentImageRange);
+        reducedData = calculateMean(submission.labResults, submission.arrayOfLabRois, normValue, reducedData, null, submission.experimentImageRange);
         addValuesToCSVMatrix(reducedData);
     }
 
@@ -134,36 +137,34 @@ public class DataReduction implements SimLoadingListener {
         }
     }
 
-    double calculateNormalValue(ImagePlus imagePlus, int startT, int endT){
-        if (normalize){
-            double normal = 0;
-            for (int k = startT; k <= endT; k++){
-                imagePlus.setT(k);
-                normal += imagePlus.getProcessor().getStatistics().mean;
-            }
-            normal = normal / (endT - startT + 1); // inclusive of final point
-            return normal;
-        } else {
-            return Double.MIN_NORMAL;
+    HashMap<String, Double> calculateNormalValue(ImagePlus imagePlus, int startT, int endT,
+                                                  ArrayList<Roi> roiList, SelectSimRange.RangeOfImage rangeOfImage){
+        if (!normalize){
+            return null;
         }
-
+        HashMap<String, Double> result = new HashMap<>();
+        for (Roi roi : roiList){
+            imagePlus.setRoi(roi);
+            for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){
+                double normal = 0;
+                for (int t = startT; t <= endT; t++){
+                    double zAverage = 0;
+                    for (int z = rangeOfImage.zStart; z <= rangeOfImage.zEnd; z++){
+                        imagePlus.setPosition(c, z, t);
+                        zAverage += imagePlus.getProcessor().getStatistics().mean;
+                    }
+                    zAverage = zAverage / (rangeOfImage.zEnd - rangeOfImage.zStart + 1);
+                    normal += zAverage;
+                }
+                normal = normal / (endT - startT + 1); // inclusive of final point
+                result.put(roi.getName() + c, normal);
+            }
+        }
+        return result;
     }
 
-
     ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                              double normalizationValue, ReducedData reducedData){
-        SelectSimRange.RangeOfImage entireRange = new SelectSimRange.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
-                1, imagePlus.getNChannels());
-        return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, entireRange);
-    }
-
-    ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                              double normalizationValue, ReducedData reducedData, SelectSimRange.RangeOfImage rangeOfImage){
-        return calculateMean(imagePlus, roiList, normalizationValue, reducedData, null, rangeOfImage);
-    }
-
-    ReducedData calculateMean(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                              double normalizationValue, ReducedData reducedData,
+                              HashMap<String, Double> normalizationValue, ReducedData reducedData,
                               LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo, SelectSimRange.RangeOfImage rangeOfImage){
         int roiCounter = 0;
         for (Roi roi: roiList) {
@@ -171,7 +172,7 @@ public class DataReduction implements SimLoadingListener {
             for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
                 String stringC = String.valueOf(c - 1);
                 String channelName = channelInfo != null && channelInfo.containsKey(stringC) ? channelInfo.get(stringC).get("Name") : String.valueOf(c);
-                reducedData.columnHeaders.add("Average:" + imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
+                reducedData.columnHeaders.add(imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
             }
             int tzCounter = 0;
             for (int t = rangeOfImage.timeStart; t <= rangeOfImage.timeEnd; t++){
@@ -181,7 +182,7 @@ public class DataReduction implements SimLoadingListener {
                         imagePlus.setPosition(c, z, t);
                         double meanValue = imagePlus.getStatistics().mean;
                         if (normalize){
-                            meanValue = meanValue / normalizationValue;
+                            meanValue = meanValue / normalizationValue.get(roi.getName() + c);
                         }
                         reducedData.data[tzCounter][c - 1 + (roiCounter * channelSize)] = meanValue;
                     }
@@ -242,7 +243,9 @@ public class DataReduction implements SimLoadingListener {
     @Override
     public void simFinishedLoading(SimResultsLoader loadedResults) {
         ImagePlus imagePlus = loadedResults.getImagePlus();
-        double normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm, submission.simEndPointNorm);
+        imagePlus.show();
+        HashMap<String, Double> normValue = calculateNormalValue(imagePlus, submission.simStartPointNorm,
+                submission.simEndPointNorm, submission.arrayOfSimRois, simRange);
         ReducedData reducedData = new ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
                 simRange.channelEnd - simRange.channelStart + 1, SelectMeasurements.AvailableMeasurements.AVERAGE);
         reducedData = calculateMean(imagePlus, arrayOfSimRois, normValue, reducedData, loadedResults.getChannelInfo(), simRange);
