@@ -1,6 +1,7 @@
-package org.vcell.N5.analysis;
+package org.vcell.N5.reduction;
 
 import org.vcell.N5.UI.HintTextField;
+import org.vcell.N5.reduction.DTO.RangeOfImage;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -80,22 +81,5 @@ class SelectSimRange extends JPanel {
                 Integer.parseInt(cStart.getText()), Integer.parseInt(cEnd.getText())
         );
         return rangeOfImage;
-    }
-
-    public static class RangeOfImage{
-        public final int timeStart;
-        public final int timeEnd;
-        public final int zStart;
-        public final int zEnd;
-        public final int channelStart;
-        public final int channelEnd;
-        public RangeOfImage(int timeStart, int timeEnd, int zStart, int zEnd, int channelStart, int channelEnd){
-            this.timeStart = timeStart;
-            this.timeEnd = timeEnd;
-            this.zStart = zStart;
-            this.zEnd = zEnd;
-            this.channelStart = channelStart;
-            this.channelEnd = channelEnd;
-        }
     }
 }

@@ -1,10 +1,9 @@
-package org.vcell.N5.analysis;
+package org.vcell.N5.reduction;
 
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

@@ -1,9 +1,10 @@
-package org.vcell.N5.analysis;
+package org.vcell.N5.reduction;
 
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
 import org.vcell.N5.UI.MainPanel;
+import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
@@ -33,6 +34,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private final SelectSimRange selectSimRange;
     private final RoiSelection roiSelection;
     private final NormalizeGUI normalizeGUI;
+    private final SelectMeasurements selectMeasurements;
 
     private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 
@@ -47,6 +49,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         selectSimRange = new SelectSimRange(jDialog, simCSize, simZSize, simTSize);
         roiSelection = new RoiSelection();
         normalizeGUI = new NormalizeGUI(jDialog, simTSize);
+        selectMeasurements = new SelectMeasurements();
 
         JPanel imagesToMeasurePanel = new JPanel();
         imagesToMeasurePanel.setLayout(new BoxLayout(imagesToMeasurePanel, BoxLayout.Y_AXIS));
@@ -56,7 +59,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
 
         add(imagesToMeasurePanel);
         add(roiSelection);
-        add(new SelectMeasurements());
+        add(selectMeasurements);
         add(displayOptionsPanel());
         add(normalizeGUI);
         add(selectSimRange);
@@ -68,7 +71,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         jDialog.pack();
     }
 
-    public void displayGUI(){
+    public DataReductionSubmission displayGUI(){
         jDialog.setVisible(true);
         mainGUIReturnValue = (Integer) pane.getValue();
         if (mainGUIReturnValue == JOptionPane.OK_OPTION){
@@ -78,22 +81,20 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
                 chosenFile = saveToFile.getSelectedFile();
                 MainPanel.controlButtonsPanel.enableCriticalButtons(false);
-                Thread thread = new Thread(() -> {
-                    DataReduction dataReduction = new DataReduction(createSubmission());
-                });
-                thread.start();
+                return createSubmission();
             }
         }
+        return null;
     }
 
-    private DataReductionSubmission createSubmission(){
+    public DataReductionSubmission createSubmission(){
         int[] simRange = normalizeGUI.getSimTimRange();
         int[] labRange = normalizeGUI.getImageTimeRange();
         return new DataReductionSubmission(normalizeMeasurement.isSelected(),
                 roiSelection.getSimROIList(), roiSelection.getImageROIList(),
                 WindowManager.getImage((String) chosenImage.getSelectedItem()),
                 simRange[0], simRange[1], labRange[0], labRange[1], filesToOpen.size(), chosenFile,
-                selectSimRange.getRangeOfSim());
+                selectSimRange.getRangeOfSim(), selectMeasurements.getChosenMeasurements());
     }
 
     private JPanel imageSelectionPanel(){
@@ -142,47 +143,34 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         public final ArrayList<Roi> arrayOfSimRois;
         public final ArrayList<Roi> arrayOfLabRois;
         public final ImagePlus labResults;
-        public final int simStartPointNorm;
-        public final int simEndPointNorm;
-        public final int imageStartPointNorm;
-        public final int imageEndPointNorm;
         public final int numOfSimImages;
         public final File fileToSaveResultsTo;
-        public final SelectSimRange.RangeOfImage experimentImageRange;
-        public final SelectSimRange.RangeOfImage simImageRange;
 
-        public DataReductionSubmission(boolean normalizeMeasurementsBool,ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                                       ImagePlus labResults, int numOfSimImages, File fileToSaveResultsTo){
-            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults,
-                    0,0,0,0, numOfSimImages, fileToSaveResultsTo);
-        }
+        public final RangeOfImage experiementNormRange;
+        public final RangeOfImage simNormRange;
 
-        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
-                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo){
-            this(normalizeMeasurementsBool, arrayOfSimRois, arrayOfLabRois, labResults, simStartPointNorm, simEndPointNorm, imageStartPointNorm, imageEndPointNorm,
-                    numOfSimImages, fileToSaveResultsTo,
-                    new SelectSimRange.RangeOfImage(1, labResults.getNFrames(),
-                            1, labResults.getNSlices(), 1, labResults.getNChannels()));
-        }
+        public final RangeOfImage experimentImageRange;
+        public final RangeOfImage simImageRange;
+        public final ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements;
 
         public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
                                        ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
                                        int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo,
-                                       SelectSimRange.RangeOfImage simRange){
+                                       RangeOfImage simRange, ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements){
             this.normalizeMeasurementsBool = normalizeMeasurementsBool;
             this.arrayOfLabRois = arrayOfLabRois;
             this.arrayOfSimRois = arrayOfSimRois;
             this.labResults = labResults;
-            this.simStartPointNorm = simStartPointNorm;
-            this.simEndPointNorm = simEndPointNorm;
-            this.imageStartPointNorm = imageStartPointNorm;
-            this.imageEndPointNorm = imageEndPointNorm;
             this.numOfSimImages = numOfSimImages;
             this.fileToSaveResultsTo = fileToSaveResultsTo;
-            this.experimentImageRange = new SelectSimRange.RangeOfImage(1, labResults.getNFrames(),
+
+            this.experiementNormRange = new RangeOfImage(imageStartPointNorm, imageEndPointNorm);
+            this.simNormRange = new RangeOfImage(simStartPointNorm, simEndPointNorm);
+
+            this.experimentImageRange = new RangeOfImage(1, labResults.getNFrames(),
                     1, labResults.getNSlices(), 1, labResults.getNChannels());
             this.simImageRange = simRange;
+            this.selectedMeasurements = selectedMeasurements;
         }
     }
 

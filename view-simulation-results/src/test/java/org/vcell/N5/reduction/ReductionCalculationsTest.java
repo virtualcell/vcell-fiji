@@ -1,4 +1,4 @@
-package org.vcell.N5.analysis;
+package org.vcell.N5.reduction;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import ij.ImagePlus;
@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -17,7 +18,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class DataReductionTest {
+public class ReductionCalculationsTest {
     // First two are SimROI, last two are LabROI
     private final double[][] labMeans2D = new double[][]{{6, 0, 18, 0}, {6.489, 0, 16.341, 0},
             {7.247, 0, 14.469, 0}}; //calculated through IJ measurement tool
@@ -43,24 +44,21 @@ public class DataReductionTest {
         N5ImageHandler.loadingManager = new LoadingManager();
     }
 
-    private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults){
-        DataReductionGUI.DataReductionSubmission dataReductionSubmission = new DataReductionGUI.DataReductionSubmission(
-                false, roiList, roiList, imagePlus,4, null);
-        compareExpectedCalculations(imagePlus, roiList, expectedResults, dataReductionSubmission);
-    }
-
     private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults,
-                                             DataReductionGUI.DataReductionSubmission dataReductionSubmission){
-        DataReduction dataReduction = new DataReduction(dataReductionSubmission);
-        DataReduction.ReducedData reducedData = new DataReduction.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(),
-                imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
-        SelectSimRange.RangeOfImage entireRange = new SelectSimRange.RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(),
-                1, imagePlus.getNChannels());
-        HashMap<String, Double> norms = dataReduction.calculateNormalValue(imagePlus, 1, 1, roiList, entireRange);
-        DataReduction.ReducedData result = dataReduction.calculateMean(imagePlus, roiList, norms, reducedData, null, entireRange);
+                                             boolean normalizeMeasurementsBool){
+        ReductionCalculations reductionCalculations = new ReductionCalculations(normalizeMeasurementsBool);
+
+        DataReductionWriter.ReducedData reducedData = new DataReductionWriter.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(), imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
+        RangeOfImage entireRange = new RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(), 1, imagePlus.getNChannels());
+        RangeOfImage normRange = new RangeOfImage(1, 1);
+        ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList = new ArrayList<>();
+        reducedDataArrayList.add(reducedData);
+
+        HashMap<String, Double> norms = reductionCalculations.calculateNormalValue(imagePlus, normRange, roiList, entireRange);
+        reductionCalculations.calculateStatistics(imagePlus, roiList, norms, reducedDataArrayList, entireRange);
         for (int r = 0; r < expectedResults.length; r++){
             for (int c = 0; c < expectedResults[r].length; c++){
-                Assert.assertEquals(expectedResults[r][c], result.data[r][c], 0.0009);
+                Assert.assertEquals(expectedResults[r][c], reducedData.data[r][c], 0.0009);
             }
         }
     }
@@ -74,7 +72,7 @@ public class DataReductionTest {
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
         Roi simROI = RoiDecoder.open(getTestResourceFiles("ROIs/Sim ROI.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(labRoi); add(simROI);}};
-        compareExpectedCalculations(labResultImage2D, roiList, labMeans2D);
+        compareExpectedCalculations(labResultImage2D, roiList, labMeans2D, false);
     }
 
     @Test
@@ -82,7 +80,7 @@ public class DataReductionTest {
         ImagePlus mitosis = new ImagePlus(getTestResourceFiles("mitosis.tif").getAbsolutePath());
         Roi mitosisROI = RoiDecoder.open(getTestResourceFiles("ROIs/Mitosis Center.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(mitosisROI);}};
-        compareExpectedCalculations(mitosis, roiList, threeDMeans);
+        compareExpectedCalculations(mitosis, roiList, threeDMeans, false);
     }
 
     @Test
@@ -111,9 +109,6 @@ public class DataReductionTest {
             }
         }
 
-        DataReductionGUI.DataReductionSubmission dataReductionSubmission = new DataReductionGUI.DataReductionSubmission(
-                true, roiList, roiList, labResultImage2D, 1, 1, 1, 1,4, null);
-
-        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, dataReductionSubmission);
+        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, true);
     }
 }

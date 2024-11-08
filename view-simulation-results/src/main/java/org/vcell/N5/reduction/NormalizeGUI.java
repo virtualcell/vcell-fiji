@@ -1,4 +1,4 @@
-package org.vcell.N5.analysis;
+package org.vcell.N5.reduction;
 
 import org.vcell.N5.UI.HintTextField;
 

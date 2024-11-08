@@ -8,7 +8,8 @@ import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.RangeSelector;
 import org.vcell.N5.UI.MainPanel;
-import org.vcell.N5.analysis.DataReductionGUI;
+import org.vcell.N5.reduction.DataReductionGUI;
+import org.vcell.N5.reduction.DataReductionWriter;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -37,7 +38,10 @@ public class LoadingManager implements SimLoadingEventCreator {
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
             if (dataReduction){
                 dataReductionGUI = new DataReductionGUI(filesToOpen, dimensions.get(2), dimensions.get(3), dimensions.get(4));
-                dataReductionGUI.displayGUI();
+                DataReductionGUI.DataReductionSubmission submission = dataReductionGUI.displayGUI();
+                if (submission != null){
+                    DataReductionWriter.createDataReductionProcess(submission);
+                }
             } else {
                 rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
             }
