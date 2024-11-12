@@ -30,7 +30,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
         displayAdvancedFeatures = new JCheckBox("Advanced Features");
 
-        openOrCancel = new JButton("Open Virtually");
+        openOrCancel = new JButton("Open Virtual Stack");
         dataReduction = new JButton("Run Measurement Script");
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));

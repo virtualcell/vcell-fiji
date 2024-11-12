@@ -43,7 +43,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         pane = new JOptionPane(this, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-        jDialog = pane.createDialog("Data Reduction");
+        jDialog = pane.createDialog("Measurement Script");
         jDialog.setResizable(true);
 
         selectSimRange = new SelectSimRange(jDialog, simCSize, simZSize, simTSize);

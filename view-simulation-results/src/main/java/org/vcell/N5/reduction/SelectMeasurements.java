@@ -9,10 +9,12 @@ class SelectMeasurements extends JPanel{
     private final MeasurementsDataModel measurementsDataModel = new MeasurementsDataModel();
 
     public SelectMeasurements(){
-        setLayout(new GridLayout(1, 2));
-        this.add(new JLabel("Measurement Type"));
+        setLayout(new GridLayout(1, 1));
+        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Measurement Type"));
         chosenMeasurement = new JList<>(measurementsDataModel);
-        this.add(chosenMeasurement);
+        chosenMeasurement.setVisibleRowCount(3);
+        JScrollPane jScrollPane = new JScrollPane(chosenMeasurement);
+        this.add(jScrollPane);
     }
 
     public ArrayList<AvailableMeasurements> getChosenMeasurements(){
