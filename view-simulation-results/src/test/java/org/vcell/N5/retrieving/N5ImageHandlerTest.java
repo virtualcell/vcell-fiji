@@ -75,7 +75,7 @@ public class N5ImageHandlerTest {
     public void testS3AlphaInstance() throws IOException{
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "", SimResultsLoader.OpenTag.NONE);
             simResultsLoader.createS3ClientAndReader();
             simResultsLoader.loadImageFromN5File();
             ImagePlus imagePlus = simResultsLoader.getImagePlus();
@@ -91,7 +91,7 @@ public class N5ImageHandlerTest {
     public void testS3AlphaInstanceLoadedIntoMemory() throws IOException {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for(N5DataSetFile n5DataSetFile : n5DataSetFiles) {
-            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "", SimResultsLoader.OpenTag.NONE);
             simResultsLoader.createS3ClientAndReader();
             simResultsLoader.loadImageFromN5File();
             ImagePlus imagePlus = simResultsLoader.getImagePlus();
@@ -113,7 +113,7 @@ public class N5ImageHandlerTest {
     public void testUnits() throws IOException {
         N5DataSetFile[] n5DataSetFiles = N5DataSetFile.alphaTestFiles();
         for (N5DataSetFile n5DataSetFile: n5DataSetFiles){
-            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "");
+            SimResultsLoader simResultsLoader = new SimResultsLoader(n5DataSetFile.uri, "", SimResultsLoader.OpenTag.NONE);
             simResultsLoader.createS3ClientAndReader();
             simResultsLoader.loadImageFromN5File();
             ImagePlus imagePlus = simResultsLoader.getImagePlus();

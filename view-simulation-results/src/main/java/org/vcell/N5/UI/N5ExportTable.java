@@ -155,12 +155,12 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         refreshTableThread.start();
     }
 
-    public void openSelectedRows(boolean openInMemory, boolean performDataReduction){
+    public void openSelectedRows(boolean openInMemory, boolean performDataReduction, SimResultsLoader.OpenTag openTag){
         ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
         for(int row: exportListTable.getSelectedRows()){
             String uri = n5ExportTableModel.getRowData(row).uri;
             ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
-            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag);
             filesToOpen.add(simResultsLoader);
         }
         N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, openInMemory,
@@ -226,7 +226,9 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         loadingRowsJobID.remove(loadedResults.rowNumber);
         exportListTable.repaint();
         controlPanel.allowCancel(false);
-        loadedResults.getImagePlus().show();
+        if (loadedResults.openTag == SimResultsLoader.OpenTag.VIEW){
+            loadedResults.getImagePlus().show();
+        }
     }
 
     public static class N5ExportTableModel extends AbstractTableModel {

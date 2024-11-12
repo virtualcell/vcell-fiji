@@ -261,14 +261,16 @@ public class DataReductionWriter implements SimLoadingListener {
 
     @Override
     public void simFinishedLoading(SimResultsLoader loadedResults) {
-        Thread imageProcessingThread = new Thread(() -> {
-            ImagePlus imagePlus = loadedResults.getImagePlus();
-            imagePlus.show();
-            addMetaData(loadedResults);
-            calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
-                    submission.arrayOfSimRois, loadedResults.getChannelInfo());
-        }, "Processing Image: " + loadedResults.userSetFileName);
-        imageProcessingThread.start();
+        if (loadedResults.openTag == SimResultsLoader.OpenTag.DATA_REDUCTION){
+            Thread imageProcessingThread = new Thread(() -> {
+                ImagePlus imagePlus = loadedResults.getImagePlus();
+                imagePlus.show();
+                addMetaData(loadedResults);
+                calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
+                        submission.arrayOfSimRois, loadedResults.getChannelInfo());
+            }, "Processing Image: " + loadedResults.userSetFileName);
+            imageProcessingThread.start();
+        }
     }
 
 }

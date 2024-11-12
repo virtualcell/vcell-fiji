@@ -53,6 +53,7 @@ public class SimResultsLoader {
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
     public static AmazonS3ClientBuilder s3ClientBuilder;
     private ImagePlus imagePlus = null;
+    public final OpenTag openTag;
 
 
     public String userSetFileName = null;
@@ -60,14 +61,14 @@ public class SimResultsLoader {
     public String exportID;
 
     public SimResultsLoader(){
-
+        openTag = OpenTag.NONE;
     }
-    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID){
-        this(stringURI, userSetFileName);
+    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID, OpenTag openTag){
+        this(stringURI, userSetFileName, openTag);
         this.rowNumber = rowNumber;
         this.exportID = exportID;
     }
-    public SimResultsLoader(String stringURI, String userSetFileName){
+    public SimResultsLoader(String stringURI, String userSetFileName, OpenTag openTag){
         uri = URI.create(stringURI);
         this.userSetFileName = userSetFileName;
         if(!(uri.getQuery() == null)){
@@ -78,6 +79,7 @@ public class SimResultsLoader {
                 throw new RuntimeException(e);
             }
         }
+        this.openTag = openTag;
     }
 
     /////////////////////////////////
@@ -224,5 +226,11 @@ public class SimResultsLoader {
     ImagePlus getImgPlusFromLocalN5File() throws IOException {
         N5Reader n5Reader = new N5FSReader(selectedLocalFile.getPath());
         return ImageJFunctions.wrap((CachedCellImg<DoubleType, ?>) N5Utils.open(n5Reader, dataSetChosen), userSetFileName);
+    }
+
+    public enum OpenTag{
+        VIEW,
+        DATA_REDUCTION,
+        NONE
     }
 }

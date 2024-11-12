@@ -1,6 +1,7 @@
 package org.vcell.N5.UI;
 
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -108,7 +109,8 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             if (openOrCancel.getText().equals("Cancel")){
                 n5ExportTable.removeFromLoadingRows();
             } else {
-                n5ExportTable.openSelectedRows(inMemory, performDataReduction);
+                SimResultsLoader.OpenTag openTag = performDataReduction ? SimResultsLoader.OpenTag.DATA_REDUCTION : SimResultsLoader.OpenTag.VIEW;
+                n5ExportTable.openSelectedRows(inMemory, performDataReduction, openTag);
             }
         } else if (e.getSource().equals(advancedFeatures.copyLink)) {
             n5ExportTable.copySelectedRowLink();
