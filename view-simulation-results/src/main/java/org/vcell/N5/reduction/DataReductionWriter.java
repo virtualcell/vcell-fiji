@@ -1,12 +1,9 @@
 package org.vcell.N5.reduction;
 
 import com.google.gson.internal.LinkedTreeMap;
+import com.opencsv.CSVWriter;
 import ij.ImagePlus;
 import ij.gui.Roi;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.MainPanel;
@@ -16,8 +13,8 @@ import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -26,20 +23,22 @@ public class DataReductionWriter implements SimLoadingListener {
 
     private final Object csvMatrixLock = new Object();
     private final Object metaDataLock = new Object();
-    private File file;
+    private final File file;
 
     private int numOfImagesToBeOpened;
     private final ReductionCalculations calculations;
 
     public final DataReductionGUI.DataReductionSubmission submission;
 
-    private final Workbook workbook = new HSSFWorkbook();
-    private final HashMap<SelectMeasurements.AvailableMeasurements, Sheet> sheetsAvailable = new HashMap<SelectMeasurements.AvailableMeasurements, Sheet>(){{
-        put(SelectMeasurements.AvailableMeasurements.AVERAGE, workbook.createSheet("Average"));
-        put(SelectMeasurements.AvailableMeasurements.STD_DEV, workbook.createSheet("Standard Deviation"));
+    private final ArrayList<ArrayList<String>> averageMatrix = new ArrayList<>();
+    private final ArrayList<ArrayList<String>> standardDivMatrix = new ArrayList<>();
+    private final ArrayList<ArrayList<String>> metaDataSheet = new ArrayList<>();
+
+    private final HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>> sheetsAvailable = new HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>>(){{
+        put(SelectMeasurements.AvailableMeasurements.AVERAGE, averageMatrix);
+        put(SelectMeasurements.AvailableMeasurements.STD_DEV, standardDivMatrix);
     }};
     private final HashMap<SelectMeasurements.AvailableMeasurements, Integer> columnsForSheets = new HashMap<>();
-    private final Sheet metaDataSheet = workbook.createSheet("Metadata");
 
     private int metaDataRow = 1;
     private int metaDataParameterCol = 5;
@@ -99,32 +98,35 @@ public class DataReductionWriter implements SimLoadingListener {
 
         // Add Time and Z-Index Columns
         for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
-            Sheet dataSheet = sheetsAvailable.get(measurement);
-            Row headerRow = dataSheet.createRow(0);
+            ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
+            dataSheet.add(new ArrayList<>());
+            ArrayList<String> headerRow = dataSheet.get(0);
+
             for (int i = 0; i < headers.size(); i++){
-                headerRow.createCell(i).setCellValue(headers.get(i));
+                headerRow.add(i, headers.get(i));
             }
             columnsForSheets.put(measurement, headers.size() + 1);
         }
 
-        metaDataSheet.createRow(0).createCell(1).setCellValue("BioModel Name");
-        metaDataSheet.getRow(0).createCell(2).setCellValue("Application Name");
-        metaDataSheet.getRow(0).createCell(3).setCellValue("Simulation Name");
-        metaDataSheet.getRow(0).createCell(4).setCellValue("N5 URL");
+        metaDataSheet.add(new ArrayList<>());
+        metaDataSheet.get(0).add("");
+        metaDataSheet.get(0).add("BioModel Name");
+        metaDataSheet.get(0).add("Application Name");
+        metaDataSheet.get(0).add("Simulation Name");
+        metaDataSheet.get(0).add("N5 URL");
 
         // Fill in Time and Z-Index Columns with selected range
 
         for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
-            Sheet dataSheet = sheetsAvailable.get(measurement);
-            int rowI = 1;
+            ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
             for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
                 for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
-                    Row pointRow = dataSheet.createRow(rowI);
-                    rowI += 1;
-                    pointRow.createCell(0).setCellValue(t);
+                    ArrayList<String> pointRow = new ArrayList<>();
+                    pointRow.add(0, String.valueOf(t));
                     if (is3D){
-                        pointRow.createCell(1).setCellValue(z);
+                        pointRow.add(1, String.valueOf(z));
                     }
+                    dataSheet.add(pointRow);
                 }
             }
         }
@@ -160,16 +162,18 @@ public class DataReductionWriter implements SimLoadingListener {
 
     private void addValuesToCSVMatrix(ReducedData reducedData){
         synchronized (csvMatrixLock){
-            Sheet dataSheet = sheetsAvailable.get(reducedData.measurementType);
+            ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(reducedData.measurementType);
             int colIndex = columnsForSheets.get(reducedData.measurementType);
+            fillWithEmptySpace(dataSheet.get(0), colIndex);
             for (int c = 0; c < reducedData.columnHeaders.size(); c++){
-                dataSheet.getRow(0).createCell(colIndex + c).setCellValue(reducedData.columnHeaders.get(c));
+                dataSheet.get(0).add(colIndex, reducedData.columnHeaders.get(c));
             }
             for (int i = 0; i < reducedData.data.length; i++){
                 for (int c = 0; c < reducedData.data[i].length; c++){
-                    Row row = dataSheet.getRow(i + 1);
+                    ArrayList<String> row = dataSheet.get(i + 1);
+                    fillWithEmptySpace(row, colIndex);
                     double mean = reducedData.data[i][c];
-                    row.createCell(colIndex + c).setCellValue(mean);
+                    row.add(String.valueOf(mean));
                 }
             }
             numOfImagesToBeOpened -= 1;
@@ -186,20 +190,24 @@ public class DataReductionWriter implements SimLoadingListener {
         synchronized (metaDataLock){
             N5ExportTable n5ExportTable = MainPanel.n5ExportTable;
             ExportDataRepresentation.SimulationExportDataRepresentation data = n5ExportTable.n5ExportTableModel.getRowData(loadedResults.rowNumber);
-            metaDataSheet.createRow(metaDataRow).createCell(0).setCellValue(loadedResults.userSetFileName);
-            metaDataSheet.getRow(metaDataRow).createCell(1).setCellValue(data.biomodelName);
-            metaDataSheet.getRow(metaDataRow).createCell(2).setCellValue(data.applicationName);
-            metaDataSheet.getRow(metaDataRow).createCell(3).setCellValue(data.simulationName);
-            metaDataSheet.getRow(metaDataRow).createCell(4).setCellValue(data.uri);
+            ArrayList<String> newMetaData = new ArrayList<>();
+            newMetaData.add(loadedResults.userSetFileName);
+            newMetaData.add(data.biomodelName);
+            newMetaData.add(data.applicationName);
+            newMetaData.add(data.simulationName);
+            newMetaData.add(data.uri);
             ArrayList<String> parameterValues = data.differentParameterValues;
             for (String s : parameterValues){
                 String[] tokens = s.split(":");
                 String colValue = tokens[1] + ":" + tokens[2];
                 if (parameterNameToCol.containsKey(tokens[0])){
-                    metaDataSheet.getRow(metaDataRow).createCell(parameterNameToCol.get(tokens[0])).setCellValue(colValue);
+                    int col = parameterNameToCol.get(tokens[0]);
+                    fillWithEmptySpace(newMetaData, col);
+                    newMetaData.add(col, colValue);
                 } else{
-                    metaDataSheet.getRow(0).createCell(metaDataParameterCol).setCellValue(tokens[0] + "\n(Default:Set Value)");
-                    metaDataSheet.getRow(metaDataRow).createCell(metaDataParameterCol).setCellValue(colValue);
+                    metaDataSheet.get(0).add(tokens[0] + " (Default:Set Value)");
+                    fillWithEmptySpace(newMetaData, metaDataParameterCol);
+                    newMetaData.add(metaDataParameterCol, colValue);
                     parameterNameToCol.put(tokens[0], metaDataParameterCol);
                     metaDataParameterCol += 1;
                 }
@@ -208,11 +216,35 @@ public class DataReductionWriter implements SimLoadingListener {
         }
     }
 
+    // If specific entry to be added isn't in array list length, add empty space until it is
+    private void fillWithEmptySpace(ArrayList<String> arrayList, int col){
+        while (arrayList.size() < col){
+            arrayList.add("");
+        }
+    }
+
     private void writeCSVMatrix(){
 
         try {
-            file = new File(file.getAbsolutePath() + ".xls");
-            workbook.write(Files.newOutputStream(file.toPath()));
+            for (SelectMeasurements.AvailableMeasurements measurements : sheetsAvailable.keySet()){
+                if (!sheetsAvailable.get(measurements).isEmpty()){
+                    File currentFile = new File(file.getAbsolutePath() + "-" + measurements.publicName + ".csv");
+                    try (FileWriter fileWriter = new FileWriter(currentFile)){
+                        CSVWriter csvWriter = new CSVWriter(fileWriter);
+                        for (ArrayList<String> row : sheetsAvailable.get(measurements)){
+                            csvWriter.writeNext(row.toArray(new String[0]));
+                        }
+                    }
+                }
+            }
+            File currentFile = new File(file.getAbsolutePath() + "-metadata.csv");
+            try (FileWriter fileWriter = new FileWriter(currentFile)){
+                CSVWriter csvWriter = new CSVWriter(fileWriter);
+                for (ArrayList<String> row : metaDataSheet){
+                    csvWriter.writeNext(row.toArray(new String[0]));
+                }
+            }
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
