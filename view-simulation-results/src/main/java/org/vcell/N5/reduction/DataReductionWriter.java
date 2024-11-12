@@ -40,7 +40,6 @@ public class DataReductionWriter implements SimLoadingListener {
     }};
     private final HashMap<SelectMeasurements.AvailableMeasurements, Integer> columnsForSheets = new HashMap<>();
 
-    private int metaDataRow = 1;
     private int metaDataParameterCol = 5;
     private final HashMap<String, Integer> parameterNameToCol = new HashMap<>();
 
@@ -212,7 +211,7 @@ public class DataReductionWriter implements SimLoadingListener {
                     metaDataParameterCol += 1;
                 }
             }
-            metaDataRow += 1;
+            metaDataSheet.add(newMetaData);
         }
     }
 
@@ -237,7 +236,7 @@ public class DataReductionWriter implements SimLoadingListener {
                     }
                 }
             }
-            File currentFile = new File(file.getAbsolutePath() + "-metadata.csv");
+            File currentFile = new File(file.getAbsolutePath() + "-Metadata.csv");
             try (FileWriter fileWriter = new FileWriter(currentFile)){
                 CSVWriter csvWriter = new CSVWriter(fileWriter);
                 for (ArrayList<String> row : metaDataSheet){
