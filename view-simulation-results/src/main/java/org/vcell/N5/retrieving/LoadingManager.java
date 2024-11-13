@@ -38,15 +38,11 @@ public class LoadingManager implements SimLoadingEventCreator {
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
             if (dataReduction){
                 dataReductionGUI = new DataReductionGUI(filesToOpen, dimensions.get(2), dimensions.get(3), dimensions.get(4));
-                DataReductionGUI.DataReductionSubmission submission = dataReductionGUI.displayGUI();
-                if (submission != null){
-                    DataReductionWriter.createDataReductionProcess(submission);
-                }
             } else {
                 rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
             }
         }
-        boolean dataReductionOkay = dataReduction && dataReductionGUI.mainGUIReturnValue == JOptionPane.OK_OPTION && dataReductionGUI.fileChooserReturnValue == JFileChooser.APPROVE_OPTION;
+        boolean dataReductionOkay = dataReduction && dataReductionGUI.shouldContinueWithProcess();
         if (dataReductionOkay || !dataReduction){
             controlButtonsPanel.allowCancel(true);
             MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));

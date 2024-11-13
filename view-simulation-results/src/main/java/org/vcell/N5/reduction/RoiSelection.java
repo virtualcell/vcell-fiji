@@ -13,8 +13,9 @@ import java.util.ArrayList;
 class RoiSelection extends JPanel {
     private final ROIDataModel imageTableModel = new ROIDataModel();
     private final ROIDataModel simTableModel = new ROIDataModel();
+    private final DataReductionGUI parentGUI;
 
-    public RoiSelection(){
+    public RoiSelection(DataReductionGUI parentGUI){
         this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
         JList<String> imageROITable = new JList<>(imageTableModel);
@@ -25,6 +26,7 @@ class RoiSelection extends JPanel {
         JFileChooser simROIFileChooser = new JFileChooser();
         this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
         this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "ROI Files"));
+        this.parentGUI = parentGUI;
     }
 
     private JPanel createROIInput(JList<String> jList, ROIDataModel roiDataModel,
@@ -43,6 +45,7 @@ class RoiSelection extends JPanel {
                 for (Roi roi : roiList){
                     roiDataModel.addRow(roi);
                 }
+                parentGUI.activateOkayButton();
                 jList.updateUI();
             }
         });
@@ -53,6 +56,7 @@ class RoiSelection extends JPanel {
                 for (int roiIndex: jList.getSelectedIndices()){
                     roiDataModel.removeRow(roiIndex);
                 }
+                parentGUI.activateOkayButton();
                 jList.updateUI();
             }
         });

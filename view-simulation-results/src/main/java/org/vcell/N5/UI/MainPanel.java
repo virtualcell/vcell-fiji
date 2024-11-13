@@ -13,7 +13,7 @@ import java.awt.*;
 import java.util.Enumeration;
 
 public class MainPanel {
-    private static JFrame exportTableDialog;
+    public static JFrame exportTableDialog;
 
     public final static ControlButtonsPanel controlButtonsPanel = new ControlButtonsPanel();
     public final static N5ExportTable n5ExportTable = new N5ExportTable();

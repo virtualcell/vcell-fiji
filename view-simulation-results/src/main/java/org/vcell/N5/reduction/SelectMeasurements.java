@@ -1,24 +1,36 @@
 package org.vcell.N5.reduction;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.util.ArrayList;
 
-class SelectMeasurements extends JPanel{
+class SelectMeasurements extends JPanel implements ListSelectionListener {
     private final JList<String> chosenMeasurement;
     private final MeasurementsDataModel measurementsDataModel = new MeasurementsDataModel();
+    private final DataReductionGUI parentGUI;
 
-    public SelectMeasurements(){
+    public SelectMeasurements(DataReductionGUI parentGUI){
         setLayout(new GridLayout(1, 1));
         this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Measurement Type"));
         chosenMeasurement = new JList<>(measurementsDataModel);
         chosenMeasurement.setVisibleRowCount(3);
+        chosenMeasurement.addListSelectionListener(this);
         JScrollPane jScrollPane = new JScrollPane(chosenMeasurement);
         this.add(jScrollPane);
+        this.parentGUI = parentGUI;
     }
 
     public ArrayList<AvailableMeasurements> getChosenMeasurements(){
         return measurementsDataModel.getSelectedMeasurements(chosenMeasurement.getSelectedIndices());
+    }
+
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+        if (e.getSource().equals(chosenMeasurement)){
+            parentGUI.activateOkayButton();
+        }
     }
 
     public enum AvailableMeasurements{
