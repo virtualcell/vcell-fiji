@@ -42,7 +42,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeMap;
 
 public class SimResultsLoader {
     private File selectedLocalFile;
@@ -53,7 +52,7 @@ public class SimResultsLoader {
     private static final Logger logger = N5ImageHandler.getLogger(SimResultsLoader.class);
     public static AmazonS3ClientBuilder s3ClientBuilder;
     private ImagePlus imagePlus = null;
-    public final OpenTag openTag;
+    public OpenTag openTag;
 
 
     public String userSetFileName = null;
@@ -61,7 +60,7 @@ public class SimResultsLoader {
     public String exportID;
 
     public SimResultsLoader(){
-        openTag = OpenTag.NONE;
+        openTag = OpenTag.TEST;
     }
     public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID, OpenTag openTag){
         this(stringURI, userSetFileName, openTag);
@@ -215,6 +214,10 @@ public class SimResultsLoader {
         this.dataSetChosen = dataSetChosen;
     }
 
+    public void setTagToCanceled(){
+        openTag = OpenTag.CANCELED;
+    }
+
     /////////////////////////
     // Local File Reading //
     ////////////////////////
@@ -231,6 +234,7 @@ public class SimResultsLoader {
     public enum OpenTag{
         VIEW,
         DATA_REDUCTION,
-        NONE
+        CANCELED,
+        TEST
     }
 }

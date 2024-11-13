@@ -66,7 +66,7 @@ public class ReductionCalculationsTest {
     @Test
     public void testMean2DCalculation(){
         // Ensure the mean calculated for each ROI, and each time point is what's to be expected
-        SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1", SimResultsLoader.OpenTag.NONE);
+        SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1", SimResultsLoader.OpenTag.TEST);
         ImagePlus labResultImage2D = simResultsLoader.getImagePlus();
 
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
@@ -85,7 +85,7 @@ public class ReductionCalculationsTest {
 
     @Test
     public void testMeanAndNormalization2DCalculation(){
-        SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1", SimResultsLoader.OpenTag.NONE);
+        SimResultsLoader simResultsLoader = new SimResultsLoader("https://vcell.cam.uchc.edu/n5Data/ezequiel23/ddf7f4f0c77dffd.n5?dataSetName=4864003788", "test1", SimResultsLoader.OpenTag.TEST);
         ImagePlus labResultImage2D = simResultsLoader.getImagePlus();
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
         Roi simROI = RoiDecoder.open(getTestResourceFiles("ROIs/Sim ROI.roi").getAbsolutePath());

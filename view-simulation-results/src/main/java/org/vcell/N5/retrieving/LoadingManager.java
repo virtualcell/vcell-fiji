@@ -67,6 +67,7 @@ public class LoadingManager implements SimLoadingEventCreator {
                         }
                     }
                     catch (RuntimeException e) {
+                        simResultsLoader.setTagToCanceled();
                         if (e.getCause().getCause().getCause() instanceof SdkInterruptedException ||
                                 e.getCause().getCause() instanceof AbortedException){
                             logger.debug("Simulation stopped loading");
