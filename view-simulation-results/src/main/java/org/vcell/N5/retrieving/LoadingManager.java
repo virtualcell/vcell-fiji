@@ -68,22 +68,19 @@ public class LoadingManager implements SimLoadingEventCreator {
                     }
                     catch (RuntimeException e) {
                         simResultsLoader.setTagToCanceled();
-                        if (e.getCause().getCause().getCause() instanceof SdkInterruptedException ||
-                                e.getCause().getCause() instanceof AbortedException){
+                        if (e instanceof AbortedException){
                             logger.debug("Simulation stopped loading");
                         } else {
                             throw new RuntimeException(e);
                         }
-                    }
-                    catch (Exception e){
-                        throw new RuntimeException(e);
                     } finally {
                         MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                        controlButtonsPanel.enableCriticalButtons(true);
                         notifySimIsDoneLoading(simResultsLoader, imagePlus);
                         synchronized (openSimulationsLock){
                             openingSimulations.remove(simResultsLoader.exportID);
                         }
+                        controlButtonsPanel.enableRowContextDependentButtons(true);
+                        MainPanel.controlButtonsPanel.allowCancel(false);
                     }
                 });
                 openThread.setName("Opening sim number: " + i + ". With id: " + simResultsLoader.exportID);

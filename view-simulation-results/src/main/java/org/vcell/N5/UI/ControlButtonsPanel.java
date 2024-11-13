@@ -107,7 +107,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         boolean performDataReduction = e.getSource().equals(dataReduction);
         if(e.getSource().equals(openOrCancel) || inMemory || performDataReduction){
             if (openOrCancel.getText().equals("Cancel")){
-                n5ExportTable.removeFromLoadingRows();
+                n5ExportTable.stopSelectedImageFromLoading();
             } else {
                 SimResultsLoader.OpenTag openTag = performDataReduction ? SimResultsLoader.OpenTag.DATA_REDUCTION : SimResultsLoader.OpenTag.VIEW;
                 n5ExportTable.openSelectedRows(inMemory, performDataReduction, openTag);
@@ -136,7 +136,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             if (allow){
                 openOrCancel.setText("Cancel");
             } else {
-                openOrCancel.setText("Open Virtually");
+                openOrCancel.setText("Open Virtual Stack");
             }
         }
     }

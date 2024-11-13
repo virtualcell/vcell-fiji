@@ -267,6 +267,8 @@ public class DataReductionWriter implements SimLoadingListener {
                 addMetaData(loadedResults);
                 calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
                         submission.arrayOfSimRois, loadedResults.getChannelInfo());
+                MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
+                imagePlus.close();
             }, "Processing Image: " + loadedResults.userSetFileName);
             imageProcessingThread.start();
         }

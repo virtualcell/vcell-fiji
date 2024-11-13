@@ -18,12 +18,12 @@ class NormalizeGUI extends JPanel {
 
     public NormalizeGUI(JDialog jDialog, double simTSize){
         Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-        Border normalizeBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Timeline Range to Create Norm");
+        Border normalizeBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Timeframe Range to Create Norm");
 
         JPanel fromImage = new JPanel(new GridLayout());
         createNormFromImageStart = new JTextField();
         createNormFromImageEnd = new JTextField();
-        fromImage.add(new JLabel("Exp. Timeline: "));
+        fromImage.add(new JLabel("Exp. Timeframe: "));
         fromImage.add(createNormFromImageStart);
         fromImage.add(new JLabel("to"));
         fromImage.add(createNormFromImageEnd);
@@ -31,7 +31,7 @@ class NormalizeGUI extends JPanel {
         JPanel fromSim = new JPanel(new GridLayout());
         createNormFromSimStart = new HintTextField("1");
         createNormFromSimEnd = new HintTextField(String.valueOf((int) simTSize));
-        fromSim.add(new JLabel("Sim Timeline: "));
+        fromSim.add(new JLabel("Sim Timeframe: "));
         fromSim.add(createNormFromSimStart);
         fromSim.add(new JLabel("to"));
         fromSim.add(createNormFromSimEnd);

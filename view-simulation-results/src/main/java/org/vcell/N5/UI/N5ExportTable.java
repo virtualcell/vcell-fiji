@@ -1,6 +1,5 @@
 package org.vcell.N5.UI;
 
-import ij.ImagePlus;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
@@ -208,11 +207,20 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         controlPanel.allowCancel(loadingRow != -1);
     }
 
-    public void removeFromLoadingRows(){
+    public void stopSelectedImageFromLoading(){
         int row = exportListTable.getSelectedRow();
         N5ImageHandler.loadingManager.stopOpeningSimulation(n5ExportTableModel.tableData.get(row).jobID);
         loadingRowsJobID.remove(row);
         exportListTable.repaint();
+    }
+
+    public void removeSpecificRowFromLoadingRows(int rowNumber){
+        loadingRowsJobID.remove(rowNumber);
+        int selected = exportListTable.getSelectedRow();
+        if (selected == rowNumber){
+            controlPanel.allowCancel(false);
+            exportListTable.repaint();
+        }
     }
 
     @Override
@@ -223,10 +231,8 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     @Override
     public void simFinishedLoading(SimResultsLoader loadedResults) {
-        loadingRowsJobID.remove(loadedResults.rowNumber);
-        exportListTable.repaint();
-        controlPanel.allowCancel(false);
         if (loadedResults.openTag == SimResultsLoader.OpenTag.VIEW){
+            removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
             loadedResults.getImagePlus().show();
         }
     }

@@ -40,6 +40,7 @@ public class N5ImageHandler implements Command {
         initializeLogService();
         loadingManager = new LoadingManager();
         exportTable = new MainPanel();
+        MainPanel.controlButtonsPanel.enableCriticalButtons(false);
         setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         Thread thread = new Thread(() -> {
@@ -47,6 +48,7 @@ public class N5ImageHandler implements Command {
             // So create one upon initialization, while the user is focused on the GUI
             // and by the time they open an Image it's already loaded.
             SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
+            MainPanel.controlButtonsPanel.enableCriticalButtons(true);
         });
         thread.start();
     }
