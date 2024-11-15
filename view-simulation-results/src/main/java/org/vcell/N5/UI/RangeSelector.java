@@ -118,7 +118,7 @@ public class RangeSelector extends JDialog implements ActionListener {
 
         else if (e.getSource().equals(cancelButton)) {
             MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            controlButtonsPanel.enableCriticalButtons(true);
+            controlButtonsPanel.enableAllButtons(true);
             cancel = true;
             this.setVisible(false);
         }

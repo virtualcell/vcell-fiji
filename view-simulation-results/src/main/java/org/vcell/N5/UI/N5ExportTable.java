@@ -195,30 +195,30 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         int row = exportListTable.getSelectedRow();
         exportDetailsPanel.resetExportDetails();
         if (row > exportListTable.getRowCount() || row < 0){
-            controlPanel.enableRowContextDependentButtons(false);
+            controlPanel.disableAllContextDependentButtons();
             return;
         }
-        controlPanel.enableRowContextDependentButtons(true);
         MainPanel.setEnableParentAndChild(exportDetailsPanel, true);
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
         exportDetailsPanel.addExportDetailEntries("Variables: " + rowData.variables, rowData.differentParameterValues);
 
         int loadingRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row, row) : -1;
-        controlPanel.allowCancel(loadingRow != -1);
+        controlPanel.updateButtonsToMatchState(loadingRow != -1);
     }
 
     public void stopSelectedImageFromLoading(){
         int row = exportListTable.getSelectedRow();
-        N5ImageHandler.loadingManager.stopOpeningSimulation(n5ExportTableModel.tableData.get(row).jobID);
+        N5ImageHandler.loadingManager.stopLoadingImage(n5ExportTableModel.tableData.get(row).jobID);
         loadingRowsJobID.remove(row);
         exportListTable.repaint();
     }
 
     public void removeSpecificRowFromLoadingRows(int rowNumber){
+        int realRowNumber = findLoadingRow(rowNumber, rowNumber);
         loadingRowsJobID.remove(rowNumber);
         int selected = exportListTable.getSelectedRow();
-        if (selected == rowNumber){
-            controlPanel.allowCancel(false);
+        if (selected == realRowNumber){
+            controlPanel.updateButtonsToMatchState(false);
             exportListTable.repaint();
         }
     }

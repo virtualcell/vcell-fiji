@@ -13,7 +13,12 @@ import java.awt.event.ActionListener;
 public class ControlButtonsPanel extends JPanel implements ActionListener {
 
     private static JButton openOrCancel;
+    private final String openButtonText = "Open Virtual Stack";
+    private final String cancelButtonText = "Cancel";
+
     private final JButton dataReduction;
+    private final String runScriptButtonText = "Run Measurement Script";
+    private final String cancelScriptButtonText = "Cancel Measurement Script";
 //    private final JButton openLocal = new JButton("Open N5 Local");
     private final JButton questionMark;
 
@@ -23,7 +28,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private N5ExportTable n5ExportTable;
     private RemoteFileSelection remoteFileSelection;
     public final AdvancedFeatures advancedFeatures = new AdvancedFeatures();
-    private boolean allowButtons = true;
+    private PanelState panelState = PanelState.NOTHING_OR_LOADING_IMAGE;
 
     public ControlButtonsPanel(){
         includeExampleExports = new JCheckBox("Show Example Exports");
@@ -32,7 +37,7 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         displayAdvancedFeatures = new JCheckBox("Advanced Features");
 
         openOrCancel = new JButton("Open Virtual Stack");
-        dataReduction = new JButton("Run Measurement Script");
+        dataReduction = new JButton(runScriptButtonText);
         questionMark = new JButton("?");
         questionMark.setPreferredSize(new Dimension(20, 20));
 
@@ -63,10 +68,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         userButtonsPanel.add(bottomRow, gridBagConstraints);
 
 //        buttonsPanel.add(questionMark);
-
-
-
-
 
         int paneWidth = 800;
         this.setPreferredSize(new Dimension(paneWidth, 110));
@@ -104,14 +105,25 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         boolean inMemory = e.getSource().equals(advancedFeatures.openInMemory);
-        boolean performDataReduction = e.getSource().equals(dataReduction);
-        if(e.getSource().equals(openOrCancel) || inMemory || performDataReduction){
-            if (openOrCancel.getText().equals("Cancel")){
+        if(e.getSource().equals(openOrCancel) || inMemory){
+            panelState = PanelState.NOTHING_OR_LOADING_IMAGE;
+            if (openOrCancel.getText().equals(cancelButtonText)){
                 n5ExportTable.stopSelectedImageFromLoading();
+                updateButtonsToMatchState(false);
             } else {
-                SimResultsLoader.OpenTag openTag = performDataReduction ? SimResultsLoader.OpenTag.DATA_REDUCTION : SimResultsLoader.OpenTag.VIEW;
-                n5ExportTable.openSelectedRows(inMemory, performDataReduction, openTag);
+                n5ExportTable.openSelectedRows(inMemory, false, SimResultsLoader.OpenTag.VIEW);
+                updateButtonsToMatchState(true);
             }
+        } else if (e.getSource().equals(dataReduction)) {
+            if (dataReduction.getText().equals(cancelScriptButtonText)){
+                panelState = PanelState.NOTHING_OR_LOADING_IMAGE;
+                N5ImageHandler.loadingManager.stopAllImagesAndAnalysis();
+            } else{
+                panelState = PanelState.PERFORMING_ANALYSIS;
+                setButtonsToCancelReduction();
+                n5ExportTable.openSelectedRows(false, true, SimResultsLoader.OpenTag.DATA_REDUCTION);
+            }
+            updateButtonsToMatchState();
         } else if (e.getSource().equals(advancedFeatures.copyLink)) {
             n5ExportTable.copySelectedRowLink();
         } else if (e.getSource().equals(questionMark)) {
@@ -125,38 +137,79 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         }
     }
 
-    public void allowCancel(boolean allow){
-        if (allowButtons){
-            openOrCancel.setEnabled(true);
-            advancedFeatures.copyLink.setEnabled(true);
-            advancedFeatures.useN5Link.setEnabled(true);
-            remoteFileSelection.submitS3Info.setEnabled(true);
-            dataReduction.setEnabled(!allow);
-            advancedFeatures.openInMemory.setEnabled(!allow);
-            if (allow){
-                openOrCancel.setText("Cancel");
-            } else {
-                openOrCancel.setText("Open Virtual Stack");
-            }
-        }
+    public void updateButtonsToMatchState(){
+        updateButtonsToMatchState(false);
     }
 
-    public void enableRowContextDependentButtons(boolean enable){
-        if (allowButtons){
-            openOrCancel.setEnabled(enable);
-            advancedFeatures.copyLink.setEnabled(enable);
-            dataReduction.setEnabled(enable);
-            advancedFeatures.openInMemory.setEnabled(enable);
-        }
+    public void updateButtonsToMatchState(boolean rowIsLoadingImage){
+        updateButtonsToMatchState(rowIsLoadingImage, panelState);
     }
 
-    public void enableCriticalButtons(boolean enable){
+    public void setStateToInitializing(boolean isInitializing){
+        panelState = isInitializing ? PanelState.INITIALIZING : PanelState.NOTHING_OR_LOADING_IMAGE;
+    }
+
+    public void updateButtonsToMatchState(boolean rowIsLoadingImage, PanelState newPanelState){
+        switch (newPanelState){
+            case NOTHING_OR_LOADING_IMAGE:
+                if (rowIsLoadingImage){
+                    allowCancel();
+                } else {
+                    enableAllButtons(true);
+                }
+                break;
+            case PERFORMING_ANALYSIS:
+                setButtonsToCancelReduction();
+                break;
+            case INITIALIZING:
+                enableAllButtons(false);
+                break;
+        }
+        panelState = newPanelState;
+    }
+
+    public void setButtonsToCancelReduction(){
+        openOrCancel.setText(openButtonText);
+        openOrCancel.setEnabled(false);
+        advancedFeatures.useN5Link.setEnabled(false);
+        advancedFeatures.openInMemory.setEnabled(false);
+
+        advancedFeatures.copyLink.setEnabled(true);
+        dataReduction.setText(cancelScriptButtonText);
+    }
+
+    private void allowCancel(){
+        openOrCancel.setEnabled(true);
+        advancedFeatures.copyLink.setEnabled(true);
+        advancedFeatures.useN5Link.setEnabled(true);
+        remoteFileSelection.submitS3Info.setEnabled(true);
+        dataReduction.setEnabled(false);
+        advancedFeatures.openInMemory.setEnabled(false);
+        openOrCancel.setText(cancelButtonText);
+    }
+
+    public void disableAllContextDependentButtons(){
+        openOrCancel.setEnabled(false);
+        advancedFeatures.copyLink.setEnabled(false);
+        dataReduction.setEnabled(false);
+        advancedFeatures.openInMemory.setEnabled(false);
+    }
+
+    public void enableAllButtons(boolean enable){
+        openOrCancel.setText(openButtonText);
+        dataReduction.setText(runScriptButtonText);
+
         advancedFeatures.useN5Link.setEnabled(enable);
         openOrCancel.setEnabled(enable);
         advancedFeatures.copyLink.setEnabled(enable);
         remoteFileSelection.submitS3Info.setEnabled(enable);
         dataReduction.setEnabled(enable);
         advancedFeatures.openInMemory.setEnabled(enable);
-        allowButtons = enable;
+    }
+
+    public enum PanelState {
+        PERFORMING_ANALYSIS,
+        NOTHING_OR_LOADING_IMAGE,
+        INITIALIZING
     }
 }

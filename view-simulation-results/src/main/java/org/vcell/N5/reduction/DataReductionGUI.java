@@ -3,6 +3,7 @@ package org.vcell.N5.reduction;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
+import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.retrieving.SimResultsLoader;
@@ -150,12 +151,12 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
             if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
                 chosenFile = saveToFile.getSelectedFile();
-                MainPanel.controlButtonsPanel.enableCriticalButtons(false);
-                DataReductionWriter.createDataReductionProcess(createSubmission());
+                MainPanel.controlButtonsPanel.updateButtonsToMatchState();
                 continueWithProcess = true;
                 jDialog.dispose();
             }
         } else if (e.getSource().equals(cancelButton)) {
+            MainPanel.controlButtonsPanel.updateButtonsToMatchState(false, ControlButtonsPanel.PanelState.NOTHING_OR_LOADING_IMAGE);
             jDialog.dispose();
         }
     }
