@@ -7,6 +7,7 @@ import org.vcell.N5.reduction.DTO.RangeOfImage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class ReductionCalculations {
     private final boolean normalize;
@@ -37,9 +38,9 @@ class ReductionCalculations {
      * @param rangeOfImage
      */
     void calculateStatistics(ImagePlus imagePlus, ArrayList<Roi> roiList,
-                            HashMap<String, Double> normalizationValue, 
-                            ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList,
-                                    RangeOfImage rangeOfImage){
+                             HashMap<String, Double> normalizationValue,
+                             ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList,
+                             RangeOfImage rangeOfImage, AtomicBoolean continueOperation){
         int roiCounter = 0;
         for (Roi roi: roiList) {
             imagePlus.setRoi(roi);
@@ -48,6 +49,9 @@ class ReductionCalculations {
                 for (int z = rangeOfImage.zStart; z <= rangeOfImage.zEnd; z++){
                     for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){
                         int channelSize = rangeOfImage.channelEnd - rangeOfImage.channelStart + 1;
+                        if (!continueOperation.get()){
+                            return;
+                        }
                         imagePlus.setPosition(c, z, t);
                         double calculatedValue;
                         for (DataReductionWriter.ReducedData reducedData : reducedDataArrayList){
@@ -61,7 +65,7 @@ class ReductionCalculations {
                                 default:
                                     throw new RuntimeException("Unknown measurement type selected.");
                             }
-                            if (normalize && reducedData.measurementType == SelectMeasurements.AvailableMeasurements.AVERAGE){
+                            if (normalize){
                                 calculatedValue = calculatedValue / normalizationValue.get(roi.getName() + c);
                             }
                             reducedData.data[tzCounter][c - 1 + (roiCounter * channelSize)] = calculatedValue;

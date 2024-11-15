@@ -1,11 +1,14 @@
 package org.vcell.N5.reduction;
 
+import com.amazonaws.AbortedException;
 import com.google.gson.internal.LinkedTreeMap;
 import com.opencsv.CSVWriter;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.Roi;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
@@ -17,6 +20,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataReductionWriter implements SimLoadingListener {
     private final ArrayList<Roi> arrayOfSimRois;
@@ -33,6 +38,9 @@ public class DataReductionWriter implements SimLoadingListener {
     private final ArrayList<ArrayList<String>> averageMatrix = new ArrayList<>();
     private final ArrayList<ArrayList<String>> standardDivMatrix = new ArrayList<>();
     private final ArrayList<ArrayList<String>> metaDataSheet = new ArrayList<>();
+
+    private final ConcurrentHashMap<String, ThreadStruct> threadPool = new ConcurrentHashMap<>();
+    private final Object threadPoolLock = new Object();
 
     private final HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>> sheetsAvailable = new HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>>(){{
         put(SelectMeasurements.AvailableMeasurements.AVERAGE, averageMatrix);
@@ -61,10 +69,6 @@ public class DataReductionWriter implements SimLoadingListener {
     // Initialize Sheet and Lab results //
     /////////////////////////////////////
 
-    public static void createDataReductionProcess(DataReductionGUI.DataReductionSubmission submission){
-        new DataReductionWriter(submission);
-    }
-
     public DataReductionWriter(DataReductionGUI.DataReductionSubmission submission){
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         this.submission = submission;
@@ -83,8 +87,15 @@ public class DataReductionWriter implements SimLoadingListener {
 
         Thread processLabResults = new Thread(() -> {
             calculateAndAddResults(submission.labResults, submission.experiementNormRange, submission.experimentImageRange,
-                    submission.arrayOfLabRois, null);
+                    submission.arrayOfLabRois, null, "Lab");
+            synchronized (threadPoolLock){
+                threadPool.remove("Lab");
+            }
         }, "Processing Lab Image");
+        ThreadStruct threadStruct = new ThreadStruct(null, new AtomicBoolean(true), processLabResults);
+        synchronized (threadPoolLock){
+            threadPool.put("Lab", threadStruct);
+        }
         processLabResults.start();
     }
 
@@ -137,7 +148,8 @@ public class DataReductionWriter implements SimLoadingListener {
 
     private void calculateAndAddResults(ImagePlus imagePlus, RangeOfImage normRange,
                                         RangeOfImage imageRange, ArrayList<Roi> rois,
-                                        LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo){
+                                        LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo,
+                                        String threadName){
         HashMap<String, Double> normValue = null;
         if (submission.normalizeMeasurementsBool){
             normValue = calculations.calculateNormalValue(imagePlus, normRange, rois, imageRange);
@@ -153,9 +165,12 @@ public class DataReductionWriter implements SimLoadingListener {
             reducedDataArrayList.add(reducedData);
             calculations.addAppropriateHeaders(imagePlus, rois, imageRange, reducedData, channelInfo);
         }
-        calculations.calculateStatistics(imagePlus, rois, normValue, reducedDataArrayList, imageRange);
+        AtomicBoolean continueOperation = threadPool.get(threadName).continueOperation;
+        calculations.calculateStatistics(imagePlus, rois, normValue, reducedDataArrayList, imageRange, continueOperation);
         for (ReducedData reducedData: reducedDataArrayList){
-            addValuesToCSVMatrix(reducedData);
+            if (continueOperation.get()){
+                addValuesToCSVMatrix(reducedData);
+            }
         }
     }
 
@@ -248,8 +263,26 @@ public class DataReductionWriter implements SimLoadingListener {
             throw new RuntimeException(e);
         } finally {
             N5ImageHandler.loadingManager.removeFromSimLoadingListener(this);
-            MainPanel.controlButtonsPanel.enableCriticalButtons(true);
+            MainPanel.controlButtonsPanel.updateButtonsToMatchState(false, ControlButtonsPanel.PanelState.NOTHING_OR_LOADING_IMAGE);
         }
+    }
+
+    public void stopAllThreads(){
+        synchronized (threadPoolLock){
+            for (String threadName: threadPool.keySet()){
+                ThreadStruct threadStruct = threadPool.get(threadName);
+                threadStruct.continueOperation.set(false);
+                // Experiment image is in thread pool, so trying to retrieve a results loader for it would not work
+                if (threadStruct.simResultsLoader != null){
+                    SimResultsLoader loadedResults = threadStruct.simResultsLoader;
+                    MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
+                    WindowManager.getImage(loadedResults.getImagePlus().getID()).close();
+                }
+                threadPool.remove(threadName);
+            }
+        }
+        N5ImageHandler.loadingManager.removeFromSimLoadingListener(this);
+        MainPanel.controlButtonsPanel.updateButtonsToMatchState(false, ControlButtonsPanel.PanelState.NOTHING_OR_LOADING_IMAGE);
     }
 
 
@@ -266,11 +299,29 @@ public class DataReductionWriter implements SimLoadingListener {
                 imagePlus.show();
                 addMetaData(loadedResults);
                 calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
-                        submission.arrayOfSimRois, loadedResults.getChannelInfo());
+                        submission.arrayOfSimRois, loadedResults.getChannelInfo(), loadedResults.exportID);
                 MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
                 imagePlus.close();
+                synchronized (threadPoolLock){
+                    threadPool.remove(loadedResults.exportID);
+                }
             }, "Processing Image: " + loadedResults.userSetFileName);
+            ThreadStruct threadStruct = new ThreadStruct(loadedResults, new AtomicBoolean(true), imageProcessingThread);
+            synchronized (threadPoolLock){
+                threadPool.put(loadedResults.exportID, threadStruct);
+            }
             imageProcessingThread.start();
+        }
+    }
+
+    static class ThreadStruct {
+        public final SimResultsLoader simResultsLoader;
+        public final AtomicBoolean continueOperation;
+        public final Thread thread;
+        public ThreadStruct(SimResultsLoader simResultsLoader, AtomicBoolean continueOperation, Thread thread){
+            this.simResultsLoader = simResultsLoader;
+            this.continueOperation = continueOperation;
+            this.thread = thread;
         }
     }
 

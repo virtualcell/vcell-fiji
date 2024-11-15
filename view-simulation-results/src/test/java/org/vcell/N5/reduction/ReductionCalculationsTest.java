@@ -17,6 +17,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReductionCalculationsTest {
     // First two are SimROI, last two are LabROI
@@ -55,7 +56,7 @@ public class ReductionCalculationsTest {
         reducedDataArrayList.add(reducedData);
 
         HashMap<String, Double> norms = reductionCalculations.calculateNormalValue(imagePlus, normRange, roiList, entireRange);
-        reductionCalculations.calculateStatistics(imagePlus, roiList, norms, reducedDataArrayList, entireRange);
+        reductionCalculations.calculateStatistics(imagePlus, roiList, norms, reducedDataArrayList, entireRange, new AtomicBoolean(true));
         for (int r = 0; r < expectedResults.length; r++){
             for (int c = 0; c < expectedResults[r].length; c++){
                 Assert.assertEquals(expectedResults[r][c], reducedData.data[r][c], 0.0009);

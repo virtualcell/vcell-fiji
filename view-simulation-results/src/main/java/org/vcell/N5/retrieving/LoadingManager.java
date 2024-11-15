@@ -1,7 +1,6 @@
 package org.vcell.N5.retrieving;
 
 import com.amazonaws.AbortedException;
-import com.amazonaws.http.timers.client.SdkInterruptedException;
 import ij.ImagePlus;
 import org.scijava.log.Logger;
 import org.vcell.N5.N5ImageHandler;
@@ -26,6 +25,7 @@ public class LoadingManager implements SimLoadingEventCreator {
 
     private final HashMap<String, Thread> openingSimulations = new HashMap<>();
     private final Object openSimulationsLock = new Object();
+    private DataReductionWriter dataReductionWriter = null;
 
     private static final Logger logger = N5ImageHandler.getLogger(RangeSelector.class);
 
@@ -38,13 +38,13 @@ public class LoadingManager implements SimLoadingEventCreator {
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
             if (dataReduction){
                 dataReductionGUI = new DataReductionGUI(filesToOpen, dimensions.get(2), dimensions.get(3), dimensions.get(4));
+                dataReductionWriter = dataReductionGUI.shouldContinueWithProcess() ? new DataReductionWriter(dataReductionGUI.createSubmission()) : null;
             } else {
                 rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
             }
         }
         boolean dataReductionOkay = dataReduction && dataReductionGUI.shouldContinueWithProcess();
         if (dataReductionOkay || !dataReduction){
-            controlButtonsPanel.allowCancel(true);
             MainPanel.changeCursor(new Cursor(Cursor.WAIT_CURSOR));
             for (int i = 0; i < filesToOpen.size(); i++){
                 SimResultsLoader simResultsLoader = filesToOpen.get(i);
@@ -64,6 +64,7 @@ public class LoadingManager implements SimLoadingEventCreator {
                     }
                     catch (RuntimeException e) {
                         simResultsLoader.setTagToCanceled();
+                        MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(simResultsLoader.rowNumber);
                         if (e instanceof AbortedException){
                             logger.debug("Simulation stopped loading");
                         } else {
@@ -75,8 +76,6 @@ public class LoadingManager implements SimLoadingEventCreator {
                         synchronized (openSimulationsLock){
                             openingSimulations.remove(simResultsLoader.exportID);
                         }
-                        controlButtonsPanel.enableRowContextDependentButtons(true);
-                        MainPanel.controlButtonsPanel.allowCancel(false);
                     }
                 });
                 openThread.setName("Opening sim number: " + i + ". With id: " + simResultsLoader.exportID);
@@ -88,18 +87,36 @@ public class LoadingManager implements SimLoadingEventCreator {
         }
     }
 
-    public void stopOpeningSimulation(String exportID){
+    public void stopAllImagesAndAnalysis(){
+        Thread stopEverything = new Thread(() -> {
+            synchronized (openSimulationsLock){
+                for (String threadName : openingSimulations.keySet()){
+                    openingSimulations.get(threadName).interrupt();
+                    openingSimulations.remove(threadName);
+                }
+            }
+            if (dataReductionWriter != null){
+                dataReductionWriter.stopAllThreads();
+            }
+        });
+        stopEverything.start();
+    }
+
+
+    public void stopLoadingImage(String exportID){
         Thread stopOtherThread = new Thread(() -> {
             synchronized (openSimulationsLock){
-                openingSimulations.get(exportID).interrupt();
-                openingSimulations.remove(exportID);
+                if (openingSimulations.containsKey(exportID)){
+                    openingSimulations.get(exportID).interrupt();
+                    openingSimulations.remove(exportID);
+                }
             }
         });
         stopOtherThread.start();
     }
 
     public void openLocalN5FS(ArrayList<SimResultsLoader> filesToOpen){
-        controlButtonsPanel.enableCriticalButtons(true);
+        controlButtonsPanel.enableAllButtons(true);
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setAcceptAllFileFilterUsed(false);
@@ -121,7 +138,7 @@ public class LoadingManager implements SimLoadingEventCreator {
                         @Override
                         public void run() {
                             MainPanel.changeCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                            controlButtonsPanel.enableCriticalButtons(true);
+                            controlButtonsPanel.enableAllButtons(true);
                         }
                     });
                 }
