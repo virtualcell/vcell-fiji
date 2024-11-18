@@ -8,6 +8,7 @@ import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.RangeSelector;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.reduction.DataReductionGUI;
+import org.vcell.N5.reduction.DataReductionManager;
 import org.vcell.N5.reduction.DataReductionWriter;
 
 import javax.swing.*;
@@ -25,7 +26,7 @@ public class LoadingManager implements SimLoadingEventCreator {
 
     private final HashMap<String, Thread> openingSimulations = new HashMap<>();
     private final Object openSimulationsLock = new Object();
-    private DataReductionWriter dataReductionWriter = null;
+    private DataReductionManager dataReductionWriter = null;
 
     private static final Logger logger = N5ImageHandler.getLogger(RangeSelector.class);
 
@@ -38,7 +39,7 @@ public class LoadingManager implements SimLoadingEventCreator {
             ArrayList<Double> dimensions = firstSim.getN5Dimensions();
             if (dataReduction){
                 dataReductionGUI = new DataReductionGUI(filesToOpen, dimensions.get(2), dimensions.get(3), dimensions.get(4));
-                dataReductionWriter = dataReductionGUI.shouldContinueWithProcess() ? new DataReductionWriter(dataReductionGUI.createSubmission()) : null;
+                dataReductionWriter = dataReductionGUI.shouldContinueWithProcess() ? new DataReductionManager(dataReductionGUI.createSubmission()) : null;
             } else {
                 rangeSelector.displayRangeMenu(dimensions.get(2), dimensions.get(3), dimensions.get(4));
             }

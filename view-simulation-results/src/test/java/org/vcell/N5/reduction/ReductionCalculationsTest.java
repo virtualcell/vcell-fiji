@@ -11,6 +11,7 @@ import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
+import org.vcell.N5.reduction.DataReductionManager.ReducedData;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -51,8 +52,8 @@ public class ReductionCalculationsTest {
 
         RangeOfImage entireRange = new RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(), 1, imagePlus.getNChannels());
         RangeOfImage normRange = new RangeOfImage(1, 1);
-        DataReductionWriter.ReducedData reducedData = new DataReductionWriter.ReducedData(entireRange, imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
-        ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList = new ArrayList<>();
+        ReducedData reducedData = new ReducedData(entireRange, imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
+        ArrayList<ReducedData> reducedDataArrayList = new ArrayList<>();
         reducedDataArrayList.add(reducedData);
 
         HashMap<String, Double> norms = reductionCalculations.calculateNormalValue(imagePlus, normRange, roiList, entireRange);

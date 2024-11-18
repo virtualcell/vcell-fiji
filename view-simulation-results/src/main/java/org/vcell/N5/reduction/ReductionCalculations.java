@@ -4,6 +4,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
+import org.vcell.N5.reduction.DataReductionManager.ReducedData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +18,7 @@ class ReductionCalculations {
     }
     
     public void addAppropriateHeaders(ImagePlus imagePlus, ArrayList<Roi> roiList, RangeOfImage rangeOfImage,
-                                      DataReductionWriter.ReducedData reducedData,
+                                      ReducedData reducedData,
                                       LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo){
         for (Roi roi: roiList){
             for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
@@ -39,7 +40,7 @@ class ReductionCalculations {
      */
     void calculateStatistics(ImagePlus imagePlus, ArrayList<Roi> roiList,
                              HashMap<String, Double> normalizationValue,
-                             ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList,
+                             ArrayList<ReducedData> reducedDataArrayList,
                              RangeOfImage rangeOfImage, AtomicBoolean continueOperation){
         int roiCounter = 0;
         for (Roi roi: roiList) {
@@ -54,7 +55,7 @@ class ReductionCalculations {
                         }
                         imagePlus.setPosition(c, z, t);
                         double calculatedValue;
-                        for (DataReductionWriter.ReducedData reducedData : reducedDataArrayList){
+                        for (ReducedData reducedData : reducedDataArrayList){
                             switch (reducedData.measurementType){
                                 case AVERAGE:
                                     calculatedValue = imagePlus.getStatistics().mean;
