@@ -1,6 +1,5 @@
 package org.vcell.N5.reduction;
 
-import com.amazonaws.AbortedException;
 import com.google.gson.internal.LinkedTreeMap;
 import com.opencsv.CSVWriter;
 import ij.ImagePlus;
@@ -30,7 +29,7 @@ public class DataReductionWriter implements SimLoadingListener {
     private final Object metaDataLock = new Object();
     private final File file;
 
-    private int numOfImagesToBeOpened;
+    private int numOfCalculationsTimesNumImages;
     private final ReductionCalculations calculations;
 
     public final DataReductionGUI.DataReductionSubmission submission;
@@ -53,15 +52,24 @@ public class DataReductionWriter implements SimLoadingListener {
 
     private final ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements;
 
+    private int maxZ;
+    private int maxT;
+
     // Per Image
     static class ReducedData{
         public final double[][] data;
         public final ArrayList<String> columnHeaders;
         public final SelectMeasurements.AvailableMeasurements measurementType;
-        public ReducedData(int rowLen, int colLen, SelectMeasurements.AvailableMeasurements measurementType){
-            data = new double[rowLen][colLen];
+        public final RangeOfImage rangeOfImage;
+        public final int colLen;
+        public ReducedData(RangeOfImage rangeOfImage, int colLen, SelectMeasurements.AvailableMeasurements measurementType){
+            int nFrames = rangeOfImage.timeEnd - rangeOfImage.timeStart + 1;
+            int nSlices = rangeOfImage.zEnd - rangeOfImage.zStart + 1;
+            data = new double[nFrames * nSlices][colLen]; // row - col
             columnHeaders = new ArrayList<>();
             this.measurementType = measurementType;
+            this.colLen = colLen;
+            this.rangeOfImage = rangeOfImage;
         }
     }
 
@@ -73,13 +81,9 @@ public class DataReductionWriter implements SimLoadingListener {
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         this.submission = submission;
         this.selectedMeasurements = submission.selectedMeasurements;
-        synchronized (csvMatrixLock){
-            synchronized (metaDataLock){
-                initializeDataSheets();
-            }
-        }
+
         this.arrayOfSimRois = submission.arrayOfSimRois;
-        this.numOfImagesToBeOpened = (submission.numOfSimImages + 1) * submission.selectedMeasurements.size(); // Plus one for the lab image
+        this.numOfCalculationsTimesNumImages = (submission.numOfSimImages + 1) * submission.selectedMeasurements.size(); // Plus one for the lab image
         this.file = submission.fileToSaveResultsTo;
         this.calculations = new ReductionCalculations(submission.normalizeMeasurementsBool);
 
@@ -92,16 +96,15 @@ public class DataReductionWriter implements SimLoadingListener {
                 threadPool.remove("Lab");
             }
         }, "Processing Lab Image");
-        ThreadStruct threadStruct = new ThreadStruct(null, new AtomicBoolean(true), processLabResults);
+        ThreadStruct threadStruct = new ThreadStruct(submission.labResults, new AtomicBoolean(true), processLabResults);
         synchronized (threadPoolLock){
             threadPool.put("Lab", threadStruct);
         }
-        processLabResults.start();
     }
 
     private void initializeDataSheets(){
         ArrayList<String> headers = new ArrayList<String>(){{add("Time Frame");}};
-        boolean is3D = submission.labResults.getNSlices() > 1;
+        boolean is3D = maxZ > 1;
         if (is3D){
             headers.add("Z Index");
         }
@@ -129,8 +132,8 @@ public class DataReductionWriter implements SimLoadingListener {
 
         for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
             ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
-            for (int t = submission.experimentImageRange.timeStart; t <= submission.experimentImageRange.timeEnd; t++){
-                for (int z = submission.experimentImageRange.zStart; z <= submission.experimentImageRange.zEnd; z++){
+            for (int t = 1; t <= maxT; t++){
+                for (int z = 1; z <= maxZ; z++){
                     ArrayList<String> pointRow = new ArrayList<>();
                     pointRow.add(0, String.valueOf(t));
                     if (is3D){
@@ -155,13 +158,11 @@ public class DataReductionWriter implements SimLoadingListener {
             normValue = calculations.calculateNormalValue(imagePlus, normRange, rois, imageRange);
         }
 
-        int nFrames = imageRange.timeEnd - imageRange.timeStart + 1;
-        int nSlices = imageRange.zEnd - imageRange.zStart + 1;
         int nChannels = imageRange.channelEnd - imageRange.channelStart + 1;
 
         ArrayList<ReducedData> reducedDataArrayList = new ArrayList<>();
         for (SelectMeasurements.AvailableMeasurements measurement : submission.selectedMeasurements){
-            ReducedData reducedData = new ReducedData(nFrames * nSlices, nChannels * arrayOfSimRois.size(), measurement);
+            ReducedData reducedData = new ReducedData(imageRange, nChannels * arrayOfSimRois.size(), measurement);
             reducedDataArrayList.add(reducedData);
             calculations.addAppropriateHeaders(imagePlus, rois, imageRange, reducedData, channelInfo);
         }
@@ -169,12 +170,12 @@ public class DataReductionWriter implements SimLoadingListener {
         calculations.calculateStatistics(imagePlus, rois, normValue, reducedDataArrayList, imageRange, continueOperation);
         for (ReducedData reducedData: reducedDataArrayList){
             if (continueOperation.get()){
-                addValuesToCSVMatrix(reducedData);
+                addValuesToWideCSVMatrix(reducedData);
             }
         }
     }
 
-    private void addValuesToCSVMatrix(ReducedData reducedData){
+    private void addValuesToWideCSVMatrix(ReducedData reducedData){
         synchronized (csvMatrixLock){
             ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(reducedData.measurementType);
             int colIndex = columnsForSheets.get(reducedData.measurementType);
@@ -182,18 +183,28 @@ public class DataReductionWriter implements SimLoadingListener {
             for (int c = 0; c < reducedData.columnHeaders.size(); c++){
                 dataSheet.get(0).add(colIndex, reducedData.columnHeaders.get(c));
             }
-            for (int i = 0; i < reducedData.data.length; i++){
-                for (int c = 0; c < reducedData.data[i].length; c++){
-                    ArrayList<String> row = dataSheet.get(i + 1);
+            RangeOfImage rangeOfImage = reducedData.rangeOfImage;
+            int tzCounter = 1;
+            for (int t = 1; t <= maxT; t++){
+                for (int z = 1; z <= maxZ; z++){
+                    boolean inBetweenTime = t <= rangeOfImage.timeEnd && rangeOfImage.timeStart <= t;
+                    boolean inBetweenZ = z <= rangeOfImage.zEnd && rangeOfImage.zStart <= z;
+                    ArrayList<String> row = dataSheet.get(tzCounter);
                     fillWithEmptySpace(row, colIndex);
-                    double mean = reducedData.data[i][c];
-                    row.add(String.valueOf(mean));
+                    for (int c = 0; c < reducedData.colLen; c++){
+                        if (inBetweenTime && inBetweenZ){
+                            int dataRow = ((t - rangeOfImage.timeStart) * (z - rangeOfImage.zStart)) + (z - rangeOfImage.zStart);
+                            double mean = reducedData.data[dataRow][c];
+                            row.add(String.valueOf(mean));
+                        }
+                    }
+                    tzCounter += 1;
                 }
             }
-            numOfImagesToBeOpened -= 1;
+            numOfCalculationsTimesNumImages -= 1;
             colIndex += 1 + reducedData.data[0].length;
             columnsForSheets.replace(reducedData.measurementType, colIndex);
-            if (numOfImagesToBeOpened == 0){
+            if (numOfCalculationsTimesNumImages == 0){
                 writeCSVMatrix();
             }
         }
@@ -237,6 +248,19 @@ public class DataReductionWriter implements SimLoadingListener {
         }
     }
 
+//    // Z changes the fastest
+//    private ArrayList<ArrayList<String>> fillWithEmptySpace(ReducedData reducedData){
+//        int t = 1;
+//        int z = 1;
+//        ArrayList<ArrayList<String>> paddedInfo = new ArrayList<>();
+//        while (reducedData.numFrames != t){
+//            while (reducedData.numSlices != z){
+//
+//            }
+//            t += 1;
+//        }
+//    }
+
     private void writeCSVMatrix(){
 
         try {
@@ -276,7 +300,10 @@ public class DataReductionWriter implements SimLoadingListener {
                 if (threadStruct.simResultsLoader != null){
                     SimResultsLoader loadedResults = threadStruct.simResultsLoader;
                     MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
-                    WindowManager.getImage(loadedResults.getImagePlus().getID()).close();
+                    ImagePlus openImage = WindowManager.getImage(loadedResults.getImagePlus().getID());
+                    if (openImage != null){
+                        openImage.close();
+                    }
                 }
                 threadPool.remove(threadName);
             }
@@ -309,17 +336,39 @@ public class DataReductionWriter implements SimLoadingListener {
             ThreadStruct threadStruct = new ThreadStruct(loadedResults, new AtomicBoolean(true), imageProcessingThread);
             synchronized (threadPoolLock){
                 threadPool.put(loadedResults.exportID, threadStruct);
+                if (threadPool.size() == (submission.numOfSimImages + 1)){
+                    maxZ = 0;
+                    maxT = 0;
+                    for (String threadName : threadPool.keySet()){
+                        int curZ = threadPool.get(threadName).imagePlus.getNSlices();
+                        int curT = threadPool.get(threadName).imagePlus.getNFrames();
+                        maxZ = Math.max(curZ, maxZ);
+                        maxT = Math.max(curT, maxT);
+                    }
+                    initializeDataSheets();
+                    for (String threadName : threadPool.keySet()){
+                        threadPool.get(threadName).thread.start();
+                    }
+                }
             }
-            imageProcessingThread.start();
         }
     }
 
     static class ThreadStruct {
         public final SimResultsLoader simResultsLoader;
+        public final ImagePlus imagePlus;
         public final AtomicBoolean continueOperation;
         public final Thread thread;
         public ThreadStruct(SimResultsLoader simResultsLoader, AtomicBoolean continueOperation, Thread thread){
             this.simResultsLoader = simResultsLoader;
+            this.continueOperation = continueOperation;
+            this.thread = thread;
+            this.imagePlus = simResultsLoader.getImagePlus();
+        }
+
+        public ThreadStruct(ImagePlus imagePlus, AtomicBoolean continueOperation, Thread thread){
+            this.imagePlus = imagePlus;
+            this.simResultsLoader = null;
             this.continueOperation = continueOperation;
             this.thread = thread;
         }

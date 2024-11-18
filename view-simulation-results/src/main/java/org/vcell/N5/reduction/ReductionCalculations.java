@@ -23,7 +23,7 @@ class ReductionCalculations {
             for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
                 String stringC = String.valueOf(c - 1);
                 String channelName = channelInfo != null && channelInfo.containsKey(stringC) ? channelInfo.get(stringC).get("Name") : String.valueOf(c);
-                reducedData.columnHeaders.add(imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
+                reducedData.columnHeaders.add(0, imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
             }
         }
     }

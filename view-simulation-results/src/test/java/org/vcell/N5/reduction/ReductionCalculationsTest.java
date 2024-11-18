@@ -49,9 +49,9 @@ public class ReductionCalculationsTest {
                                              boolean normalizeMeasurementsBool){
         ReductionCalculations reductionCalculations = new ReductionCalculations(normalizeMeasurementsBool);
 
-        DataReductionWriter.ReducedData reducedData = new DataReductionWriter.ReducedData(imagePlus.getNFrames() * imagePlus.getNSlices(), imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
         RangeOfImage entireRange = new RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(), 1, imagePlus.getNChannels());
         RangeOfImage normRange = new RangeOfImage(1, 1);
+        DataReductionWriter.ReducedData reducedData = new DataReductionWriter.ReducedData(entireRange, imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
         ArrayList<DataReductionWriter.ReducedData> reducedDataArrayList = new ArrayList<>();
         reducedDataArrayList.add(reducedData);
 
