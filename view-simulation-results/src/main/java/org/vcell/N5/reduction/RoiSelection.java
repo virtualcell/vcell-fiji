@@ -25,7 +25,7 @@ class RoiSelection extends JPanel {
         JList<String> simROITable = new JList<>(simTableModel);
         JFileChooser simROIFileChooser = new JFileChooser();
         this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "ROI Files"));
+        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "2D ROI Files"));
         this.parentGUI = parentGUI;
     }
 

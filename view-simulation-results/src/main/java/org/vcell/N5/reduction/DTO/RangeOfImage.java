@@ -17,6 +17,18 @@ public class RangeOfImage {
         this.channelEnd = channelEnd;
     }
 
+    public int getNChannels(){
+        return this.channelEnd - this.channelStart + 1;
+    }
+
+    public int getNFrames(){
+        return this.timeEnd - this.timeStart + 1;
+    }
+
+    public int getNSlices(){
+        return this.zEnd - this.zStart + 1;
+    }
+
     /**
      * Only regards time for range, and is used for normalization.
      * @param timeStart

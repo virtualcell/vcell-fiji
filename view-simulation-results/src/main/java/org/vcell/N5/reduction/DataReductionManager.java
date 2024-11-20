@@ -8,6 +8,7 @@ import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
+import org.vcell.N5.reduction.DTO.ReducedData;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -21,7 +22,7 @@ public class DataReductionManager implements SimLoadingListener {
     private final ArrayList<Roi> arrayOfSimRois;
     private final Object csvMatrixLock = new Object();
 
-    private int numOfCalculationsTimesNumImages;
+    private int numOfImagesToOpen;
     private final ReductionCalculations calculations;
 
     public final DataReductionGUI.DataReductionSubmission submission;
@@ -31,31 +32,12 @@ public class DataReductionManager implements SimLoadingListener {
 
     private DataReductionWriter dataReductionWriter;
 
-
-    // Per Image
-    public static class ReducedData{
-        public final double[][] data;
-        public final ArrayList<String> columnHeaders;
-        public final SelectMeasurements.AvailableMeasurements measurementType;
-        public final RangeOfImage rangeOfImage;
-        public final int colLen;
-        public ReducedData(RangeOfImage rangeOfImage, int colLen, SelectMeasurements.AvailableMeasurements measurementType){
-            int nFrames = rangeOfImage.timeEnd - rangeOfImage.timeStart + 1;
-            int nSlices = rangeOfImage.zEnd - rangeOfImage.zStart + 1;
-            data = new double[nFrames * nSlices][colLen]; // row - col
-            columnHeaders = new ArrayList<>();
-            this.measurementType = measurementType;
-            this.colLen = colLen;
-            this.rangeOfImage = rangeOfImage;
-        }
-    }
-
     public DataReductionManager(DataReductionGUI.DataReductionSubmission submission){
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         this.submission = submission;
 
         this.arrayOfSimRois = submission.arrayOfSimRois;
-        this.numOfCalculationsTimesNumImages = (submission.numOfSimImages + 1) * submission.selectedMeasurements.size(); // Plus one for the lab image
+        this.numOfImagesToOpen = submission.numOfSimImages + 1; // Plus one for the lab image
         this.calculations = new ReductionCalculations(submission.normalizeMeasurementsBool);
 
         Thread processLabResults = new Thread(() -> {
@@ -84,27 +66,25 @@ public class DataReductionManager implements SimLoadingListener {
             normValue = calculations.calculateNormalValue(imagePlus, normRange, rois, imageRange);
         }
 
-        int nChannels = imageRange.channelEnd - imageRange.channelStart + 1;
+        ReducedData reducedData = new ReducedData(imagePlus.getTitle(), imageRange, arrayOfSimRois.size(), submission.selectedMeasurements);
+        calculations.addAppropriateHeaders(rois, imageRange, reducedData, channelInfo);
 
-        ArrayList<ReducedData> reducedDataArrayList = new ArrayList<>();
-        for (SelectMeasurements.AvailableMeasurements measurement : submission.selectedMeasurements){
-            ReducedData reducedData = new ReducedData(imageRange, nChannels * arrayOfSimRois.size(), measurement);
-            reducedDataArrayList.add(reducedData);
-            calculations.addAppropriateHeaders(imagePlus, rois, imageRange, reducedData, channelInfo);
-        }
         AtomicBoolean continueOperation = threadPool.get(threadName).continueOperation;
-        calculations.calculateStatistics(imagePlus, rois, normValue, reducedDataArrayList, imageRange, continueOperation);
-        for (ReducedData reducedData: reducedDataArrayList){
-            if (continueOperation.get()){
-                synchronized (csvMatrixLock){
-                    dataReductionWriter.addValuesToWideCSVMatrix(reducedData);
-                    numOfCalculationsTimesNumImages -= 1;
+        calculations.calculateStatistics(imagePlus, rois, normValue, reducedData, imageRange, continueOperation);
+        if (continueOperation.get()){
+            synchronized (csvMatrixLock){
+                try {
+                    dataReductionWriter.consumeNewData(reducedData);
+                } catch (IOException e) {
+                    stopAllThreads();
+                    throw new RuntimeException(e);
                 }
+                numOfImagesToOpen -= 1;
             }
         }
-        if (numOfCalculationsTimesNumImages == 0){
+        if (numOfImagesToOpen == 0 && continueOperation.get()){
             try{
-                dataReductionWriter.writeCSVMatrix();
+                dataReductionWriter.close();
             } catch (IOException ioException){
                 throw new RuntimeException(ioException);
             } finally {

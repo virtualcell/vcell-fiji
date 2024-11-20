@@ -9,14 +9,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
+import org.vcell.N5.reduction.DTO.ReducedData;
 import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
-import org.vcell.N5.reduction.DataReductionManager.ReducedData;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,20 +48,24 @@ public class ReductionCalculationsTest {
     }
 
     private void compareExpectedCalculations(ImagePlus imagePlus, ArrayList<Roi> roiList, double[][] expectedResults,
-                                             boolean normalizeMeasurementsBool){
+                                             boolean normalizeMeasurementsBool, int nz, int nt, int nc){
         ReductionCalculations reductionCalculations = new ReductionCalculations(normalizeMeasurementsBool);
 
         RangeOfImage entireRange = new RangeOfImage(1, imagePlus.getNFrames(), 1, imagePlus.getNSlices(), 1, imagePlus.getNChannels());
         RangeOfImage normRange = new RangeOfImage(1, 1);
-        ReducedData reducedData = new ReducedData(entireRange, imagePlus.getNChannels() * roiList.size(), SelectMeasurements.AvailableMeasurements.AVERAGE);
-        ArrayList<ReducedData> reducedDataArrayList = new ArrayList<>();
-        reducedDataArrayList.add(reducedData);
+        ReducedData reducedData = new ReducedData("", entireRange, roiList.size(), new ArrayList<>(Collections.singletonList(SelectMeasurements.AvailableMeasurements.AVERAGE)));
 
         HashMap<String, Double> norms = reductionCalculations.calculateNormalValue(imagePlus, normRange, roiList, entireRange);
-        reductionCalculations.calculateStatistics(imagePlus, roiList, norms, reducedDataArrayList, entireRange, new AtomicBoolean(true));
-        for (int r = 0; r < expectedResults.length; r++){
-            for (int c = 0; c < expectedResults[r].length; c++){
-                Assert.assertEquals(expectedResults[r][c], reducedData.data[r][c], 0.0009);
+        reductionCalculations.calculateStatistics(imagePlus, roiList, norms, reducedData, entireRange, new AtomicBoolean(true));
+        for (int c = 0; c < nc; c++){
+            for (int r = 0; r < roiList.size(); r++){
+                for (int t = 0; t < nt; t++){
+                    for (int z = 0; z < nz; z++){
+                        int row = (t * nz) + z;
+                        int col = (r * nc) + c;
+                        Assert.assertEquals(expectedResults[row][col], reducedData.getDataPoint(t, z, c, r, SelectMeasurements.AvailableMeasurements.AVERAGE), 0.0009);
+                    }
+                }
             }
         }
     }
@@ -74,7 +79,8 @@ public class ReductionCalculationsTest {
         Roi labRoi = RoiDecoder.open(getTestResourceFiles("ROIs/Lab ROI.roi").getAbsolutePath());
         Roi simROI = RoiDecoder.open(getTestResourceFiles("ROIs/Sim ROI.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(labRoi); add(simROI);}};
-        compareExpectedCalculations(labResultImage2D, roiList, labMeans2D, false);
+        compareExpectedCalculations(labResultImage2D, roiList, labMeans2D, false,
+                1, 3, 2);
     }
 
     @Test
@@ -82,7 +88,8 @@ public class ReductionCalculationsTest {
         ImagePlus mitosis = new ImagePlus(getTestResourceFiles("mitosis.tif").getAbsolutePath());
         Roi mitosisROI = RoiDecoder.open(getTestResourceFiles("ROIs/Mitosis Center.roi").getAbsolutePath());
         ArrayList<Roi> roiList = new ArrayList<Roi>(){{add(mitosisROI);}};
-        compareExpectedCalculations(mitosis, roiList, threeDMeans, false);
+        compareExpectedCalculations(mitosis, roiList, threeDMeans, false,
+                5, 1, 2);
     }
 
     @Test
@@ -111,6 +118,7 @@ public class ReductionCalculationsTest {
             }
         }
 
-        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, true);
+        compareExpectedCalculations(labResultImage2D, roiList, normalizedValues, true,
+                1, 3, 2);
     }
 }

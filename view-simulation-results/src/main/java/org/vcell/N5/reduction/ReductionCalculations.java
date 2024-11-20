@@ -4,11 +4,12 @@ import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
-import org.vcell.N5.reduction.DataReductionManager.ReducedData;
+import org.vcell.N5.reduction.DTO.ReducedData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 class ReductionCalculations {
     private final boolean normalize;
@@ -17,14 +18,15 @@ class ReductionCalculations {
         this.normalize = normalize;
     }
     
-    public void addAppropriateHeaders(ImagePlus imagePlus, ArrayList<Roi> roiList, RangeOfImage rangeOfImage,
+    public void addAppropriateHeaders(ArrayList<Roi> roiList, RangeOfImage rangeOfImage,
                                       ReducedData reducedData,
                                       LinkedTreeMap<String, LinkedTreeMap<String, String>> channelInfo){
-        for (Roi roi: roiList){
+        for (int r = 0; r < roiList.size(); r++){
             for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){ //Last channel is domain channel, not variable
                 String stringC = String.valueOf(c - 1);
                 String channelName = channelInfo != null && channelInfo.containsKey(stringC) ? channelInfo.get(stringC).get("Name") : String.valueOf(c);
-                reducedData.columnHeaders.add(0, imagePlus.getTitle() + ":" + roi.getName() + ":" + channelName);
+                reducedData.channelNames.put(c - 1, channelName);
+                reducedData.roiNames.put(r, roiList.get(r).getName());
             }
         }
     }
@@ -35,28 +37,27 @@ class ReductionCalculations {
      * @param imagePlus
      * @param roiList
      * @param normalizationValue
-     * @param reducedDataArrayList
      * @param rangeOfImage
      */
     void calculateStatistics(ImagePlus imagePlus, ArrayList<Roi> roiList,
                              HashMap<String, Double> normalizationValue,
-                             ArrayList<ReducedData> reducedDataArrayList,
+                             ReducedData reducedData,
                              RangeOfImage rangeOfImage, AtomicBoolean continueOperation){
-        int roiCounter = 0;
-        for (Roi roi: roiList) {
-            imagePlus.setRoi(roi);
-            int tzCounter = 0;
+        for (int roi = 0; roi < roiList.size(); roi++) {
+            imagePlus.setRoi(roiList.get(roi));
             for (int t = rangeOfImage.timeStart; t <= rangeOfImage.timeEnd; t++){
                 for (int z = rangeOfImage.zStart; z <= rangeOfImage.zEnd; z++){
                     for (int c = rangeOfImage.channelStart; c <= rangeOfImage.channelEnd; c++){
-                        int channelSize = rangeOfImage.channelEnd - rangeOfImage.channelStart + 1;
                         if (!continueOperation.get()){
                             return;
                         }
                         imagePlus.setPosition(c, z, t);
+                        int nT = t - rangeOfImage.timeStart;
+                        int nZ = z - rangeOfImage.zStart;
+                        int nC = c - rangeOfImage.channelStart;
                         double calculatedValue;
-                        for (ReducedData reducedData : reducedDataArrayList){
-                            switch (reducedData.measurementType){
+                        for (SelectMeasurements.AvailableMeasurements measurement : reducedData.measurements){
+                            switch (measurement){
                                 case AVERAGE:
                                     calculatedValue = imagePlus.getStatistics().mean;
                                     break;
@@ -67,15 +68,13 @@ class ReductionCalculations {
                                     throw new RuntimeException("Unknown measurement type selected.");
                             }
                             if (normalize){
-                                calculatedValue = calculatedValue / normalizationValue.get(roi.getName() + c);
+                                calculatedValue = calculatedValue / normalizationValue.get(roiList.get(roi).getName() + c);
                             }
-                            reducedData.data[tzCounter][c - 1 + (roiCounter * channelSize)] = calculatedValue;
+                            reducedData.putDataPoint(calculatedValue, nT, nZ, nC, roi, measurement);
                         }
                     }
-                    tzCounter += 1;
                 }
             }
-            roiCounter += 1;
         }
     }
 

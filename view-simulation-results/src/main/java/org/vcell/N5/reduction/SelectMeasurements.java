@@ -6,7 +6,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.util.ArrayList;
 
-class SelectMeasurements extends JPanel implements ListSelectionListener {
+public class SelectMeasurements extends JPanel implements ListSelectionListener {
     private final JList<String> chosenMeasurement;
     private final MeasurementsDataModel measurementsDataModel = new MeasurementsDataModel();
     private final DataReductionGUI parentGUI;
