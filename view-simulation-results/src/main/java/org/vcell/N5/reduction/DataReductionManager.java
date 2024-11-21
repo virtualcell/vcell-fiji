@@ -145,6 +145,9 @@ public class DataReductionManager implements SimLoadingListener {
                     for (String threadName : threadPool.keySet()){
                         int curZ = threadPool.get(threadName).imagePlus.getNSlices();
                         int curT = threadPool.get(threadName).imagePlus.getNFrames();
+                        if (!threadName.equals("Lab") && submission.simImageRange.zEnd - submission.simImageRange.zStart == 0){
+                            curZ = 1;
+                        }
                         maxZ = Math.max(curZ, maxZ);
                         maxT = Math.max(curT, maxT);
                     }

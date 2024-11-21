@@ -73,16 +73,7 @@ public class DataReductionWriter{
         boolean is3D = maxZ > 1;
 
         // Add Time and Z-Index Columns
-        for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
-            ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
-            dataSheet.add(new ArrayList<>());
-            ArrayList<String> headerRow = dataSheet.get(0);
 
-            for (int i = 0; i < headers.size(); i++){
-                headerRow.add(i, headers.get(i));
-            }
-            columnsForSheets.put(measurement, headers.size() + 1);
-        }
 
         metaDataSheet.add(new ArrayList<>());
         metaDataSheet.get(0).add("");
@@ -96,6 +87,17 @@ public class DataReductionWriter{
             if (is3D){
                 headers.add("Z Index");
             }
+            for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
+                ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
+                dataSheet.add(new ArrayList<>());
+                ArrayList<String> headerRow = dataSheet.get(0);
+
+                for (int i = 0; i < headers.size(); i++){
+                    headerRow.add(i, headers.get(i));
+                }
+                columnsForSheets.put(measurement, headers.size() + 1);
+            }
+
             for (SelectMeasurements.AvailableMeasurements measurement : selectedMeasurements){
                 ArrayList<ArrayList<String>> dataSheet = sheetsAvailable.get(measurement);
                 for (int t = 1; t <= maxT; t++){
@@ -175,12 +177,13 @@ public class DataReductionWriter{
                     for (int t = 1; t <= maxT; t++){
                         for (int z = 1; z <= maxZ; z++){
                             boolean inBetweenTime = t <= rangeOfImage.timeEnd && rangeOfImage.timeStart <= t;
-                            boolean inBetweenZ = z <= rangeOfImage.zEnd && rangeOfImage.zStart <= z;
+                            boolean onlyOneZ = rangeOfImage.zEnd - rangeOfImage.zStart == 0 && maxZ == 1;
+                            boolean inBetweenZ = z <= rangeOfImage.zEnd && rangeOfImage.zStart <= z || onlyOneZ;
                             ArrayList<String> row = dataSheet.get(tzCounter);
                             fillWithEmptySpace(row, colIndex);
                             if (inBetweenTime && inBetweenZ){
                                 int nt = t - rangeOfImage.timeStart;
-                                int nz = z - rangeOfImage.zStart;
+                                int nz = onlyOneZ ? 0 : z - rangeOfImage.zStart;
                                 row.add(String.valueOf(reducedData.getDataPoint(nt, nz, c, r, measurement)));
                             }
                             tzCounter += 1;
