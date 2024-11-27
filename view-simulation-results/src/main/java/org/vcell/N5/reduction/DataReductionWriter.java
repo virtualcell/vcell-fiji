@@ -73,6 +73,7 @@ public class DataReductionWriter{
         if (wideTable){
             writeWideTableCSVMatrix();
         }
+        writeMetaDataTable();
     }
 
     public void initializeDataSheets(){
@@ -248,6 +249,9 @@ public class DataReductionWriter{
                 }
             }
         }
+    }
+
+    private void writeMetaDataTable() throws IOException {
         File currentFile = new File(file.getAbsolutePath() + "-Metadata.csv");
         try (FileWriter fileWriter = new FileWriter(currentFile)){
             CSVWriter csvWriter = new CSVWriter(fileWriter);
