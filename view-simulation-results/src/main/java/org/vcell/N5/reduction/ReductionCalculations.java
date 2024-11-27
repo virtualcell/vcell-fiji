@@ -65,6 +65,12 @@ class ReductionCalculations {
                                 case STD_DEV:
                                     calculatedValue = imagePlus.getStatistics().stdDev;
                                     break;
+                                case MAX_INTENSITY:
+                                    calculatedValue = imagePlus.getStatistics().max;
+                                    break;
+                                case MIN_INTENSITY:
+                                    calculatedValue = imagePlus.getStatistics().min;
+                                    break;
                                 default:
                                     throw new RuntimeException("Unknown measurement type selected.");
                             }

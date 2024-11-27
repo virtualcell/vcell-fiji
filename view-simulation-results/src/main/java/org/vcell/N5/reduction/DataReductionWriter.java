@@ -25,12 +25,16 @@ public class DataReductionWriter{
 
     private final ArrayList<ArrayList<String>> averageMatrix = new ArrayList<>();
     private final ArrayList<ArrayList<String>> standardDivMatrix = new ArrayList<>();
+    private final ArrayList<ArrayList<String>> maxIntensityMatrix = new ArrayList<>();
+    private final ArrayList<ArrayList<String>> minIntensityMatrix = new ArrayList<>();
     private final ArrayList<ArrayList<String>> metaDataSheet = new ArrayList<>();
 
 
     private final HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>> sheetsAvailable = new HashMap<SelectMeasurements.AvailableMeasurements, ArrayList<ArrayList<String>>>(){{
         put(SelectMeasurements.AvailableMeasurements.AVERAGE, averageMatrix);
         put(SelectMeasurements.AvailableMeasurements.STD_DEV, standardDivMatrix);
+        put(SelectMeasurements.AvailableMeasurements.MAX_INTENSITY, maxIntensityMatrix);
+        put(SelectMeasurements.AvailableMeasurements.MIN_INTENSITY, minIntensityMatrix);
     }};
     private final HashMap<SelectMeasurements.AvailableMeasurements, Integer> columnsForSheets = new HashMap<>();
 

@@ -35,7 +35,9 @@ public class SelectMeasurements extends JPanel implements ListSelectionListener 
 
     public enum AvailableMeasurements{
         AVERAGE("Average"),
-        STD_DEV("Standard Deviation");
+        STD_DEV("Standard Deviation"),
+        MAX_INTENSITY("Max Intensity"),
+        MIN_INTENSITY("Minimum Intensity");
 
         public final String publicName;
         AvailableMeasurements(String publicName){
@@ -44,7 +46,8 @@ public class SelectMeasurements extends JPanel implements ListSelectionListener 
     }
 
     static class MeasurementsDataModel extends AbstractListModel<String>{
-        private final AvailableMeasurements[] availableMeasurements = new AvailableMeasurements[]{AvailableMeasurements.AVERAGE, AvailableMeasurements.STD_DEV};
+        private final AvailableMeasurements[] availableMeasurements = new AvailableMeasurements[]{
+                AvailableMeasurements.AVERAGE, AvailableMeasurements.STD_DEV, AvailableMeasurements.MAX_INTENSITY, AvailableMeasurements.MIN_INTENSITY};
 
         public ArrayList<AvailableMeasurements> getSelectedMeasurements(int[] indices){
             ArrayList<AvailableMeasurements> selected = new ArrayList<>();
