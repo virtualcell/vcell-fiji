@@ -1,4 +1,4 @@
-package org.vcell.N5.reduction;
+package org.vcell.N5.reduction.GUI;
 
 import org.vcell.N5.UI.HintTextField;
 import org.vcell.N5.reduction.DTO.RangeOfImage;

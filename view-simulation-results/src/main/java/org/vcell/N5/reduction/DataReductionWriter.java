@@ -6,6 +6,8 @@ import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.reduction.DTO.ReducedData;
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
+import org.vcell.N5.reduction.GUI.SelectMeasurements;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.File;

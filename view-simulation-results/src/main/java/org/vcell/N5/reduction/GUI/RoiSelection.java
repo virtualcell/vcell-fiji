@@ -1,4 +1,4 @@
-package org.vcell.N5.reduction;
+package org.vcell.N5.reduction.GUI;
 
 import ij.gui.Roi;
 import ij.io.RoiDecoder;

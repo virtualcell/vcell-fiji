@@ -7,9 +7,8 @@ import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.RangeSelector;
 import org.vcell.N5.UI.MainPanel;
-import org.vcell.N5.reduction.DataReductionGUI;
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
 import org.vcell.N5.reduction.DataReductionManager;
-import org.vcell.N5.reduction.DataReductionWriter;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;

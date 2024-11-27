@@ -1,6 +1,6 @@
 package org.vcell.N5.reduction.DTO;
 
-import org.vcell.N5.reduction.SelectMeasurements;
+import org.vcell.N5.reduction.GUI.SelectMeasurements;
 
 import java.util.ArrayList;
 import java.util.HashMap;
