@@ -22,6 +22,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private JComboBox<String> chosenImage;
     private final JCheckBox selectRangeOfMeasurement = new JCheckBox("Select Measurement Range: ");
     private final JCheckBox normalizeMeasurement = new JCheckBox("Normalize Measurement: ");
+    private final JCheckBox choseCSVTableFormat = new JCheckBox("Choose CSV Format: ");
     
     private final JDialog jDialog = new JDialog(MainPanel.exportTableDialog, true);
     private final JButton okayButton = new JButton("Okay");
@@ -36,6 +37,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private final RoiSelection roiSelection;
     private final NormalizeGUI normalizeGUI;
     private final SelectMeasurements selectMeasurements;
+    private final SelectTableFormat selectTableFormat;
 
     private boolean continueWithProcess = false;
 
@@ -51,6 +53,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         roiSelection = new RoiSelection(this);
         normalizeGUI = new NormalizeGUI(jDialog, simTSize);
         selectMeasurements = new SelectMeasurements(this);
+        selectTableFormat = new SelectTableFormat();
 
         JPanel imagesToMeasurePanel = new JPanel();
         imagesToMeasurePanel.setLayout(new BoxLayout(imagesToMeasurePanel, BoxLayout.Y_AXIS));
@@ -62,6 +65,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         add(roiSelection);
         add(selectMeasurements);
         add(displayOptionsPanel());
+        add(selectTableFormat);
         add(normalizeGUI);
         add(selectSimRange);
         add(okayCancelPanel());
@@ -72,6 +76,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         cancelButton.addActionListener(this);
         normalizeMeasurement.addActionListener(this);
         selectRangeOfMeasurement.addActionListener(this);
+        choseCSVTableFormat.addActionListener(this);
 
         this.setBorder(new EmptyBorder(15, 12, 15, 12));
 
@@ -90,7 +95,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                 roiSelection.getSimROIList(), roiSelection.getImageROIList(),
                 WindowManager.getImage((String) chosenImage.getSelectedItem()),
                 simRange[0], simRange[1], labRange[0], labRange[1], filesToOpen.size(), chosenFile,
-                selectSimRange.getRangeOfSim(), selectMeasurements.getChosenMeasurements());
+                selectSimRange.getRangeOfSim(), selectMeasurements.getChosenMeasurements(), selectTableFormat.isWideTableSelected());
     }
 
     private JPanel okayCancelPanel(){
@@ -129,6 +134,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.X_AXIS));
         jPanel.add(normalizeMeasurement);
         jPanel.add(selectRangeOfMeasurement);
+        jPanel.add(choseCSVTableFormat);
         return jPanel;
     }
 
@@ -145,6 +151,13 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             normalizeGUI.setVisible(normalizeMeasurement.isSelected());
         } else if (e.getSource().equals(selectRangeOfMeasurement)){
             selectSimRange.setVisible(selectRangeOfMeasurement.isSelected());
+        } else if (e.getSource().equals(choseCSVTableFormat)) {
+            selectTableFormat.setVisible(choseCSVTableFormat.isSelected());
+            selectTableFormat.revalidate();
+            selectTableFormat.repaint();
+            jDialog.revalidate();
+            jDialog.repaint();
+            jDialog.pack();
         } else if (e.getSource().equals(okayButton)) {
             JFileChooser saveToFile = new JFileChooser();
             saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -180,10 +193,12 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         public final RangeOfImage simImageRange;
         public final ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements;
 
+        public final boolean wideTable;
+
         public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
                                        ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
                                        int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo,
-                                       RangeOfImage simRange, ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements){
+                                       RangeOfImage simRange, ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements, boolean wideTable){
             this.normalizeMeasurementsBool = normalizeMeasurementsBool;
             this.arrayOfLabRois = arrayOfLabRois;
             this.arrayOfSimRois = arrayOfSimRois;
@@ -198,6 +213,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                     1, labResults.getNSlices(), 1, labResults.getNChannels());
             this.simImageRange = simRange;
             this.selectedMeasurements = selectedMeasurements;
+            this.wideTable = wideTable;
         }
     }
 

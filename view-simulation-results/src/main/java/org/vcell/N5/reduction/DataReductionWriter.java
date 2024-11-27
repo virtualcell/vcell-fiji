@@ -40,7 +40,7 @@ public class DataReductionWriter{
     private final int maxZ;
     private final int maxT;
 
-    private final boolean wideTable = true;
+    private final boolean wideTable;
 
     ///////////////////////////////////////
     // Initialize Sheet and Lab results //
@@ -52,6 +52,7 @@ public class DataReductionWriter{
         this.file = submission.fileToSaveResultsTo;
         this.maxZ = maxZ;
         this.maxT = maxT;
+        this.wideTable = submission.wideTable;
     }
 
     public void consumeNewData(ReducedData reducedData) throws IOException {
