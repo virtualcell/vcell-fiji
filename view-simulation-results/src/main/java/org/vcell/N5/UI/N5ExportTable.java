@@ -215,12 +215,9 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     public void removeSpecificRowFromLoadingRows(int rowNumber){
         int realRowNumber = findLoadingRow(rowNumber, rowNumber);
-        loadingRowsJobID.remove(rowNumber);
-        int selected = exportListTable.getSelectedRow();
-        if (selected == realRowNumber){
-            controlPanel.updateButtonsToMatchState(false);
-            exportListTable.repaint();
-        }
+        loadingRowsJobID.remove(realRowNumber);
+        controlPanel.updateButtonsToMatchState(false);
+        exportListTable.repaint();
     }
 
     @Override
