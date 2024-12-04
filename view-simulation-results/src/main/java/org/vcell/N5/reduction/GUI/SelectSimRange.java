@@ -40,7 +40,7 @@ class SelectSimRange extends JPanel {
         zRange.add(zEnd);
 
         JPanel tRange = new JPanel(new GridLayout());
-        tRange.add(new JLabel("Time Range: "));
+        tRange.add(new JLabel("Time Frame's: "));
         tRange.add(tStart);
         tRange.add(new JLabel("to"));
         tRange.add(tEnd);

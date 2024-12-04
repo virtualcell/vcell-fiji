@@ -5,7 +5,7 @@ import javax.swing.border.EtchedBorder;
 import java.awt.*;
 
 public class SelectTableFormat extends JPanel {
-    private final JRadioButton wideTable = new JRadioButton("Wide (Best for manual input)");
+    private final JRadioButton wideTable = new JRadioButton("Wide (Best for manual analysis)");
 
     public SelectTableFormat(){
         this.setLayout(new GridLayout(1,1));
