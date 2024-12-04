@@ -4,6 +4,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
+import org.jetbrains.annotations.NotNull;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
@@ -42,6 +43,13 @@ public class DataReductionManager implements SimLoadingListener {
         this.calculations = new ReductionCalculations(submission.normalizeMeasurementsBool);
 
         Thread processLabResults = new Thread(() -> {
+            if (submission.arrayOfLabRois.isEmpty()){
+                int height = submission.labResults.getHeight();
+                int width = submission.labResults.getWidth();
+                Roi roi = new Roi(0, 0, width, height);
+                roi.setName("Entire Image");
+                submission.arrayOfLabRois.add(roi);
+            }
             calculateAndAddResults(submission.labResults, submission.experiementNormRange, submission.experimentImageRange,
                     submission.arrayOfLabRois, null, "Lab");
             synchronized (threadPoolLock){
@@ -125,24 +133,20 @@ public class DataReductionManager implements SimLoadingListener {
     @Override
     public void simFinishedLoading(SimResultsLoader loadedResults) {
         if (loadedResults.openTag == SimResultsLoader.OpenTag.DATA_REDUCTION){
-            Thread imageProcessingThread = new Thread(() -> {
-                ImagePlus imagePlus = loadedResults.getImagePlus();
-                imagePlus.show();
-                dataReductionWriter.addMetaData(loadedResults);
-                calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
-                        submission.arrayOfSimRois, loadedResults.getChannelInfo(), loadedResults.exportID);
-                MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
-                imagePlus.close();
-                synchronized (threadPoolLock){
-                    threadPool.remove(loadedResults.exportID);
-                }
-            }, "Processing Image: " + loadedResults.userSetFileName);
-            ThreadStruct threadStruct = new ThreadStruct(loadedResults, new AtomicBoolean(true), imageProcessingThread);
+            ThreadStruct threadStruct = getThreadStruct(loadedResults);
             synchronized (threadPoolLock){
                 threadPool.put(loadedResults.exportID, threadStruct);
                 if (threadPool.size() == (submission.numOfSimImages + 1)){
                     int maxZ = 0;
                     int maxT = 0;
+                    //
+                    if (arrayOfSimRois.isEmpty() && !threadStruct.thread.getName().equals("Lab")){
+                        int height = loadedResults.getImagePlus().getHeight();
+                        int width = loadedResults.getImagePlus().getWidth();
+                        Roi roi = new Roi(0, 0, width, height);
+                        roi.setName("Entire Image");
+                        arrayOfSimRois.add(roi);
+                    }
                     for (String threadName : threadPool.keySet()){
                         int curZ = threadPool.get(threadName).imagePlus.getNSlices();
                         int curT = threadPool.get(threadName).imagePlus.getNFrames();
@@ -160,6 +164,22 @@ public class DataReductionManager implements SimLoadingListener {
                 }
             }
         }
+    }
+
+    private @NotNull ThreadStruct getThreadStruct(SimResultsLoader loadedResults) {
+        Thread imageProcessingThread = new Thread(() -> {
+            ImagePlus imagePlus = loadedResults.getImagePlus();
+            imagePlus.show();
+            dataReductionWriter.addMetaData(loadedResults);
+            calculateAndAddResults(imagePlus, submission.simNormRange, submission.simImageRange,
+                    submission.arrayOfSimRois, loadedResults.getChannelInfo(), loadedResults.exportID);
+            MainPanel.n5ExportTable.removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
+            imagePlus.close();
+            synchronized (threadPoolLock){
+                threadPool.remove(loadedResults.exportID);
+            }
+        }, "Processing Image: " + loadedResults.userSetFileName);
+        return new ThreadStruct(loadedResults, new AtomicBoolean(true), imageProcessingThread);
     }
 
     static class ThreadStruct {

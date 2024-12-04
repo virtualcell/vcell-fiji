@@ -141,8 +141,8 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     public void activateOkayButton(){
         boolean selectedAMeasurement = !selectMeasurements.getChosenMeasurements().isEmpty();
         boolean chosenExperimentImage = chosenImage.getSelectedItem() != null;
-        boolean roisIsSelected = !roiSelection.getImageROIList().isEmpty() && !roiSelection.getSimROIList().isEmpty();
-        okayButton.setEnabled(selectedAMeasurement && chosenExperimentImage && roisIsSelected);
+//        boolean roisIsSelected = !roiSelection.getImageROIList().isEmpty() && !roiSelection.getSimROIList().isEmpty();
+        okayButton.setEnabled(selectedAMeasurement && chosenExperimentImage);
     }
 
     @Override
