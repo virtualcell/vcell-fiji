@@ -66,7 +66,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         add(selectMeasurements);
         add(displayOptionsPanel());
         add(selectTableFormat);
-        add(normalizeGUI);
+//        add(normalizeGUI);
         add(selectSimRange);
         add(okayCancelPanel());
         
@@ -132,7 +132,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private JPanel displayOptionsPanel(){
         JPanel jPanel = new JPanel();
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.X_AXIS));
-        jPanel.add(normalizeMeasurement);
+//        jPanel.add(normalizeMeasurement);
         jPanel.add(selectRangeOfMeasurement);
         jPanel.add(choseCSVTableFormat);
         return jPanel;
