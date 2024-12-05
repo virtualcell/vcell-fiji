@@ -3,6 +3,8 @@ package org.vcell.N5.UI;
 import org.scijava.log.Logger;
 import org.vcell.N5.ExportDataRepresentation;
 import org.vcell.N5.N5ImageHandler;
+import org.vcell.N5.UI.Filters.SearchBar;
+import org.vcell.N5.UI.Filters.TimeFilter;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -23,7 +25,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class N5ExportTable extends JScrollPane implements ListSelectionListener, SimLoadingListener {
-    private N5ExportTableModel n5ExportTableModel;
+    public N5ExportTableModel n5ExportTableModel;
     private JTable exportListTable;
 
     private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
@@ -32,16 +34,19 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     private ControlButtonsPanel controlPanel;
     private ExportDetailsPanel exportDetailsPanel;
+    private TimeFilter timeFilter;
 
 
     private final Logger logger = N5ImageHandler.getLogger(N5ExportTable.class);
 
     public N5ExportTable(){}
 
-    public void initialize(ControlButtonsPanel controlButtonsPanel, ExportDetailsPanel exportDetailsPanel){
+    public void initialize(ControlButtonsPanel controlButtonsPanel, ExportDetailsPanel exportDetailsPanel,
+                           TimeFilter timeFilter){
         this.controlPanel = controlButtonsPanel;
         this.exportDetailsPanel = exportDetailsPanel;
-        N5ImageHandler.loadingFactory.addSimLoadingListener(this);
+        this.timeFilter = timeFilter;
+        N5ImageHandler.loadingManager.addSimLoadingListener(this);
         n5ExportTableModel = new N5ExportTableModel();
         exportListTable = new JTable(n5ExportTableModel);
         this.setViewportView(exportListTable);
@@ -71,71 +76,45 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Export Table"));
         exportListTable.getSelectionModel().addListSelectionListener(this);
 
-        if(!N5ImageHandler.exportedDataExists()){
-            updateExampleExportsToTable();
-        }
-        else{
-            updateTableData();
-        }
+        updateTableData("");
         automaticRefresh();
     }
 
-    void updateTableData(){
+    public void updateTableData(){
+        updateTableData(SearchBar.searchTextField.getText());
+    }
+
+    public void updateTableData(String strFilter){
         // when initializing it is null
         if (controlPanel == null){
-            updateTableData(LocalDateTime.now().minusYears(10));
+            updateTableData(LocalDateTime.now().minusYears(10), strFilter);
         } else {
-            updateTableData(controlPanel.oldestTimeAllowed());
+            updateTableData(timeFilter.oldestTimeAllowed(), strFilter);
         }
     }
 
-    void updateTableData(LocalDateTime oldestTimeAllowed){
+    void updateTableData(LocalDateTime oldestTimeAllowed, String strFilter){
         n5ExportTableModel.resetData();
-        this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Personal Exports"));
+        if (!controlPanel.includeExampleExports.isSelected()){
+            this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Personal Exports"));
+        } else {
+            this.setBorder(exampleBorder);
+        }
         try {
-            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.getJsonData();
-            if (formatExportData != null){
-                Stack<String> jobStack = formatExportData.formatJobIDs;
-                while (!jobStack.isEmpty()){
-                    String jobID = jobStack.pop();
-                    if (!n5ExportTableModel.appendRowData(formatExportData.simulationDataMap.get(jobID), oldestTimeAllowed)){
-                        break;
-                    }
-                }
+            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.exportedDataExists() && !controlPanel.includeExampleExports.isSelected() ?
+                    N5ImageHandler.getJsonData() : N5ImageHandler.getExampleJSONData();
+
+            Stack<String> jobStack = (Stack<String>) formatExportData.formatJobIDs.clone();
+            while (!jobStack.isEmpty()){
+                String jobID = jobStack.pop();
+                n5ExportTableModel.addToRowData(formatExportData.simulationDataMap.get(jobID), oldestTimeAllowed,
+                        strFilter, true);
             }
+
             n5ExportTableModel.fireTableDataChanged();
             this.updateUI();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    void updateExampleExportsToTable(){
-        // when initializing it is null
-        if (controlPanel == null){
-            updateExampleExportsToTable(LocalDateTime.now().minusYears(10));
-        } else {
-            updateExampleExportsToTable(controlPanel.oldestTimeAllowed());
-        }
-    }
-
-    void updateExampleExportsToTable(LocalDateTime oldestTimeAllowed){
-        n5ExportTableModel.resetData();
-        this.setBorder(exampleBorder);
-        try{
-            ExportDataRepresentation.FormatExportDataRepresentation exampleFormatExportData = N5ImageHandler.getExampleJSONData();
-            Stack<String> exampleJobStack = (Stack<String>) exampleFormatExportData.formatJobIDs.clone();
-            while (!exampleJobStack.isEmpty()){
-                String jobID = exampleJobStack.pop();
-                if (!n5ExportTableModel.appendRowData(exampleFormatExportData.simulationDataMap.get(jobID), oldestTimeAllowed)){
-                    break;
-                }
-            }
-            n5ExportTableModel.fireTableDataChanged();
-            this.updateUI();
-        }
-        catch (FileNotFoundException e){
-            throw new RuntimeException("Can't open example N5 export table.", e);
         }
     }
 
@@ -144,7 +123,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             try {
                 while(true){
                     ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.getJsonData();
-                    if (formatExportData != null && !this.getBorder().equals(exampleBorder)){
+                    if (formatExportData != null && !controlPanel.includeExampleExports.isSelected()){
                         ExportDataRepresentation.SimulationExportDataRepresentation mostRecentTableEntry = !n5ExportTableModel.tableData.isEmpty() ? n5ExportTableModel.tableData.getFirst() : null;
                         Stack<String> jobStack = formatExportData.formatJobIDs;
                         boolean isUpdated = false;
@@ -154,7 +133,9 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
                                     || !formatExportData.simulationDataMap.containsKey(mostRecentTableEntry.jobID))){
                                 break;
                             }
-                            isUpdated = n5ExportTableModel.prependRowData(formatExportData.simulationDataMap.get(currentJob), controlPanel.oldestTimeAllowed());
+                            isUpdated = n5ExportTableModel.addToRowData(formatExportData.simulationDataMap.get(currentJob),
+                                    timeFilter.oldestTimeAllowed(), SearchBar.searchTextField.getText(),
+                                    false);
                         }
                         if(isUpdated){
                             n5ExportTableModel.fireTableDataChanged();
@@ -173,15 +154,16 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         refreshTableThread.start();
     }
 
-    public void openSelectedRows(boolean inMemory){
+    public void openSelectedRows(boolean openInMemory, boolean performDataReduction, SimResultsLoader.OpenTag openTag){
         ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
         for(int row: exportListTable.getSelectedRows()){
             String uri = n5ExportTableModel.getRowData(row).uri;
             ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
-            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag);
             filesToOpen.add(simResultsLoader);
         }
-        N5ImageHandler.loadingFactory.openN5FileDataset(filesToOpen, inMemory);
+        N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, openInMemory,
+                performDataReduction);
     }
 
     public void copySelectedRowLink(){
@@ -213,22 +195,28 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         int row = exportListTable.getSelectedRow();
         exportDetailsPanel.resetExportDetails();
         if (row > exportListTable.getRowCount() || row < 0){
-            controlPanel.enableRowContextDependentButtons(false);
+            controlPanel.disableAllContextDependentButtons();
             return;
         }
-        controlPanel.enableRowContextDependentButtons(true);
         MainPanel.setEnableParentAndChild(exportDetailsPanel, true);
         ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
         exportDetailsPanel.addExportDetailEntries("Variables: " + rowData.variables, rowData.differentParameterValues);
 
         int loadingRow = loadingRowsJobID.containsKey(row) ? findLoadingRow(row, row) : -1;
-        controlPanel.allowCancel(loadingRow != -1);
+        controlPanel.updateButtonsToMatchState(loadingRow != -1);
     }
 
-    public void removeFromLoadingRows(){
+    public void stopSelectedImageFromLoading(){
         int row = exportListTable.getSelectedRow();
-        N5ImageHandler.loadingFactory.stopOpeningSimulation(n5ExportTableModel.tableData.get(row).jobID);
+        N5ImageHandler.loadingManager.stopLoadingImage(n5ExportTableModel.tableData.get(row).jobID);
         loadingRowsJobID.remove(row);
+        exportListTable.repaint();
+    }
+
+    public void removeSpecificRowFromLoadingRows(int rowNumber){
+        int realRowNumber = findLoadingRow(rowNumber, rowNumber);
+        loadingRowsJobID.remove(realRowNumber);
+        controlPanel.updateButtonsToMatchState(false);
         exportListTable.repaint();
     }
 
@@ -239,13 +227,14 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     }
 
     @Override
-    public void simFinishedLoading(int itemRow, String exportID) {
-        loadingRowsJobID.remove(itemRow);
-        exportListTable.repaint();
-        controlPanel.allowCancel(false);
+    public void simFinishedLoading(SimResultsLoader loadedResults) {
+        if (loadedResults.openTag == SimResultsLoader.OpenTag.VIEW){
+            removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
+            loadedResults.getImagePlus().show();
+        }
     }
 
-    static class N5ExportTableModel extends AbstractTableModel {
+    public static class N5ExportTableModel extends AbstractTableModel {
         public final ArrayList<String> headers = new ArrayList<String>(){{
             add("BioModel");
             add("Application");
@@ -300,23 +289,21 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         public void resetData(){
             tableData = new LinkedList<>();
         }
-        public boolean appendRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed){
-            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime exportDate = LocalDateTime.parse(rowData.exportDate, dateFormat);
-            if (exportDate.isBefore(oldestExportAllowed)){
-                return false;
-            }
-            tableData.add(rowData);
-            return true;
+        private boolean stringFilter(ExportDataRepresentation.SimulationExportDataRepresentation rowData, String strFilter){
+            return rowData.biomodelName.contains(strFilter) || rowData.applicationName.contains(strFilter) ||
+                    rowData.simulationName.contains(strFilter) || rowData.savedFileName.contains(strFilter);
         }
-
-        public boolean prependRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed){
+        public boolean addToRowData(ExportDataRepresentation.SimulationExportDataRepresentation rowData, LocalDateTime oldestExportAllowed, String strFilter, boolean append){
             DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
             LocalDateTime exportDate = LocalDateTime.parse(rowData.exportDate, dateFormat);
-            if (exportDate.isBefore(oldestExportAllowed)){
+            if (exportDate.isBefore(oldestExportAllowed) || !stringFilter(rowData, strFilter)){
                 return false;
             }
-            tableData.addFirst(rowData);
+            if (append){
+                tableData.add(rowData);
+            } else {
+                tableData.addFirst(rowData);
+            }
             return true;
         }
 

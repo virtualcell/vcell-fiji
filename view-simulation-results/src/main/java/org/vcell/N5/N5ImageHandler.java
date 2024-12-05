@@ -11,8 +11,7 @@ import org.scijava.log.slf4j.SLF4JLogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.vcell.N5.UI.MainPanel;
-import org.vcell.N5.UI.N5ExportTable;
-import org.vcell.N5.retrieving.LoadingFactory;
+import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.*;
@@ -34,13 +33,14 @@ public class N5ImageHandler implements Command {
     public static MainPanel exportTable;
     public static String exportedMetaDataPath = System.getProperty("user.home") + "/.vcell/exportMetaData.json";
     private static ExportDataRepresentation.FormatExportDataRepresentation exampleJSONData;
-    public static LoadingFactory loadingFactory;
+    public static LoadingManager loadingManager;
 
     @Override
     public void run() {
         initializeLogService();
-        loadingFactory = new LoadingFactory();
+        loadingManager = new LoadingManager();
         exportTable = new MainPanel();
+        MainPanel.controlButtonsPanel.setStateToInitializing(true);
         setExampleJSONData();
 //        N5ImageHandler.logService.setLevel(LogService.DEBUG);
         Thread thread = new Thread(() -> {
@@ -48,6 +48,8 @@ public class N5ImageHandler implements Command {
             // So create one upon initialization, while the user is focused on the GUI
             // and by the time they open an Image it's already loaded.
             SimResultsLoader.s3ClientBuilder = AmazonS3ClientBuilder.standard();
+            MainPanel.controlButtonsPanel.setStateToInitializing(false);
+            MainPanel.n5ExportTable.valueChanged(null);
         });
         thread.start();
     }

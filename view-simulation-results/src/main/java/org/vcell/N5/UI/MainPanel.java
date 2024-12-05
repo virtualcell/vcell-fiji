@@ -1,38 +1,52 @@
 package org.vcell.N5.UI;
 
+import org.vcell.N5.UI.Filters.SearchBar;
+import org.vcell.N5.UI.Filters.TimeFilter;
+
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.Enumeration;
 
 public class MainPanel {
-    private static JDialog exportTableDialog;
-    private final int paneWidth = 800;
+    public static JFrame exportTableDialog;
 
     public final static ControlButtonsPanel controlButtonsPanel = new ControlButtonsPanel();
-    public final N5ExportTable n5ExportTable = new N5ExportTable();
+    public final static N5ExportTable n5ExportTable = new N5ExportTable();
     public final ExportDetailsPanel exportDetailsPanel = new ExportDetailsPanel();
     public final RemoteFileSelection remoteFileSelection = new RemoteFileSelection();
-
+    public final static TimeFilter timeFilter = new TimeFilter();
+    public final static SearchBar searchBar = new SearchBar();
 
     public MainPanel(){
-        JPanel parentPanel = new JPanel();
-
-
-        n5ExportTable.initialize(controlButtonsPanel, exportDetailsPanel);
+        n5ExportTable.initialize(controlButtonsPanel, exportDetailsPanel, timeFilter);
         controlButtonsPanel.initialize(n5ExportTable, remoteFileSelection);
 
-        parentPanel.setLayout(new BorderLayout());
-        parentPanel.add(controlButtonsPanel, BorderLayout.NORTH);
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        JPanel northPanel = new JPanel(new BorderLayout());
+        northPanel.add(controlButtonsPanel, BorderLayout.SOUTH);
+
         JSplitPane jSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, n5ExportTable, exportDetailsPanel);
         jSplitPane.setContinuousLayout(true);
-        parentPanel.add(jSplitPane, BorderLayout.CENTER);
 
-        parentPanel.setPreferredSize(new Dimension(paneWidth, 650));
-        JOptionPane pane = new JOptionPane(parentPanel, JOptionPane.PLAIN_MESSAGE, 0, null, new Object[]{"Close"});
-        exportTableDialog = pane.createDialog("VCell Exports");
-        exportTableDialog.setModal(false);
+        JPanel filters = new JPanel(new BorderLayout());
+        Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+        filters.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, " Filters "));
+        filters.add(timeFilter, BorderLayout.NORTH);
+        filters.add(searchBar, BorderLayout.SOUTH);
+
+        contentPanel.add(northPanel, BorderLayout.NORTH);
+        contentPanel.add(jSplitPane, BorderLayout.CENTER);
+        contentPanel.add(filters, BorderLayout.SOUTH);
+        contentPanel.setBorder(new EmptyBorder(15, 12, 15, 12));
+
+        exportTableDialog = new JFrame("VCell Exports");
+        exportTableDialog.add(contentPanel);
+        exportTableDialog.pack();
         exportTableDialog.setResizable(true);
         exportTableDialog.setVisible(true);
     }
