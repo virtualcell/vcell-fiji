@@ -57,10 +57,6 @@ public class TimeFilter extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(anyInterval) || e.getSource().equals(todayInterval)
                 || e.getSource().equals(monthInterval) || e.getSource().equals(yearlyInterval)) {
-            if(MainPanel.controlButtonsPanel.includeExampleExports.isSelected()){
-                n5ExportTable.updateTableData();
-                return;
-            }
             n5ExportTable.updateTableData();
         }
     }

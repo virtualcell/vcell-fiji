@@ -141,7 +141,7 @@ public class DataReductionWriter{
     public void addMetaData(SimResultsLoader loadedResults){
         synchronized (metaDataLock){
             N5ExportTable n5ExportTable = MainPanel.n5ExportTable;
-            ExportDataRepresentation.SimulationExportDataRepresentation data = n5ExportTable.n5ExportTableModel.getRowData(loadedResults.rowNumber);
+            ExportDataRepresentation.SimulationExportDataRepresentation data = n5ExportTable.getN5ExportTableModel().getRowData(loadedResults.rowNumber);
             ArrayList<String> newMetaData = new ArrayList<>();
             newMetaData.add(loadedResults.userSetFileName);
             newMetaData.add(data.biomodelName);
