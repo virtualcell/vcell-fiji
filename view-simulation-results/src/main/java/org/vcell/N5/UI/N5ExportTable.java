@@ -163,7 +163,7 @@ public class N5ExportTable extends JTabbedPane implements ListSelectionListener,
         for(int row: currentTable.getSelectedRows()){
             String uri = n5ExportTableModel.getRowData(row).uri;
             ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
-            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag, rowData.imageROIReferences);
             filesToOpen.add(simResultsLoader);
         }
         N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, openInMemory,

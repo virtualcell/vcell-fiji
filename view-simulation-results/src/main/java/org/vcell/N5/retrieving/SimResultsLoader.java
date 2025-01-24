@@ -10,11 +10,15 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.LinkedTreeMap;
 import ij.ImagePlus;
+import ij.gui.Roi;
+import ij.io.RoiDecoder;
 import ij.plugin.ContrastEnhancer;
 import ij.plugin.Duplicator;
+import ij.plugin.frame.RoiManager;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.DoubleType;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.ssl.SSLContexts;
@@ -32,10 +36,9 @@ import org.vcell.N5.library.extensions.SimCacheLoader;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URI;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -45,6 +48,7 @@ import java.util.HashMap;
 
 public class SimResultsLoader {
     private File selectedLocalFile;
+    private ArrayList<URL> roiReferences;
     private URI uri;
     private String dataSetChosen;
     private static final String defaultS3Region = "site2-low";
@@ -62,11 +66,14 @@ public class SimResultsLoader {
     public SimResultsLoader(){
         openTag = OpenTag.TEST;
     }
-    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID, OpenTag openTag){
+    public SimResultsLoader(String stringURI, String userSetFileName, int rowNumber, String exportID, OpenTag openTag, ArrayList<URL> roiReference){
         this(stringURI, userSetFileName, openTag);
         this.rowNumber = rowNumber;
         this.exportID = exportID;
+        this.roiReferences = roiReference;
     }
+
+    // Mostly for tests
     public SimResultsLoader(String stringURI, String userSetFileName, OpenTag openTag){
         uri = URI.create(stringURI);
         this.userSetFileName = userSetFileName;
@@ -165,6 +172,22 @@ public class SimResultsLoader {
         imagePlus.setZ(Math.floorDiv(imagePlus.getNSlices(), 2));
         imagePlus.setT(Math.floorDiv(imagePlus.getNFrames(), 2));
 
+        // There is ROI's referenced with this image
+        if (roiReferences != null){
+            for (URL roiReference : roiReferences){
+                try (InputStream input = roiReference.openStream()) {
+                    final File tempFile = File.createTempFile("imagej-roi", "tmp");
+                    try (FileOutputStream out = new FileOutputStream(tempFile)) {
+                        IOUtils.copy(input, out);
+                    }
+                    Roi roi = RoiDecoder.open(tempFile.getAbsolutePath());
+                    imagePlus.setRoi(roi);
+                    tempFile.delete();
+                } catch (IOException e) {
+                    logger.debug("Can't open stream to roi reference: " + roiReference);
+                }
+            }
+        }
         new ContrastEnhancer().stretchHistogram(imagePlus, 1);
     }
 
