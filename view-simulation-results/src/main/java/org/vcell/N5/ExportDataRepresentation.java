@@ -1,5 +1,6 @@
 package org.vcell.N5;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
@@ -24,18 +25,20 @@ public class ExportDataRepresentation {
     }
 
     public static class SimulationExportDataRepresentation {
-        public String exportDate;
-        public String uri;
-        public String jobID;
-        public String dataID;
-        public String simulationName;
-        public String applicationName;
-        public String biomodelName;
-        public String variables;
-        public String startAndEndTime;
+        public final String exportDate;
+        public final String uri;
+        public final String jobID;
+        public final String dataID;
+        public final String simulationName;
+        public final String applicationName;
+        public final String biomodelName;
+        public final String variables;
+        public final String startAndEndTime;
 
-        public ArrayList<String> differentParameterValues;
-        public String savedFileName;
+        public final ArrayList<String> differentParameterValues;
+        public final String savedFileName;
+
+        public final ArrayList<URL> imageROIReferences;
 
         public int zSlices;
         public int tSlices;
@@ -43,7 +46,7 @@ public class ExportDataRepresentation {
 
         public SimulationExportDataRepresentation(String exportDate, String uri, String jobID, String dataID, String simulationName,
                                                   String applicationName, String biomodelName, String variables, String startAndEndTime,
-                                                  ArrayList<String> differentParameterValues, String savedFileName){
+                                                  ArrayList<String> differentParameterValues, String savedFileName, ArrayList<URL> imageROIReferences){
             this.exportDate = exportDate;
             this.uri = uri;
             this.jobID = jobID;
@@ -55,6 +58,7 @@ public class ExportDataRepresentation {
             this.startAndEndTime = startAndEndTime;
             this.differentParameterValues = differentParameterValues;
             this.savedFileName = savedFileName;
+            this.imageROIReferences = imageROIReferences;
         }
     }
 

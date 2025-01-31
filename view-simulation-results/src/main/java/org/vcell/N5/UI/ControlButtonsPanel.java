@@ -22,7 +22,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 //    private final JButton openLocal = new JButton("Open N5 Local");
     private final JButton questionMark;
 
-    public final JCheckBox includeExampleExports;
     public final JCheckBox displayAdvancedFeatures;
 
     private N5ExportTable n5ExportTable;
@@ -31,9 +30,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
     private PanelState panelState = PanelState.NOTHING_OR_LOADING_IMAGE;
 
     public ControlButtonsPanel(){
-        includeExampleExports = new JCheckBox("Show Example Exports");
-        includeExampleExports.setSelected(!N5ImageHandler.exportedDataExists());
-
         displayAdvancedFeatures = new JCheckBox("Advanced Features");
 
         openOrCancel = new JButton("Open Virtual Stack");
@@ -54,7 +50,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
 
 
         JPanel bottomRow = new JPanel(new GridBagLayout());
-        bottomRow.add(includeExampleExports);
         gridBagConstraints.gridx = 1;
         bottomRow.add(displayAdvancedFeatures, gridBagConstraints);
         gridBagConstraints.gridx = 2;
@@ -86,7 +81,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
         questionMark.addActionListener(this);
         advancedFeatures.useN5Link.addActionListener(this);
 //        openLocal.addActionListener(this);
-        includeExampleExports.addActionListener(this);
         displayAdvancedFeatures.addActionListener(this);
         dataReduction.addActionListener(this);
         advancedFeatures.openInMemory.addActionListener(this);
@@ -130,8 +124,6 @@ public class ControlButtonsPanel extends JPanel implements ActionListener {
             new HelpExplanation().displayHelpMenu();
         } else if (e.getSource().equals(advancedFeatures.useN5Link)) {
             remoteFileSelection.setVisible(true);
-        } else if (e.getSource().equals(includeExampleExports)){
-            n5ExportTable.updateTableData();
         } else if (e.getSource().equals(displayAdvancedFeatures)) {
             advancedFeatures.setVisible(displayAdvancedFeatures.isSelected());
         }

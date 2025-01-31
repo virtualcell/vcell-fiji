@@ -2,6 +2,7 @@ package org.vcell.N5.reduction.GUI;
 
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
+import ij.plugin.frame.RoiManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,7 +26,7 @@ class RoiSelection extends JPanel {
         JList<String> simROITable = new JList<>(simTableModel);
         JFileChooser simROIFileChooser = new JFileChooser();
         this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Apply 2D ROI Files"));
+        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Apply ROI"));
         this.parentGUI = parentGUI;
     }
 
@@ -41,7 +42,8 @@ class RoiSelection extends JPanel {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<Roi> roiList = fillROIList(fileChooser);
+                AvailableROIs availableROIs = new AvailableROIs();
+                ArrayList<Roi> roiList = availableROIs.getSelectedRows();
                 for (Roi roi : roiList){
                     roiDataModel.addRow(roi);
                 }

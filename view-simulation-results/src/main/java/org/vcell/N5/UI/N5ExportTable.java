@@ -9,8 +9,6 @@ import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -24,13 +22,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class N5ExportTable extends JScrollPane implements ListSelectionListener, SimLoadingListener {
-    public N5ExportTableModel n5ExportTableModel;
+public class N5ExportTable extends JTabbedPane implements ListSelectionListener, SimLoadingListener {
+    private N5ExportTableModel n5ExportTableModel;
     private JTable exportListTable;
-
-    private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-    private final Border exampleBorder = BorderFactory.createTitledBorder(lowerEtchedBorder, "Example Exports");
+    private JTable exampleExportListTable;
     private final Map<Integer, String> loadingRowsJobID = new HashMap<>();
+
+    private final JScrollPane personalExportsPanel = new JScrollPane();
+    private final JScrollPane exampleExportsPanel = new JScrollPane();
+
 
     private ControlButtonsPanel controlPanel;
     private ExportDetailsPanel exportDetailsPanel;
@@ -49,7 +49,12 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         n5ExportTableModel = new N5ExportTableModel();
         exportListTable = new JTable(n5ExportTableModel);
-        this.setViewportView(exportListTable);
+        exampleExportListTable = new JTable(n5ExportTableModel);
+        personalExportsPanel.setViewportView(exportListTable);
+        exampleExportsPanel.setViewportView(exampleExportListTable);
+
+        this.addTab("Personal Exports", personalExportsPanel);
+        this.addTab("Example Exports", exampleExportsPanel);
 
 
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer(){
@@ -70,12 +75,14 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         int columns = n5ExportTableModel.getColumnCount();
         for (int i = 0; i < columns; i++){
             exportListTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
+            exampleExportListTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
         this.setPreferredSize(new Dimension(500, 400));
-        this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Export Table"));
         exportListTable.getSelectionModel().addListSelectionListener(this);
+        exampleExportListTable.getSelectionModel().addListSelectionListener(this);
 
+        this.setSelectedIndex(N5ImageHandler.exportedDataExists() ? 0 : 1);
         updateTableData("");
         automaticRefresh();
     }
@@ -95,13 +102,9 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     void updateTableData(LocalDateTime oldestTimeAllowed, String strFilter){
         n5ExportTableModel.resetData();
-        if (!controlPanel.includeExampleExports.isSelected()){
-            this.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Personal Exports"));
-        } else {
-            this.setBorder(exampleBorder);
-        }
         try {
-            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.exportedDataExists() && !controlPanel.includeExampleExports.isSelected() ?
+            boolean hasPersonalExports = N5ImageHandler.exportedDataExists() && this.getSelectedIndex() == 0;
+            ExportDataRepresentation.FormatExportDataRepresentation formatExportData = hasPersonalExports ?
                     N5ImageHandler.getJsonData() : N5ImageHandler.getExampleJSONData();
 
             Stack<String> jobStack = (Stack<String>) formatExportData.formatJobIDs.clone();
@@ -123,7 +126,7 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             try {
                 while(true){
                     ExportDataRepresentation.FormatExportDataRepresentation formatExportData = N5ImageHandler.getJsonData();
-                    if (formatExportData != null && !controlPanel.includeExampleExports.isSelected()){
+                    if (formatExportData != null && this.getSelectedIndex() == 0){
                         ExportDataRepresentation.SimulationExportDataRepresentation mostRecentTableEntry = !n5ExportTableModel.tableData.isEmpty() ? n5ExportTableModel.tableData.getFirst() : null;
                         Stack<String> jobStack = formatExportData.formatJobIDs;
                         boolean isUpdated = false;
@@ -156,10 +159,11 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     public void openSelectedRows(boolean openInMemory, boolean performDataReduction, SimResultsLoader.OpenTag openTag){
         ArrayList<SimResultsLoader> filesToOpen = new ArrayList<>();
-        for(int row: exportListTable.getSelectedRows()){
+        JTable currentTable = getCurrentTable();
+        for(int row: currentTable.getSelectedRows()){
             String uri = n5ExportTableModel.getRowData(row).uri;
             ExportDataRepresentation.SimulationExportDataRepresentation rowData = n5ExportTableModel.getRowData(row);
-            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag);
+            SimResultsLoader simResultsLoader = new SimResultsLoader(uri, rowData.savedFileName, row, rowData.jobID, openTag, rowData.imageROIReferences);
             filesToOpen.add(simResultsLoader);
         }
         N5ImageHandler.loadingManager.openN5FileDataset(filesToOpen, openInMemory,
@@ -167,7 +171,8 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
     }
 
     public void copySelectedRowLink(){
-        ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(exportListTable.getSelectedRow());
+        JTable currentTable = getCurrentTable();
+        ExportDataRepresentation.SimulationExportDataRepresentation selectedRow = n5ExportTableModel.getRowData(currentTable.getSelectedRow());
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(new StringSelection(selectedRow.uri), null);
     }
@@ -192,9 +197,10 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
 
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        int row = exportListTable.getSelectedRow();
+        JTable currentTable = getCurrentTable();
+        int row = currentTable.getSelectedRow();
         exportDetailsPanel.resetExportDetails();
-        if (row > exportListTable.getRowCount() || row < 0){
+        if (row > currentTable.getRowCount() || row < 0){
             controlPanel.disableAllContextDependentButtons();
             return;
         }
@@ -206,24 +212,33 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
         controlPanel.updateButtonsToMatchState(loadingRow != -1);
     }
 
+    @Override
+    public void setSelectedIndex(int index) {
+        super.setSelectedIndex(index);
+        updateTableData();
+    }
+
     public void stopSelectedImageFromLoading(){
-        int row = exportListTable.getSelectedRow();
+        JTable currentTable = getCurrentTable();
+        int row = currentTable.getSelectedRow();
         N5ImageHandler.loadingManager.stopLoadingImage(n5ExportTableModel.tableData.get(row).jobID);
         loadingRowsJobID.remove(row);
-        exportListTable.repaint();
+        currentTable.repaint();
     }
 
     public void removeSpecificRowFromLoadingRows(int rowNumber){
+        JTable currentTable = getCurrentTable();
         int realRowNumber = findLoadingRow(rowNumber, rowNumber);
         loadingRowsJobID.remove(realRowNumber);
         controlPanel.updateButtonsToMatchState(false);
-        exportListTable.repaint();
+        currentTable.repaint();
     }
 
     @Override
     public void simIsLoading(int itemRow, String exportID) {
+        JTable currentTable = getCurrentTable();
         loadingRowsJobID.put(itemRow, exportID);
-        exportListTable.repaint();
+        currentTable.repaint();
     }
 
     @Override
@@ -232,6 +247,18 @@ public class N5ExportTable extends JScrollPane implements ListSelectionListener,
             removeSpecificRowFromLoadingRows(loadedResults.rowNumber);
             loadedResults.getImagePlus().show();
         }
+    }
+
+    /**
+     * Required, for there is one table for examples and another for personal exports. The same table
+     * can not be used for both tabs, because a JComponent can have only one parent.
+     */
+    private JTable getCurrentTable(){
+        return this.getSelectedIndex() == 0 ? exportListTable : exampleExportListTable;
+    }
+
+    public N5ExportTableModel getN5ExportTableModel(){
+        return n5ExportTableModel;
     }
 
     public static class N5ExportTableModel extends AbstractTableModel {
