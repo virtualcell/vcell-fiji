@@ -17,23 +17,23 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class DataReductionGUI extends JPanel implements ActionListener {
-    private final JDialog jDialog = new JDialog(MainPanel.exportTableDialog, true);
+    private final JDialog jDialog = new CustomDialog(MainPanel.exportTableDialog, true);
     private final JButton okayButton = new JButton("Next");
-    private final JButton cancelButton = new JButton("Cancel");
+    private final JButton backButton = new JButton("Back");
 
     private File resultSaveFile;
 
     private final ArrayList<SimResultsLoader> simsToOpen;
     private final ArrayList<JPanel> panels = new ArrayList<>();
 
-    public int fileChooserReturnValue;
-
+    private final JPanel switchPanel = new JPanel();
     private final RoiSelection roiSelection;
     private final ImagesToMeasure imagesToMeasurePanel;
     private final NormalizeGUI normalizeGUI;
     private final Conclusion conclusion;
 
     private boolean continueWithProcess = false;
+    private int currentPanelIndex = 0;
 
 
     public DataReductionGUI(ArrayList<SimResultsLoader> simsToOpen, double simCSize, double simZSize, double simTSize){
@@ -44,18 +44,19 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         roiSelection = new RoiSelection(this);
         normalizeGUI = new NormalizeGUI(jDialog, simTSize);
         conclusion = new Conclusion(this, simCSize, simZSize, simTSize);
-        imagesToMeasurePanel = new ImagesToMeasure(simsToOpen);
+        imagesToMeasurePanel = new ImagesToMeasure(simsToOpen, this);
 
         panels.add(imagesToMeasurePanel);
         panels.add(roiSelection);
         panels.add(conclusion);
 
-        add(panels.get(0));
-        add(okayCancelPanel());
+        switchPanel.add(panels.get(0));
+        add(switchPanel);
+        add(okayBackPanel());
         setVisible(true);
 
         okayButton.addActionListener(this);
-        cancelButton.addActionListener(this);
+        backButton.addActionListener(this);
 
 
         this.setBorder(new EmptyBorder(15, 12, 15, 12));
@@ -78,18 +79,15 @@ public class DataReductionGUI extends JPanel implements ActionListener {
                 conclusion.selectSimRange.getRangeOfSim(), conclusion.selectMeasurements.getChosenMeasurements(), conclusion.selectTableFormat.isWideTableSelected());
     }
 
-    private JPanel okayCancelPanel(){
+    private JPanel okayBackPanel(){
         JPanel jPanel = new JPanel();
+        jPanel.add(backButton);
         jPanel.add(okayButton);
-        jPanel.add(cancelButton);
         return jPanel;
     }
 
     public void activateNext(){
-        int currentPanelIndex = panels.indexOf(jDialog.getContentPane().getComponent(0));
-        jDialog.getContentPane().remove(0);
-        jDialog.getContentPane().add(panels.get(currentPanelIndex + 1));
-        updateDisplay();
+        okayButton.setEnabled(true);
     }
 
     public void activateOkayButton(){
@@ -107,18 +105,40 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(okayButton)) {
-            JFileChooser saveToFile = new JFileChooser();
-            saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
-            if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
-                resultSaveFile = saveToFile.getSelectedFile();
-                MainPanel.controlButtonsPanel.updateButtonsToMatchState();
-                continueWithProcess = true;
-                jDialog.dispose();
+            if (okayButton.getText().equals("Next")){
+                if (currentPanelIndex == panels.size() - 1){
+                    return;
+                }
+                switchPanel.remove(panels.get(currentPanelIndex));
+                currentPanelIndex += 1;
+                switchPanel.add(panels.get(currentPanelIndex));
+                if (panels.get(currentPanelIndex) != roiSelection){
+                    okayButton.setEnabled(false);
+                }
+                if (currentPanelIndex == panels.size() - 1){
+                    okayButton.setText("Finish");
+                }
+                updateDisplay();
+            } else {
+                JFileChooser saveToFile = new JFileChooser();
+                saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                int fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
+                if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
+                    resultSaveFile = saveToFile.getSelectedFile();
+                    MainPanel.controlButtonsPanel.updateButtonsToMatchState();
+                    continueWithProcess = true;
+                    jDialog.dispose();
+                }
             }
-        } else if (e.getSource().equals(cancelButton)) {
-            MainPanel.controlButtonsPanel.updateButtonsToMatchState(false, ControlButtonsPanel.PanelState.NOTHING_OR_LOADING_IMAGE);
-            jDialog.dispose();
+        } else if (e.getSource().equals(backButton)) {
+            if (currentPanelIndex == 0){
+                return;
+            }
+            okayButton.setText("Next");
+            switchPanel.remove(panels.get(currentPanelIndex));
+            currentPanelIndex -= 1;
+            switchPanel.add(panels.get(currentPanelIndex));
+            updateDisplay();
         }
     }
 
@@ -128,6 +148,18 @@ public class DataReductionGUI extends JPanel implements ActionListener {
 
     public static void main(String[] args) {
         DataReductionGUI dataReductionGUI = new DataReductionGUI(new ArrayList<>(), 0, 0, 0);
+    }
+
+    static class CustomDialog extends JDialog{
+        public CustomDialog(JFrame parent, boolean modal){
+            super(parent, modal);
+        }
+
+        @Override
+        public void dispose() {
+            MainPanel.controlButtonsPanel.updateButtonsToMatchState(false, ControlButtonsPanel.PanelState.NOTHING_OR_LOADING_IMAGE);
+            super.dispose();
+        }
     }
 }
 
