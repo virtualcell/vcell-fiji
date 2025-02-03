@@ -1,11 +1,12 @@
 package org.vcell.N5.reduction.GUI;
 
-import ij.ImagePlus;
 import ij.WindowManager;
-import ij.gui.Roi;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
-import org.vcell.N5.reduction.DTO.RangeOfImage;
+import org.vcell.N5.reduction.DTO.DataReductionSubmission;
+import org.vcell.N5.reduction.GUI.conclusion.SelectMeasurements;
+import org.vcell.N5.reduction.GUI.conclusion.SelectSimRange;
+import org.vcell.N5.reduction.GUI.conclusion.SelectTableFormat;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
@@ -25,7 +26,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
     private final JCheckBox choseCSVTableFormat = new JCheckBox("Choose CSV Format: ");
     
     private final JDialog jDialog = new JDialog(MainPanel.exportTableDialog, true);
-    private final JButton okayButton = new JButton("Okay");
+    private final JButton okayButton = new JButton("Next");
     private final JButton cancelButton = new JButton("Cancel");
     private File chosenFile;
 
@@ -142,6 +143,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         boolean selectedAMeasurement = !selectMeasurements.getChosenMeasurements().isEmpty();
         boolean chosenExperimentImage = chosenImage.getSelectedItem() != null;
 //        boolean roisIsSelected = !roiSelection.getImageROIList().isEmpty() && !roiSelection.getSimROIList().isEmpty();
+        okayButton.setText("Okay");
         okayButton.setEnabled(selectedAMeasurement && chosenExperimentImage);
     }
 
@@ -176,45 +178,6 @@ public class DataReductionGUI extends JPanel implements ActionListener {
 
     public boolean shouldContinueWithProcess() {
         return continueWithProcess;
-    }
-
-    public static class DataReductionSubmission{
-        public final boolean normalizeMeasurementsBool;
-        public final ArrayList<Roi> arrayOfSimRois;
-        public final ArrayList<Roi> arrayOfLabRois;
-        public final ImagePlus labResults;
-        public final int numOfSimImages;
-        public final File fileToSaveResultsTo;
-
-        public final RangeOfImage experiementNormRange;
-        public final RangeOfImage simNormRange;
-
-        public final RangeOfImage experimentImageRange;
-        public final RangeOfImage simImageRange;
-        public final ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements;
-
-        public final boolean wideTable;
-
-        public DataReductionSubmission(boolean normalizeMeasurementsBool, ArrayList<Roi> arrayOfSimRois, ArrayList<Roi> arrayOfLabRois,
-                                       ImagePlus labResults, int simStartPointNorm, int simEndPointNorm, int imageStartPointNorm,
-                                       int imageEndPointNorm, int numOfSimImages, File fileToSaveResultsTo,
-                                       RangeOfImage simRange, ArrayList<SelectMeasurements.AvailableMeasurements> selectedMeasurements, boolean wideTable){
-            this.normalizeMeasurementsBool = normalizeMeasurementsBool;
-            this.arrayOfLabRois = arrayOfLabRois;
-            this.arrayOfSimRois = arrayOfSimRois;
-            this.labResults = labResults;
-            this.numOfSimImages = numOfSimImages;
-            this.fileToSaveResultsTo = fileToSaveResultsTo;
-
-            this.experiementNormRange = new RangeOfImage(imageStartPointNorm, imageEndPointNorm);
-            this.simNormRange = new RangeOfImage(simStartPointNorm, simEndPointNorm);
-
-            this.experimentImageRange = new RangeOfImage(1, labResults.getNFrames(),
-                    1, labResults.getNSlices(), 1, labResults.getNChannels());
-            this.simImageRange = simRange;
-            this.selectedMeasurements = selectedMeasurements;
-            this.wideTable = wideTable;
-        }
     }
 
     public static void main(String[] args) {

@@ -1,4 +1,6 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.conclusion;
+
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

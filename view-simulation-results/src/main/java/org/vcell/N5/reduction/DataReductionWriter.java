@@ -6,8 +6,8 @@ import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.UI.N5ExportTable;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.reduction.DTO.ReducedData;
-import org.vcell.N5.reduction.GUI.DataReductionGUI;
-import org.vcell.N5.reduction.GUI.SelectMeasurements;
+import org.vcell.N5.reduction.DTO.DataReductionSubmission;
+import org.vcell.N5.reduction.GUI.conclusion.SelectMeasurements;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import java.io.File;
@@ -21,7 +21,7 @@ public class DataReductionWriter{
     private final Object metaDataLock = new Object();
     private final File file;
 
-    public final DataReductionGUI.DataReductionSubmission submission;
+    public final DataReductionSubmission submission;
 
     private final ArrayList<ArrayList<String>> averageMatrix = new ArrayList<>();
     private final ArrayList<ArrayList<String>> standardDivMatrix = new ArrayList<>();
@@ -52,7 +52,7 @@ public class DataReductionWriter{
     // Initialize Sheet and Lab results //
     /////////////////////////////////////
 
-    public DataReductionWriter(DataReductionGUI.DataReductionSubmission submission, int maxT, int maxZ){
+    public DataReductionWriter(DataReductionSubmission submission, int maxT, int maxZ){
         this.submission = submission;
         this.selectedMeasurements = submission.selectedMeasurements;
         this.file = submission.fileToSaveResultsTo;

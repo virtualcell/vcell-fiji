@@ -5,7 +5,7 @@ import ij.ImagePlus;
 import ij.gui.Roi;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.reduction.DTO.ReducedData;
-import org.vcell.N5.reduction.GUI.SelectMeasurements;
+import org.vcell.N5.reduction.GUI.conclusion.SelectMeasurements;
 
 import java.util.ArrayList;
 import java.util.HashMap;

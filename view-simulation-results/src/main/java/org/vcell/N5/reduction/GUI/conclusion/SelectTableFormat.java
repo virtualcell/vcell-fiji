@@ -1,4 +1,4 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.conclusion;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;

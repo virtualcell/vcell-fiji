@@ -1,4 +1,4 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.conclusion;
 
 import org.vcell.N5.UI.HintTextField;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
@@ -10,7 +10,7 @@ import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-class SelectSimRange extends JPanel {
+public class SelectSimRange extends JPanel {
     private final JTextField cStart = new HintTextField("1");
     private final JTextField cEnd;
 
