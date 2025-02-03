@@ -1,4 +1,4 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.ROIs;
 
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;

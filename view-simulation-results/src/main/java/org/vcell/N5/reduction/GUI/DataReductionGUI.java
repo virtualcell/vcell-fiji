@@ -1,16 +1,15 @@
 package org.vcell.N5.reduction.GUI;
 
-import ij.WindowManager;
 import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.reduction.DTO.DataReductionSubmission;
+import org.vcell.N5.reduction.GUI.ROIs.RoiSelection;
 import org.vcell.N5.reduction.GUI.conclusion.Conclusion;
+import org.vcell.N5.reduction.GUI.images.ImagesToMeasure;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,43 +17,40 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class DataReductionGUI extends JPanel implements ActionListener {
-    private JComboBox<String> chosenImage;
-    
     private final JDialog jDialog = new JDialog(MainPanel.exportTableDialog, true);
-    private final JButton okayButton = new JButton("Okay");
+    private final JButton okayButton = new JButton("Next");
     private final JButton cancelButton = new JButton("Cancel");
-    private File chosenFile;
 
-    private final ArrayList<SimResultsLoader> filesToOpen;
+    private File resultSaveFile;
+
+    private final ArrayList<SimResultsLoader> simsToOpen;
+    private final ArrayList<JPanel> panels = new ArrayList<>();
 
     public int fileChooserReturnValue;
 
     private final RoiSelection roiSelection;
+    private final ImagesToMeasure imagesToMeasurePanel;
     private final NormalizeGUI normalizeGUI;
     private final Conclusion conclusion;
 
     private boolean continueWithProcess = false;
 
-    private final Border lowerEtchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 
-    public DataReductionGUI(ArrayList<SimResultsLoader> filesToOpen, double simCSize, double simZSize, double simTSize){
-        this.filesToOpen = filesToOpen;
+    public DataReductionGUI(ArrayList<SimResultsLoader> simsToOpen, double simCSize, double simZSize, double simTSize){
+        this.simsToOpen = simsToOpen;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         okayButton.setEnabled(false);
 
         roiSelection = new RoiSelection(this);
         normalizeGUI = new NormalizeGUI(jDialog, simTSize);
         conclusion = new Conclusion(this, simCSize, simZSize, simTSize);
+        imagesToMeasurePanel = new ImagesToMeasure(simsToOpen);
 
-        JPanel imagesToMeasurePanel = new JPanel();
-        imagesToMeasurePanel.setLayout(new BoxLayout(imagesToMeasurePanel, BoxLayout.Y_AXIS));
-        imagesToMeasurePanel.setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Images To Measure"));
-        imagesToMeasurePanel.add(imageSelectionPanel());
-        imagesToMeasurePanel.add(selectedImagesToOpenPanel());
+        panels.add(imagesToMeasurePanel);
+        panels.add(roiSelection);
+        panels.add(conclusion);
 
-        add(imagesToMeasurePanel);
-        add(roiSelection);
-        add(conclusion);
+        add(panels.get(0));
         add(okayCancelPanel());
         setVisible(true);
 
@@ -77,8 +73,8 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         int[] labRange = normalizeGUI.getImageTimeRange();
         return new DataReductionSubmission(false,
                 roiSelection.getSimROIList(), roiSelection.getImageROIList(),
-                WindowManager.getImage((String) chosenImage.getSelectedItem()),
-                simRange[0], simRange[1], labRange[0], labRange[1], filesToOpen.size(), chosenFile,
+                imagesToMeasurePanel.getChosenExpImage(),
+                simRange[0], simRange[1], labRange[0], labRange[1], simsToOpen.size(), resultSaveFile,
                 conclusion.selectSimRange.getRangeOfSim(), conclusion.selectMeasurements.getChosenMeasurements(), conclusion.selectTableFormat.isWideTableSelected());
     }
 
@@ -89,35 +85,16 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         return jPanel;
     }
 
-    private JPanel imageSelectionPanel(){
-        JPanel jPanel = new JPanel(new GridLayout(1, 2));
-        jPanel.add(new JLabel("Experimental"));
-        chosenImage = new JComboBox<>(WindowManager.getImageTitles());
-        jPanel.add(chosenImage);
-        return jPanel;
+    public void activateNext(){
+        int currentPanelIndex = panels.indexOf(jDialog.getContentPane().getComponent(0));
+        jDialog.getContentPane().remove(0);
+        jDialog.getContentPane().add(panels.get(currentPanelIndex + 1));
+        updateDisplay();
     }
-
-    private JPanel selectedImagesToOpenPanel(){
-        JPanel jPanel = new JPanel();
-        String[] namesOfImagesToOpen = new String[filesToOpen.size()];
-        for (int i = 0; i < filesToOpen.size(); i++){
-            namesOfImagesToOpen[i] = filesToOpen.get(i).userSetFileName;
-        }
-        JList<String> selectedImagesToOpen = new JList<>(namesOfImagesToOpen);
-        selectedImagesToOpen.setEnabled(false);
-        selectedImagesToOpen.setVisibleRowCount(4);
-        JScrollPane jScrollPane = new JScrollPane(selectedImagesToOpen);
-        jPanel.add(new JLabel("Selected Simulations"));
-        jPanel.add(jScrollPane);
-        jPanel.setLayout(new GridLayout(1, 2));
-        return jPanel;
-    }
-
-
 
     public void activateOkayButton(){
         boolean selectedAMeasurement = !conclusion.selectMeasurements.getChosenMeasurements().isEmpty();
-        boolean chosenExperimentImage = chosenImage.getSelectedItem() != null;
+        boolean chosenExperimentImage = imagesToMeasurePanel.getChosenExpImage() != null;
         okayButton.setEnabled(selectedAMeasurement && chosenExperimentImage);
     }
 
@@ -134,7 +111,7 @@ public class DataReductionGUI extends JPanel implements ActionListener {
             saveToFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooserReturnValue = saveToFile.showDialog(this, "Save Results To File");
             if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION){
-                chosenFile = saveToFile.getSelectedFile();
+                resultSaveFile = saveToFile.getSelectedFile();
                 MainPanel.controlButtonsPanel.updateButtonsToMatchState();
                 continueWithProcess = true;
                 jDialog.dispose();

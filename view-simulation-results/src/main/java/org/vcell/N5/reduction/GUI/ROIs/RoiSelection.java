@@ -1,8 +1,8 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.ROIs;
 
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
-import ij.plugin.frame.RoiManager;
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-class RoiSelection extends JPanel {
+public class RoiSelection extends JPanel {
     private final ROIDataModel imageTableModel = new ROIDataModel();
     private final ROIDataModel simTableModel = new ROIDataModel();
     private final DataReductionGUI parentGUI;
