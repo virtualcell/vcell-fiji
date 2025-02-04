@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class DataReductionGUI extends JPanel implements ActionListener {
     private final JDialog jDialog = new JDialog(MainPanel.exportTableDialog, true);
-    private final JButton okayButton = new JButton("Next");
+    private final JButton okayButton = new JButton("Okay");
     private final JButton cancelButton = new JButton("Cancel");
 
     private File resultSaveFile;
@@ -46,11 +46,9 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         conclusion = new Conclusion(this, simCSize, simZSize, simTSize);
         imagesToMeasurePanel = new ImagesToMeasure(simsToOpen);
 
-        panels.add(imagesToMeasurePanel);
-        panels.add(roiSelection);
-        panels.add(conclusion);
-
-        add(panels.get(0));
+        add(imagesToMeasurePanel);
+        add(roiSelection);
+        add(conclusion);
         add(okayCancelPanel());
         setVisible(true);
 
@@ -83,13 +81,6 @@ public class DataReductionGUI extends JPanel implements ActionListener {
         jPanel.add(okayButton);
         jPanel.add(cancelButton);
         return jPanel;
-    }
-
-    public void activateNext(){
-        int currentPanelIndex = panels.indexOf(jDialog.getContentPane().getComponent(0));
-        jDialog.getContentPane().remove(0);
-        jDialog.getContentPane().add(panels.get(currentPanelIndex + 1));
-        updateDisplay();
     }
 
     public void activateOkayButton(){

@@ -5,6 +5,8 @@ import ij.io.RoiDecoder;
 import org.vcell.N5.reduction.GUI.DataReductionGUI;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,7 +28,9 @@ public class RoiSelection extends JPanel {
         JList<String> simROITable = new JList<>(simTableModel);
         JFileChooser simROIFileChooser = new JFileChooser();
         this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Apply ROI"));
+        Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
+        BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "2. Apply ROI"));
+        this.setBorder(border);
         this.parentGUI = parentGUI;
     }
 

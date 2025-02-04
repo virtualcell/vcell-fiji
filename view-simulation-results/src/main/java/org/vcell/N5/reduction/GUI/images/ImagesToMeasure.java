@@ -6,6 +6,7 @@ import org.vcell.N5.retrieving.SimResultsLoader;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.util.ArrayList;
@@ -19,7 +20,9 @@ public class ImagesToMeasure extends JPanel {
         this.simsToOpen = simsToOpen;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBorder(BorderFactory.createTitledBorder(lowerEtchedBorder, "Images To Measure"));
+        Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
+                BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "1. Images To Measure"));
+        setBorder(border);
         add(imageSelectionPanel());
         add(selectedImagesToOpenPanel());
     }
