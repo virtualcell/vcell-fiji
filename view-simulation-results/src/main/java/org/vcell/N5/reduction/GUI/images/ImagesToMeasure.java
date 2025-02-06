@@ -49,7 +49,7 @@ public class ImagesToMeasure extends JPanel {
                         File file = fileChooser.getSelectedFile();
                         experimentalImage = new Opener().openImage(file.getAbsolutePath());
                         jPanel.removeAll();
-                        jPanel.add(new JLabel("<HTML><i>Selected Experimental Image</i></HTML>"));
+                        jPanel.add(new JLabel("<HTML><i>Experimental</i></HTML>"));
                         JList<String> expImageList = new JList<>(new String[]{experimentalImage.getTitle()});
                         expImageList.setEnabled(false);
                         expImageList.setVisibleRowCount(4);
@@ -77,7 +77,7 @@ public class ImagesToMeasure extends JPanel {
         selectedImagesToOpen.setEnabled(false);
         selectedImagesToOpen.setVisibleRowCount(4);
         JScrollPane jScrollPane = new JScrollPane(selectedImagesToOpen);
-        jPanel.add(new JLabel("<HTML><i>Selected Simulations</i></HTML>"));
+        jPanel.add(new JLabel("<HTML><i>Simulations</i></HTML>"));
         jPanel.add(jScrollPane);
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
         return jPanel;

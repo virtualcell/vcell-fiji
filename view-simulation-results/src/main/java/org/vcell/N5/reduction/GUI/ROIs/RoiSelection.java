@@ -23,11 +23,11 @@ public class RoiSelection extends JPanel {
 
         JList<String> imageROITable = new JList<>(imageTableModel);
         JFileChooser imageROIFileChooser = new JFileChooser();
-        this.add(createROIInput(imageROITable, imageTableModel, imageROIFileChooser, "Experimental"));
+        this.add(createROIInput(imageROITable, imageTableModel, imageROIFileChooser, "<HTML><i>Experimental</i></HTML>"));
 
         JList<String> simROITable = new JList<>(simTableModel);
         JFileChooser simROIFileChooser = new JFileChooser();
-        this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
+        this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "<HTML><i>Simulation</i></HTML>"));
         Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
         BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "2. Apply ROI"));
         this.setBorder(border);
