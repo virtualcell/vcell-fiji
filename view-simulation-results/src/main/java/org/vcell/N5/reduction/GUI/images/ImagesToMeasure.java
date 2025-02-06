@@ -19,7 +19,7 @@ public class ImagesToMeasure extends JPanel {
     public ImagesToMeasure(ArrayList<SimResultsLoader> simsToOpen){
         this.simsToOpen = simsToOpen;
 
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
                 BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "1. Images To Measure"));
         setBorder(border);
@@ -28,7 +28,8 @@ public class ImagesToMeasure extends JPanel {
     }
 
     private JPanel imageSelectionPanel(){
-        JPanel jPanel = new JPanel(new GridLayout(1, 2));
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
         jPanel.add(new JLabel("Experimental"));
         chosenImage = new JComboBox<>(WindowManager.getImageTitles());
         jPanel.add(chosenImage);
@@ -47,7 +48,7 @@ public class ImagesToMeasure extends JPanel {
         JScrollPane jScrollPane = new JScrollPane(selectedImagesToOpen);
         jPanel.add(new JLabel("Selected Simulations"));
         jPanel.add(jScrollPane);
-        jPanel.setLayout(new GridLayout(1, 2));
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
         return jPanel;
     }
 
