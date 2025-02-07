@@ -1,6 +1,8 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.conclusion;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
 
@@ -15,9 +17,10 @@ public class SelectTableFormat extends JPanel {
         buttonGroup.add(tallTable);
         this.add(wideTable);
         this.add(tallTable);
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Select CSV Table Format:"));
+        Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
+                BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "4. Select CSV Table Format:"));
+        this.setBorder(border);
         wideTable.setSelected(true);
-        this.setVisible(false);
     }
 
 

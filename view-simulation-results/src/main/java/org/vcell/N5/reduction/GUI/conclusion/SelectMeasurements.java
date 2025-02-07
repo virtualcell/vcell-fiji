@@ -1,6 +1,10 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.conclusion;
+
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -13,9 +17,11 @@ public class SelectMeasurements extends JPanel implements ListSelectionListener 
 
     public SelectMeasurements(DataReductionGUI parentGUI){
         setLayout(new GridLayout(1, 1));
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Measurement Type"));
+        Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
+                BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "3. Measurement Type"));
+        this.setBorder(border);
         chosenMeasurement = new JList<>(measurementsDataModel);
-        chosenMeasurement.setVisibleRowCount(3);
+        chosenMeasurement.setVisibleRowCount(4);
         chosenMeasurement.addListSelectionListener(this);
         JScrollPane jScrollPane = new JScrollPane(chosenMeasurement);
         this.add(jScrollPane);

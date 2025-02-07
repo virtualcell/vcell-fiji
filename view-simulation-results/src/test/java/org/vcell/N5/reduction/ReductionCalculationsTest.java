@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.vcell.N5.N5ImageHandler;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.reduction.DTO.ReducedData;
-import org.vcell.N5.reduction.GUI.SelectMeasurements;
+import org.vcell.N5.reduction.GUI.conclusion.SelectMeasurements;
 import org.vcell.N5.retrieving.LoadingManager;
 import org.vcell.N5.retrieving.SimResultsLoader;
 

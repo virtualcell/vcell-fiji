@@ -1,17 +1,19 @@
-package org.vcell.N5.reduction.GUI;
+package org.vcell.N5.reduction.GUI.ROIs;
 
 import ij.gui.Roi;
 import ij.io.RoiDecoder;
-import ij.plugin.frame.RoiManager;
+import org.vcell.N5.reduction.GUI.DataReductionGUI;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-class RoiSelection extends JPanel {
+public class RoiSelection extends JPanel {
     private final ROIDataModel imageTableModel = new ROIDataModel();
     private final ROIDataModel simTableModel = new ROIDataModel();
     private final DataReductionGUI parentGUI;
@@ -21,12 +23,14 @@ class RoiSelection extends JPanel {
 
         JList<String> imageROITable = new JList<>(imageTableModel);
         JFileChooser imageROIFileChooser = new JFileChooser();
-        this.add(createROIInput(imageROITable, imageTableModel, imageROIFileChooser, "Experimental"));
+        this.add(createROIInput(imageROITable, imageTableModel, imageROIFileChooser, "<HTML><i>Experimental</i></HTML>"));
 
         JList<String> simROITable = new JList<>(simTableModel);
         JFileChooser simROIFileChooser = new JFileChooser();
-        this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "Sim"));
-        this.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Apply ROI"));
+        this.add(createROIInput(simROITable, simTableModel, simROIFileChooser, "<HTML><i>Simulation</i></HTML>"));
+        Border border = new CompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
+        BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "2. Apply ROI"));
+        this.setBorder(border);
         this.parentGUI = parentGUI;
     }
 

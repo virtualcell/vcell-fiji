@@ -10,7 +10,7 @@ import org.vcell.N5.UI.ControlButtonsPanel;
 import org.vcell.N5.UI.MainPanel;
 import org.vcell.N5.reduction.DTO.RangeOfImage;
 import org.vcell.N5.reduction.DTO.ReducedData;
-import org.vcell.N5.reduction.GUI.DataReductionGUI;
+import org.vcell.N5.reduction.DTO.DataReductionSubmission;
 import org.vcell.N5.retrieving.SimLoadingListener;
 import org.vcell.N5.retrieving.SimResultsLoader;
 
@@ -27,14 +27,14 @@ public class DataReductionManager implements SimLoadingListener {
     private int numOfImagesToOpen;
     private final ReductionCalculations calculations;
 
-    public final DataReductionGUI.DataReductionSubmission submission;
+    public final DataReductionSubmission submission;
 
     private final ConcurrentHashMap<String, ThreadStruct> threadPool = new ConcurrentHashMap<>();
     private final Object threadPoolLock = new Object();
 
     private DataReductionWriter dataReductionWriter;
 
-    public DataReductionManager(DataReductionGUI.DataReductionSubmission submission){
+    public DataReductionManager(DataReductionSubmission submission){
         N5ImageHandler.loadingManager.addSimLoadingListener(this);
         this.submission = submission;
 
