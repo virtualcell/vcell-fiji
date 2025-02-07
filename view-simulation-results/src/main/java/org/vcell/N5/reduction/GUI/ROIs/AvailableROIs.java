@@ -31,8 +31,8 @@ public class AvailableROIs extends JDialog implements ActionListener {
         this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
 
         if (roiDataModel.getRowCount() == 0){
-            String message = "There seems to be no ROI's present in ImageJ's ROI manager.\nWould you rather open your ROI directly from the file system.";
-            int confirm = JOptionPane.showConfirmDialog(this, message, "No ROI's In ROI Manager", JOptionPane.OK_CANCEL_OPTION);
+            String message = "There seems to be no ROI's present in ImageJ's ROI manager.\nWould you rather open your ROI directly from the file system?";
+            int confirm = JOptionPane.showConfirmDialog(this, message, "No ROI's In ROI Manager", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.OK_OPTION){
                 JFileChooser fileChooser = new JFileChooser();
                 fillROIList(fileChooser);
