@@ -5,14 +5,16 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.s3.AmazonS3KeyValueAccess;
 
+import java.net.URI;
+
 public class S3KeyValueAccess extends AmazonS3KeyValueAccess {
     private final String bucketName;
     private final AmazonS3 s3;
 
-    public S3KeyValueAccess(AmazonS3 s3, String containerURI, boolean createBucket) throws N5Exception.N5IOException{
-        super(s3, containerURI, createBucket);
+    public S3KeyValueAccess(AmazonS3 s3, String bucketName, URI baseURI, boolean createBucket) throws N5Exception.N5IOException{
+        super(s3, baseURI, createBucket);
         this.s3 = s3;
-        this.bucketName = containerURI;
+        this.bucketName = bucketName;
     }
 
 

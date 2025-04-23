@@ -38,6 +38,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
@@ -111,8 +112,8 @@ public class SimResultsLoader {
         s3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(new AnonymousAWSCredentials()));
         s3ClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(uri.getScheme() + "://" + uri.getAuthority(), defaultS3Region));
         AmazonS3 s3Client = s3ClientBuilder.build();
-        S3KeyValueAccess amazonS3KeyValueAccess = new S3KeyValueAccess(s3Client, bucketName, false);
-        n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, s3ObjectKey, new GsonBuilder(), false);
+        S3KeyValueAccess amazonS3KeyValueAccess = new S3KeyValueAccess(s3Client, bucketName, uri, false);
+        n5AmazonS3Reader = new N5KeyValueReader(amazonS3KeyValueAccess, "", new GsonBuilder(), true);
     }
 
     private void allowInsecureConnections(){
